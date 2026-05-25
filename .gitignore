@@ -1,0 +1,58 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+secrets.*
+credentials.*
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Backend virtual environments
+backend/.venv/
+backend/venv/
+backend/env/
+
+# Backend runtime data
+backend/data/
+backend/logs/
+
+# Node and frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Docker and local overrides
+docker-compose.override.yml
