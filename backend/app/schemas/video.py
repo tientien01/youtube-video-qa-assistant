@@ -12,4 +12,10 @@ class VideoIngestResponse(BaseModel):
     duration_seconds: int | None
     transcript_language: str | None
     chunk_count: int
-    status: Literal['pending', 'ready', 'transcript_not_found', 'failed']
+    status: Literal[
+        "pending",
+        "transcript_fetched",
+        "ready",
+        "transcript_not_found",
+        "failed",
+    ]
