@@ -2,15 +2,26 @@ export function VideoResult({ video }) {
   if (!video) {
     return (
       <div className="empty-state">
-        <h2>No video indexed yet</h2>
-        <p>Submit a YouTube URL to verify the backend ingest endpoint.</p>
+        <h2>Chưa có video nào được index</h2>
+        <p>Nhập URL YouTube để lấy transcript và tạo index RAG.</p>
       </div>
     )
   }
 
+  const embedUrl = `https://www.youtube.com/embed/${video.video_id}`
+
   return (
     <div className="result-panel">
-      <h2>Ingest Result</h2>
+      <div className="video-frame">
+        <iframe
+          src={embedUrl}
+          title={video.title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </div>
+
+      <h2>Kết quả ingest</h2>
       <dl>
         <div>
           <dt>Video ID</dt>
@@ -21,7 +32,7 @@ export function VideoResult({ video }) {
           <dd>{video.title}</dd>
         </div>
         <div>
-          <dt>Status</dt>
+          <dt>Trạng thái</dt>
           <dd>{video.status}</dd>
         </div>
         <div>
@@ -29,15 +40,15 @@ export function VideoResult({ video }) {
           <dd>{video.chunk_count}</dd>
         </div>
         <div>
-          <dt>Transcript Language</dt>
-          <dd>{video.transcript_language || 'Not available yet'}</dd>
+          <dt>Ngôn ngữ transcript</dt>
+          <dd>{video.transcript_language || 'Chưa có'}</dd>
         </div>
         <div>
-          <dt>Duration</dt>
+          <dt>Thời lượng</dt>
           <dd>
             {video.duration_seconds === null
-              ? 'Not available yet'
-              : `${video.duration_seconds} seconds`}
+              ? 'Chưa có'
+              : `${video.duration_seconds} giây`}
           </dd>
         </div>
       </dl>

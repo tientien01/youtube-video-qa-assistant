@@ -16,7 +16,7 @@ export function VideoIngestForm({ onSubmit, isLoading }) {
 
   return (
     <form className="ingest-form" onSubmit={handleSubmit}>
-      <label htmlFor="youtube-url">YouTube URL</label>
+      <label htmlFor="youtube-url">URL YouTube</label>
       <div className="form-row">
         <input
           id="youtube-url"
@@ -29,7 +29,7 @@ export function VideoIngestForm({ onSubmit, isLoading }) {
           required
         />
         <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Processing...' : 'Ingest Video'}
+          {isLoading ? 'Đang xử lý...' : 'Ingest video'}
         </button>
       </div>
     </form>

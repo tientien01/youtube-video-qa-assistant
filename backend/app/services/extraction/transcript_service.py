@@ -7,7 +7,7 @@ from youtube_transcript_api import (
 from app.schemas.transcript import TranscriptSegment
 
 
-ENGLISH_LANGUAGE_PREFIX = "en"
+PREFERRED_LANGUAGE_PREFIXES = ("en", "vi")
 
 
 class TranscriptNotFoundError(Exception):
@@ -37,34 +37,34 @@ def fetch_transcript(video_id: str) -> tuple[list[TranscriptSegment], str]:
 
 
 def _select_transcript(transcript_list):
-    english_transcripts = [
-        transcript
-        for transcript in transcript_list
-        if _is_english_transcript(transcript)
+    transcripts = list(transcript_list)
+    preferred_transcripts = [
+        transcript for transcript in transcripts if _is_preferred_transcript(transcript)
     ]
+    candidate_transcripts = preferred_transcripts or transcripts
 
     manual_transcript = next(
-        (transcript for transcript in english_transcripts if not transcript.is_generated),
+        (transcript for transcript in candidate_transcripts if not transcript.is_generated),
         None,
     )
     if manual_transcript is not None:
         return manual_transcript
 
     generated_transcript = next(
-        (transcript for transcript in english_transcripts if transcript.is_generated),
+        (transcript for transcript in candidate_transcripts if transcript.is_generated),
         None,
     )
     if generated_transcript is not None:
         return generated_transcript
 
-    raise TranscriptNotFoundError("English transcript not found for this video.")
+    raise TranscriptNotFoundError("Usable transcript not found for this video.")
 
 
-def _is_english_transcript(transcript) -> bool:
+def _is_preferred_transcript(transcript) -> bool:
     language_code = transcript.language_code.lower()
-    return (
-        language_code == ENGLISH_LANGUAGE_PREFIX
-        or language_code.startswith(f"{ENGLISH_LANGUAGE_PREFIX}-")
+    return any(
+        language_code == prefix or language_code.startswith(f"{prefix}-")
+        for prefix in PREFERRED_LANGUAGE_PREFIXES
     )
 
 
