@@ -1,11 +1,20 @@
 import re
+from dataclasses import dataclass
 
 from app.schemas.transcript import TranscriptSegment
 from app.services.rag.models import TranscriptChunk
 
 
 WHITESPACE_PATTERN = re.compile(r"\s+")
-TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9_]+", re.UNICODE)
+TOKEN_PATTERN = re.compile(r"[^\W_]+", re.UNICODE)
+
+
+@dataclass(frozen=True)
+class _ChunkPart:
+    text: str
+    start_seconds: float
+    end_seconds: float
+    word_count: int
 
 
 def clean_text(text: str) -> str:
@@ -30,33 +39,37 @@ def chunk_transcript(
         raise ValueError("overlap_words must be smaller than target_words.")
 
     chunks: list[TranscriptChunk] = []
-    current_parts: list[str] = []
+    current_parts: list[_ChunkPart] = []
     current_word_count = 0
-    current_start: float | None = None
-    current_end: float | None = None
 
     for segment in segments:
         cleaned_text = clean_text(segment.text)
         if not cleaned_text:
             continue
 
-        if current_start is None:
-            current_start = segment.start_seconds
+        word_count = len(tokenize(cleaned_text))
+        if word_count == 0:
+            continue
 
-        current_parts.append(cleaned_text)
-        current_word_count += len(tokenize(cleaned_text))
-        current_end = segment.end_seconds
+        current_parts.append(
+            _ChunkPart(
+                text=cleaned_text,
+                start_seconds=segment.start_seconds,
+                end_seconds=segment.end_seconds,
+                word_count=word_count,
+            )
+        )
+        current_word_count += word_count
 
         if current_word_count >= target_words:
-            _append_chunk(chunks, video_id, current_parts, current_start, current_end)
-            current_parts, current_word_count, current_start = _build_overlap(
+            _append_chunk(chunks, video_id, current_parts)
+            current_parts, current_word_count = _build_overlap(
                 current_parts,
-                current_end,
                 overlap_words,
             )
 
-    if current_parts and current_start is not None and current_end is not None:
-        _append_chunk(chunks, video_id, current_parts, current_start, current_end)
+    if current_parts:
+        _append_chunk(chunks, video_id, current_parts)
 
     return chunks
 
@@ -64,11 +77,9 @@ def chunk_transcript(
 def _append_chunk(
     chunks: list[TranscriptChunk],
     video_id: str,
-    parts: list[str],
-    start_seconds: float,
-    end_seconds: float,
+    parts: list[_ChunkPart],
 ) -> None:
-    text = clean_text(" ".join(parts))
+    text = clean_text(" ".join(part.text for part in parts))
     if not text:
         return
 
@@ -77,30 +88,39 @@ def _append_chunk(
             chunk_id=f"{video_id}-{len(chunks) + 1:04d}",
             video_id=video_id,
             text=text,
-            start_seconds=start_seconds,
-            end_seconds=end_seconds,
+            start_seconds=parts[0].start_seconds,
+            end_seconds=parts[-1].end_seconds,
         )
     )
 
 
 def _build_overlap(
-    parts: list[str],
-    fallback_start: float,
+    parts: list[_ChunkPart],
     overlap_words: int,
-) -> tuple[list[str], int, float]:
+) -> tuple[list[_ChunkPart], int]:
     if overlap_words == 0:
-        return [], 0, fallback_start
+        return [], 0
 
-    overlap_tokens: list[str] = []
+    overlap_parts: list[_ChunkPart] = []
+    remaining_words = overlap_words
     for part in reversed(parts):
-        part_tokens = tokenize(part)
-        overlap_tokens = part_tokens + overlap_tokens
-        if len(overlap_tokens) >= overlap_words:
+        if part.word_count <= remaining_words:
+            overlap_parts.append(part)
+            remaining_words -= part.word_count
+            if remaining_words <= 0:
+                break
+        else:
+            tokens = tokenize(part.text)
+            selected_tokens = tokens[-remaining_words:]
+            overlap_parts.append(
+                _ChunkPart(
+                    text=" ".join(selected_tokens),
+                    start_seconds=part.start_seconds,
+                    end_seconds=part.end_seconds,
+                    word_count=len(selected_tokens),
+                )
+            )
             break
 
-    selected_tokens = overlap_tokens[-overlap_words:]
-    overlap_text = " ".join(selected_tokens)
-    if not overlap_text:
-        return [], 0, fallback_start
-
-    return [overlap_text], len(selected_tokens), fallback_start
+    overlap_parts.reverse()
+    return overlap_parts, sum(part.word_count for part in overlap_parts)
