@@ -71,7 +71,7 @@ function App() {
     }
   }
 
-  async function handleAsk(question) {
+  async function handleAsk(question, retrievalMode) {
     if (!video) {
       return
     }
@@ -83,12 +83,14 @@ function App() {
       const response = await askVideoQuestion({
         videoId: video.video_id,
         question,
+        retrievalMode,
       })
       setMessages((currentMessages) => [
         {
           id: `${Date.now()}-${currentMessages.length}`,
           question,
           answer: response.answer,
+          retrievalMode: response.retrieval_mode,
           sources: response.sources,
         },
         ...currentMessages,

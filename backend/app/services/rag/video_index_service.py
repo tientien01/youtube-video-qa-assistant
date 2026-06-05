@@ -7,7 +7,9 @@ from app.services.extraction.video_url_service import extract_youtube_video_id
 from app.services.rag.generation_service import generate_answer
 from app.services.rag.local_store import VideoNotIndexedError, rag_store
 from app.services.rag.metadata_store import VideoMetadata, metadata_store
+from app.services.rag.retrieval_service import RetrievalMode, retrieve_chunks
 from app.services.rag.text_processing import chunk_transcript
+from app.services.rag.vector_store import vector_store
 
 
 logger = logging.getLogger(__name__)
@@ -19,6 +21,8 @@ def ingest_video_content(url: str) -> VideoIngestResponse:
 
     if rag_store.has_video(video_id):
         chunk_count = rag_store.get_video_chunk_count(video_id)
+        if not vector_store.has_video(video_id):
+            vector_store.upsert_video(video_id, rag_store.get_video_chunks(video_id))
         metadata = metadata_store.get_video(video_id)
         if metadata is None:
             metadata = metadata_store.upsert_video(
@@ -47,6 +51,7 @@ def ingest_video_content(url: str) -> VideoIngestResponse:
     transcript_segments, language_code = fetch_transcript(video_id)
     chunks = chunk_transcript(video_id=video_id, segments=transcript_segments)
     rag_store.upsert_video(video_id, chunks)
+    vector_store.upsert_video(video_id, chunks)
 
     duration_seconds = int(max(segment.end_seconds for segment in transcript_segments))
     metadata = metadata_store.upsert_video(
@@ -92,21 +97,32 @@ def get_ingested_video(video_id: str) -> VideoMetadataResponse:
 
 def delete_ingested_video(video_id: str) -> VideoDeleteResponse:
     deleted_chunks = rag_store.delete_video(video_id)
+    deleted_vectors = vector_store.delete_video(video_id)
     deleted_metadata = metadata_store.delete_video(video_id)
-    if not deleted_chunks and not deleted_metadata:
+    if not deleted_chunks and not deleted_vectors and not deleted_metadata:
         raise VideoNotIndexedError("Video has not been indexed yet.")
 
     logger.info("Deleted video_id=%s from local library", video_id)
     return VideoDeleteResponse(video_id=video_id, deleted=True)
 
 
-def ask_video_question(video_id: str, question: str) -> ChatAskResponse:
+def ask_video_question(
+    video_id: str,
+    question: str,
+    retrieval_mode: RetrievalMode = "hybrid",
+) -> ChatAskResponse:
     logger.info(
-        "Retrieving context for video_id=%s question_length=%s",
+        "Retrieving context for video_id=%s question_length=%s mode=%s",
         video_id,
         len(question),
+        retrieval_mode,
     )
-    retrieved_chunks = rag_store.retrieve(video_id=video_id, question=question, top_k=4)
+    retrieved_chunks = retrieve_chunks(
+        video_id=video_id,
+        question=question,
+        mode=retrieval_mode,
+        top_k=4,
+    )
     answer = generate_answer(question=question, retrieved_chunks=retrieved_chunks)
     logger.info(
         "Generated answer for video_id=%s source_count=%s",
@@ -116,6 +132,7 @@ def ask_video_question(video_id: str, question: str) -> ChatAskResponse:
 
     return ChatAskResponse(
         answer=answer,
+        retrieval_mode=retrieval_mode,
         sources=[
             ChatSource(
                 chunk_id=item.chunk.chunk_id,

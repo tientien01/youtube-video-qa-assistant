@@ -107,3 +107,45 @@ File này ghi lại các thay đổi đã thực hiện theo roadmap để dễ 
 - Chưa có database thật; metadata và chunks vẫn là local JSON.
 - Chưa có frontend route riêng cho history page.
 - Chưa thêm summary, notes, quiz, LLM hoặc embedding.
+
+## 2026-06-05 - Phase 5: Semantic RAG baseline và hybrid retrieval
+
+### Đã thay đổi
+
+- Thêm `HashingEmbeddingService` để tạo embedding vector local, deterministic, không cần API key.
+- Thêm `LocalVectorStore` để lưu vector index local bằng JSON.
+- Khi ingest video mới, backend lưu chunks vào cả BM25 local store và vector store.
+- Khi ingest video đã cache, backend tự build vector index nếu chunks đã có nhưng vector index chưa có.
+- Khi xóa video, backend xóa cả chunks, metadata và vectors.
+- Thêm `retrieval_service.py` để gom logic chọn retrieval mode.
+- Thêm retrieval modes:
+  - `bm25`
+  - `embedding`
+  - `hybrid`
+- `hybrid` kết hợp BM25 score và embedding score sau khi normalize.
+- Cập nhật `/api/v1/chat/ask` để nhận `retrieval_mode`.
+- Cập nhật response chat để trả `retrieval_mode` đã dùng.
+- Cập nhật frontend Chat panel để chọn retrieval mode trước khi hỏi.
+- Cập nhật frontend answer card để hiển thị mode đã dùng.
+- Thêm tests cho vector store, hybrid retrieval và chat API với retrieval mode.
+
+### Lý do
+
+- BM25 vẫn được giữ làm baseline để so sánh với semantic retrieval.
+- Embedding retrieval làm pipeline RAG giống thực tế hơn: chunk text -> embedding -> vector search.
+- Hybrid retrieval là hướng thực tế hơn cho demo vì tận dụng cả keyword matching và vector similarity.
+- Implementation hiện dùng local hashing embedding để ổn định, chạy offline và không cần tải model lớn.
+
+### Giới hạn hiện tại
+
+- Embedding hiện là hashing embedding local, chưa phải sentence-transformers hoặc embedding model từ provider.
+- Vector store hiện là JSON local, chưa phải ChromaDB.
+- Chưa có reranker.
+- Chưa có evaluation dataset để đo BM25 vs embedding vs hybrid.
+- Chưa có RAG Debug View để hiển thị score chi tiết theo từng retriever.
+
+### Bước tiếp theo nên làm
+
+- Nếu cần bám sát production RAG hơn, thay `LocalVectorStore` bằng ChromaDB adapter.
+- Nếu máy đủ tài nguyên, thay `HashingEmbeddingService` bằng sentence-transformers local.
+- Kéo một phần Phase 7 lên sớm để thêm evaluation và debug view.

@@ -1,9 +1,15 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+
+RetrievalMode = Literal["bm25", "embedding", "hybrid"]
 
 
 class ChatAskRequest(BaseModel):
     video_id: str = Field(..., min_length=1)
     question: str = Field(..., min_length=1)
+    retrieval_mode: RetrievalMode = "hybrid"
 
 
 class ChatSource(BaseModel):
@@ -16,4 +22,5 @@ class ChatSource(BaseModel):
 
 class ChatAskResponse(BaseModel):
     answer: str
+    retrieval_mode: RetrievalMode
     sources: list[ChatSource]

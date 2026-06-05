@@ -224,10 +224,39 @@
   gap: 10px;
 }
 
-.question-form label {
+.question-form label,
+.retrieval-mode-field {
   color: var(--text-strong);
   font-size: 14px;
   font-weight: 700;
+}
+
+.question-options {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.retrieval-mode-field {
+  display: grid;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.retrieval-mode-field select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-strong);
+  background: var(--bg);
+  font: inherit;
+}
+
+.retrieval-mode-field select:focus {
+  border-color: var(--accent);
+  outline: 3px solid var(--focus);
 }
 
 .question-form textarea {
@@ -284,6 +313,25 @@
   font-weight: 700;
 }
 
+.answer-heading {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+}
+
+.answer-heading span {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: var(--muted);
+  background: var(--bg);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .answer-text {
   margin: 0;
   white-space: pre-wrap;
@@ -337,6 +385,15 @@
 
   .question-form button {
     width: 100%;
+  }
+
+  .question-options,
+  .answer-heading {
+    display: grid;
+  }
+
+  .retrieval-mode-field {
+    min-width: 0;
   }
 
   .history-item {

@@ -9,6 +9,7 @@ from app.main import app
 from app.services.rag.local_store import LocalRagStore
 from app.services.rag.metadata_store import LocalVideoMetadataStore
 from app.services.rag.models import TranscriptChunk
+from app.services.rag.vector_store import LocalVectorStore
 
 
 class ApiRoutesTest(unittest.TestCase):
@@ -42,6 +43,7 @@ class ApiRoutesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             store = LocalRagStore(Path(temp_dir) / "index.json")
             metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
+            vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
             store.upsert_video("dQw4w9WgXcQ", [chunk])
             metadata_store.upsert_video(
                 video_id="dQw4w9WgXcQ",
@@ -55,6 +57,7 @@ class ApiRoutesTest(unittest.TestCase):
             with (
                 patch("app.services.rag.video_index_service.rag_store", store),
                 patch("app.services.rag.video_index_service.metadata_store", metadata_store),
+                patch("app.services.rag.video_index_service.vector_store", vector_store),
                 patch("app.services.rag.video_index_service.fetch_transcript") as fetch_transcript_mock,
             ):
                 response = self.client.post(
@@ -126,6 +129,7 @@ class ApiRoutesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             store = LocalRagStore(Path(temp_dir) / "index.json")
             metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
+            vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
             store.upsert_video("dQw4w9WgXcQ", [chunk])
             metadata_store.upsert_video(
                 video_id="dQw4w9WgXcQ",
@@ -138,6 +142,7 @@ class ApiRoutesTest(unittest.TestCase):
 
             with (
                 patch("app.services.rag.video_index_service.rag_store", store),
+                patch("app.services.rag.video_index_service.vector_store", vector_store),
                 patch("app.services.rag.video_index_service.metadata_store", metadata_store),
             ):
                 response = self.client.delete("/api/v1/videos/dQw4w9WgXcQ")
@@ -165,6 +170,38 @@ class ApiRoutesTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json()["detail"], "Video has not been indexed yet.")
+
+    def test_chat_accepts_retrieval_mode(self):
+        chunk = TranscriptChunk(
+            chunk_id="dQw4w9WgXcQ-0001",
+            video_id="dQw4w9WgXcQ",
+            text="Hybrid retrieval combines keyword matching and embedding search.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
+            store.upsert_video("dQw4w9WgXcQ", [chunk])
+            vector_store.upsert_video("dQw4w9WgXcQ", [chunk])
+
+            with (
+                patch("app.services.rag.retrieval_service.rag_store", store),
+                patch("app.services.rag.retrieval_service.vector_store", vector_store),
+            ):
+                response = self.client.post(
+                    "/api/v1/chat/ask",
+                    json={
+                        "video_id": "dQw4w9WgXcQ",
+                        "question": "How does hybrid retrieval work?",
+                        "retrieval_mode": "hybrid",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["retrieval_mode"], "hybrid")
+        self.assertGreaterEqual(len(response.json()["sources"]), 1)
 
 
 if __name__ == "__main__":

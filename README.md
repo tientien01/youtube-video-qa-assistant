@@ -13,6 +13,7 @@ MVP hiện có:
 - Chunk transcript có timestamp.
 - Lưu RAG index local bằng JSON.
 - Retrieval baseline theo BM25-style lexical search.
+- Retrieval modes: `bm25`, `embedding`, `hybrid`.
 - Endpoint `/api/v1/videos/ingest`.
 - Endpoint `/api/v1/chat/ask`.
 - Frontend ingest video, chat và hiển thị sources timestamp.
@@ -82,3 +83,9 @@ Trước khi qua Phase 1, cần đảm bảo Phase 0 ổn:
 - API lỗi cơ bản rõ ràng.
 - Logging cơ bản cho ingest và ask.
 - Baseline BM25 đủ ổn để so sánh với semantic/hybrid RAG sau này.
+
+Phase kỹ thuật RAG hiện đã có semantic retrieval baseline:
+
+- Local hashing embedding.
+- Local vector store bằng JSON.
+- Hybrid retrieval kết hợp BM25 và embedding score.

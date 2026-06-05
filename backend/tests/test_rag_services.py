@@ -8,7 +8,9 @@ from app.services.rag.generation_service import generate_answer
 from app.services.rag.local_store import LocalRagStore
 from app.services.rag.metadata_store import LocalVideoMetadataStore
 from app.services.rag.models import TranscriptChunk
+from app.services.rag.retrieval_service import retrieve_chunks
 from app.services.rag.text_processing import chunk_transcript, tokenize
+from app.services.rag.vector_store import LocalVectorStore
 from app.services.rag.video_index_service import ingest_video_content
 
 
@@ -94,6 +96,7 @@ class RagServicesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             store = LocalRagStore(Path(temp_dir) / "index.json")
             metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
+            vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
             store.upsert_video("dQw4w9WgXcQ", [chunk])
             metadata_store.upsert_video(
                 video_id="dQw4w9WgXcQ",
@@ -107,6 +110,7 @@ class RagServicesTest(unittest.TestCase):
             with (
                 patch("app.services.rag.video_index_service.rag_store", store),
                 patch("app.services.rag.video_index_service.metadata_store", metadata_store),
+                patch("app.services.rag.video_index_service.vector_store", vector_store),
                 patch("app.services.rag.video_index_service.fetch_transcript") as fetch_transcript_mock,
             ):
                 response = ingest_video_content(
@@ -129,10 +133,12 @@ class RagServicesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             store = LocalRagStore(Path(temp_dir) / "index.json")
             metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
+            vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
 
             with (
                 patch("app.services.rag.video_index_service.rag_store", store),
                 patch("app.services.rag.video_index_service.metadata_store", metadata_store),
+                patch("app.services.rag.video_index_service.vector_store", vector_store),
                 patch(
                     "app.services.rag.video_index_service.fetch_transcript",
                     return_value=(segments, "en"),
@@ -149,6 +155,71 @@ class RagServicesTest(unittest.TestCase):
         self.assertEqual(metadata.duration_seconds, 9)
         self.assertEqual(metadata.transcript_language, "en")
         self.assertGreater(metadata.chunk_count, 0)
+        self.assertTrue(vector_store.has_video("dQw4w9WgXcQ"))
+
+    def test_vector_store_retrieves_similar_chunk(self):
+        chunks = [
+            TranscriptChunk(
+                chunk_id="video123456-0001",
+                video_id="video123456",
+                text="Semantic retrieval uses embeddings and vector search.",
+                start_seconds=0,
+                end_seconds=5,
+            ),
+            TranscriptChunk(
+                chunk_id="video123456-0002",
+                video_id="video123456",
+                text="Cooking pasta needs boiling water.",
+                start_seconds=5,
+                end_seconds=10,
+            ),
+        ]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalVectorStore(Path(temp_dir) / "vectors.json")
+            store.upsert_video("video123456", chunks)
+            results = store.retrieve("video123456", "embedding search", top_k=1)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].chunk.chunk_id, "video123456-0001")
+
+    def test_retrieval_service_supports_hybrid_mode(self):
+        chunks = [
+            TranscriptChunk(
+                chunk_id="video123456-0001",
+                video_id="video123456",
+                text="Hybrid retrieval combines BM25 keywords with embedding search.",
+                start_seconds=0,
+                end_seconds=5,
+            ),
+            TranscriptChunk(
+                chunk_id="video123456-0002",
+                video_id="video123456",
+                text="Cooking pasta needs boiling water.",
+                start_seconds=5,
+                end_seconds=10,
+            ),
+        ]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            rag_test_store = LocalRagStore(Path(temp_dir) / "index.json")
+            vector_test_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
+            rag_test_store.upsert_video("video123456", chunks)
+            vector_test_store.upsert_video("video123456", chunks)
+
+            with (
+                patch("app.services.rag.retrieval_service.rag_store", rag_test_store),
+                patch("app.services.rag.retrieval_service.vector_store", vector_test_store),
+            ):
+                results = retrieve_chunks(
+                    video_id="video123456",
+                    question="How does hybrid embedding retrieval work?",
+                    mode="hybrid",
+                    top_k=1,
+                )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].chunk.chunk_id, "video123456-0001")
 
     def test_metadata_store_lists_newest_video_first(self):
         with tempfile.TemporaryDirectory() as temp_dir:

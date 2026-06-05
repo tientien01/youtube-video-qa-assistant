@@ -9,6 +9,7 @@ export function ChatPanel({
   error,
 }) {
   const [question, setQuestion] = useState('')
+  const [retrievalMode, setRetrievalMode] = useState('hybrid')
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -18,7 +19,7 @@ export function ChatPanel({
       return
     }
 
-    onAsk(trimmedQuestion)
+    onAsk(trimmedQuestion, retrievalMode)
     setQuestion('')
   }
 
@@ -39,7 +40,22 @@ export function ChatPanel({
       </div>
 
       <form className="question-form" onSubmit={handleSubmit}>
-        <label htmlFor="question">Câu hỏi</label>
+        <div className="question-options">
+          <label htmlFor="question">Câu hỏi</label>
+          <label className="retrieval-mode-field" htmlFor="retrieval-mode">
+            Retrieval
+            <select
+              id="retrieval-mode"
+              value={retrievalMode}
+              onChange={(event) => setRetrievalMode(event.target.value)}
+              disabled={isAsking}
+            >
+              <option value="hybrid">Hybrid</option>
+              <option value="embedding">Embedding</option>
+              <option value="bm25">BM25</option>
+            </select>
+          </label>
+        </div>
         <textarea
           id="question"
           name="question"
@@ -63,7 +79,10 @@ export function ChatPanel({
         ) : (
           messages.map((message) => (
             <article className="answer-card" key={message.id}>
-              <p className="question-text">{message.question}</p>
+              <div className="answer-heading">
+                <p className="question-text">{message.question}</p>
+                <span>{message.retrievalMode || 'hybrid'}</span>
+              </div>
               <p className="answer-text">{message.answer}</p>
 
               {message.sources.length > 0 ? (

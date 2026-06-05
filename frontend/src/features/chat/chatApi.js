@@ -1,6 +1,6 @@
 const API_BASE_URL = 'http://127.0.0.1:8000/api/v1'
 
-export async function askVideoQuestion({ videoId, question }) {
+export async function askVideoQuestion({ videoId, question, retrievalMode }) {
   const response = await fetch(`${API_BASE_URL}/chat/ask`, {
     method: 'POST',
     headers: {
@@ -9,6 +9,7 @@ export async function askVideoQuestion({ videoId, question }) {
     body: JSON.stringify({
       video_id: videoId,
       question,
+      retrieval_mode: retrievalMode,
     }),
   })
 
