@@ -17,3 +17,38 @@ export async function ingestVideo(url) {
 
   return data
 }
+
+export async function listVideos() {
+  const response = await fetch(`${API_BASE_URL}/videos`)
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.detail || 'Không thể tải danh sách video.')
+  }
+
+  return data
+}
+
+export async function getVideo(videoId) {
+  const response = await fetch(`${API_BASE_URL}/videos/${videoId}`)
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.detail || 'Không thể tải thông tin video.')
+  }
+
+  return data
+}
+
+export async function deleteVideo(videoId) {
+  const response = await fetch(`${API_BASE_URL}/videos/${videoId}`, {
+    method: 'DELETE',
+  })
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.detail || 'Không thể xóa video.')
+  }
+
+  return data
+}

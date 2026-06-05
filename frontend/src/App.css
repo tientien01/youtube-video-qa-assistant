@@ -100,7 +100,8 @@
 
 .empty-state,
 .result-panel,
-.chat-panel {
+.chat-panel,
+.history-panel {
   padding: 24px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -109,7 +110,8 @@
 
 .empty-state h2,
 .result-panel h2,
-.chat-panel h2 {
+.chat-panel h2,
+.history-panel h2 {
   margin: 0 0 8px;
 }
 
@@ -123,6 +125,58 @@
   display: grid;
   gap: 6px;
   margin-bottom: 18px;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.history-select,
+.history-delete {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.history-select {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px;
+  color: inherit;
+  text-align: left;
+}
+
+.history-select[aria-current='true'] {
+  border-color: var(--accent);
+  outline: 3px solid var(--focus);
+}
+
+.history-title {
+  color: var(--text-strong);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.history-meta {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.history-delete {
+  min-width: 72px;
+  padding: 0 14px;
+  color: var(--danger);
 }
 
 .video-frame {
@@ -283,6 +337,14 @@
 
   .question-form button {
     width: 100%;
+  }
+
+  .history-item {
+    grid-template-columns: 1fr;
+  }
+
+  .history-delete {
+    min-height: 42px;
   }
 
   .source-item {

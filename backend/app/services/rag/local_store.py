@@ -22,9 +22,25 @@ class LocalRagStore:
         self._index[video_id] = chunks
         self._save()
 
+    def has_video(self, video_id: str) -> bool:
+        self._ensure_loaded()
+        return bool(self._index.get(video_id))
+
     def get_video_chunks(self, video_id: str) -> list[TranscriptChunk]:
         self._ensure_loaded()
         return self._index.get(video_id, [])
+
+    def get_video_chunk_count(self, video_id: str) -> int:
+        return len(self.get_video_chunks(video_id))
+
+    def delete_video(self, video_id: str) -> bool:
+        self._ensure_loaded()
+        if video_id not in self._index:
+            return False
+
+        del self._index[video_id]
+        self._save()
+        return True
 
     def retrieve(self, video_id: str, question: str, top_k: int = 4) -> list[RetrievedChunk]:
         self._ensure_loaded()

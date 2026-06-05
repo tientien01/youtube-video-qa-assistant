@@ -33,7 +33,7 @@ export function VideoResult({ video }) {
         </div>
         <div>
           <dt>Trạng thái</dt>
-          <dd>{video.status}</dd>
+          <dd>{video.status || 'cached'}</dd>
         </div>
         <div>
           <dt>Chunks</dt>
