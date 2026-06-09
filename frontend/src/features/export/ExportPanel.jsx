@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { buildLearningMarkdown, buildMarkdownFilename } from './exportMarkdown'
 
-export function ExportPanel({ video, summary, notes }) {
+export function ExportPanel({ video, summary, notes, quiz }) {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const markdown = useMemo(
-    () => buildLearningMarkdown({ video, summary, notes }),
-    [video, summary, notes],
+    () => buildLearningMarkdown({ video, summary, notes, quiz }),
+    [video, summary, notes, quiz],
   )
 
   if (!video) {

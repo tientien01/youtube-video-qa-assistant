@@ -51,9 +51,15 @@ export function SummaryPanel({
             <p className="question-text">
               {summary.mode}
             </p>
-            <span>{summary.cached ? 'cached' : 'new'}</span>
+            <div className="status-tags">
+              <span>{summary.cached ? 'cached' : 'new'}</span>
+              {summary.generation ? <span>{formatGeneration(summary.generation)}</span> : null}
+            </div>
           </div>
           <p className="answer-text">{summary.summary}</p>
+          {summary.generation?.fallback_reason ? (
+            <p className="muted-text">Fallback: {summary.generation.fallback_reason}</p>
+          ) : null}
 
           {summary.sources.length > 0 ? (
             <div className="source-list">
@@ -78,4 +84,8 @@ export function SummaryPanel({
       )}
     </section>
   )
+}
+
+function formatGeneration(generation) {
+  return `${generation.generation_mode}:${generation.provider}`
 }

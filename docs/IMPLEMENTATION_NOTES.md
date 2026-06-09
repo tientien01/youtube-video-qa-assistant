@@ -302,6 +302,94 @@ File này ghi lại các thay đổi đã thực hiện theo roadmap để dễ 
 
 ### Giới hạn hiện tại
 
-- Export chưa bao gồm quiz vì Phase F chưa triển khai.
+- Export đã được cập nhật ở Phase F để bao gồm quiz nếu quiz đã được tạo.
 - Export chưa bao gồm selected chat answers.
 - Chưa có backend export service hoặc lưu artifact server-side.
+
+## 2026-06-09 - Phase F: Quiz fallback baseline
+
+### Đã thay đổi
+
+- Thêm schema quiz tại `backend/app/schemas/quiz.py`.
+- Thêm `quiz_service.py` để tạo quiz fallback từ transcript chunks.
+- Thêm endpoint `POST /api/v1/videos/{video_id}/quiz`.
+- Quiz request hỗ trợ:
+  - `question_count`
+  - `difficulty`: `easy`, `medium`, `hard`
+  - `question_type`: `multiple_choice`, `true_false`, `short_answer`, `mixed`
+- Quiz response trả câu hỏi, options, đáp án đúng, explanation và timestamp source cho từng câu.
+- Dùng lại `LocalGeneratedOutputStore` để cache quiz theo video và cấu hình request.
+- Thêm frontend `QuizPanel` và `quizApi`.
+- Cập nhật `App.jsx` để user tạo quiz sau summary/study notes.
+- Cập nhật Export Markdown để đưa quiz vào file nếu quiz đã được tạo.
+- Thêm tests cho quiz service và quiz API.
+
+### Lý do
+
+- Quiz hoàn thiện workflow học tập: user không chỉ đọc summary/notes mà còn tự kiểm tra mức hiểu bài.
+- Fallback từ transcript chunks giúp app vẫn chạy local/offline, không phụ thuộc API key.
+- Timestamp source giữ nguyên nguyên tắc grounded output: mỗi câu hỏi có đoạn video để xem lại.
+
+### Giới hạn hiện tại
+
+- Quiz fallback còn đơn giản và chưa dùng LLM để tạo nhiễu đáp án chất lượng cao.
+- Short answer hiện phù hợp tự đối chiếu hơn là chấm điểm tự động chính xác.
+- Chưa lưu kết quả làm bài của user.
+- Chưa có RAG Debug View để quan sát retrieval/generation chi tiết.
+
+### Kiểm tra
+
+- Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
+- Đã chạy `npm run lint`.
+- Đã chạy `npm run build`.
+- Kết quả backend: 47 tests pass.
+
+## 2026-06-09 - Phase G: RAG Debug View và evaluation baseline
+
+### Đã thay đổi
+
+- Thêm schema generation metadata dùng chung tại `backend/app/schemas/generation.py`.
+- Cập nhật chat response để trả `generation` metadata.
+- Cập nhật summary response để trả `generation` metadata.
+- Cập nhật study notes response để trả `generation` metadata.
+- Cập nhật LLM generation helper để phân biệt:
+  - `llm`
+  - `fallback`
+  - `cached`
+- Thêm Debug Retrieve API:
+  - `backend/app/schemas/debug.py`
+  - `backend/app/api/v1/routes/debug.py`
+  - `POST /api/v1/debug/retrieve`
+- Debug API trả question, retrieval mode, top_k, latency và retrieved chunks kèm score/timestamp.
+- Thêm frontend RAG Debug View:
+  - `frontend/src/features/debug/debugApi.js`
+  - `frontend/src/features/debug/RagDebugPanel.jsx`
+- Cập nhật Chat, Summary và Study Notes UI để hiển thị generation metadata.
+- Cập nhật Export Markdown để ghi generation metadata của summary/study notes.
+- Thêm evaluation baseline:
+  - `backend/evaluation/eval_dataset.example.json`
+  - `backend/evaluation/metrics.py`
+  - `backend/evaluation/run_retrieval_eval.py`
+  - `docs/EVALUATION_RESULTS.md`
+- Thêm tests cho Debug API và evaluation metrics.
+
+### Lý do
+
+- RAG Debug View giúp chứng minh retrieval hoạt động thế nào thay vì chỉ hiển thị answer cuối.
+- Generation metadata giúp biết output đang dùng LLM, fallback hay cache.
+- Evaluation runner tạo nền để so sánh BM25, embedding và hybrid bằng số liệu trước khi nâng cấp embedding/vector store.
+
+### Giới hạn hiện tại
+
+- `docs/EVALUATION_RESULTS.md` hiện là template, chưa có số liệu thật.
+- `eval_dataset.example.json` chỉ là dataset mẫu; cần thay bằng video đã ingest và expected chunk IDs thật.
+- Cached summary/notes hiện chỉ trả `generation_mode = cached`, chưa lưu provider gốc của lần generate đầu tiên.
+- Debug View hiện tập trung retrieval, chưa hiển thị prompt gửi LLM.
+
+### Kiểm tra
+
+- Đã chạy `.\.venv\Scripts\python.exe -m py_compile` cho các file backend Phase G.
+- Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
+- Đã chạy `npm run lint`.
+- Đã chạy `npm run build`.
+- Kết quả backend: 51 tests pass.

@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.schemas.generation import GenerationMetadata
+
 
 RetrievalMode = Literal["bm25", "embedding", "hybrid"]
 
@@ -24,3 +26,4 @@ class ChatAskResponse(BaseModel):
     answer: str
     retrieval_mode: RetrievalMode
     sources: list[ChatSource]
+    generation: GenerationMetadata

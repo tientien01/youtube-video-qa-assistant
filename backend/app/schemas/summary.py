@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from app.schemas.generation import GenerationMetadata
+
 
 SummaryMode = Literal["short", "detailed", "timeline"]
 
@@ -23,3 +25,4 @@ class SummaryResponse(BaseModel):
     summary: str
     sources: list[SummarySource]
     cached: bool
+    generation: GenerationMetadata

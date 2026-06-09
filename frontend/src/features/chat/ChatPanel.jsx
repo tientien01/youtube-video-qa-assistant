@@ -81,9 +81,15 @@ export function ChatPanel({
             <article className="answer-card" key={message.id}>
               <div className="answer-heading">
                 <p className="question-text">{message.question}</p>
-                <span>{message.retrievalMode || 'hybrid'}</span>
+                <div className="status-tags">
+                  <span>{message.retrievalMode || 'hybrid'}</span>
+                  {message.generation ? <span>{formatGeneration(message.generation)}</span> : null}
+                </div>
               </div>
               <p className="answer-text">{message.answer}</p>
+              {message.generation?.fallback_reason ? (
+                <p className="muted-text">Fallback: {message.generation.fallback_reason}</p>
+              ) : null}
 
               {message.sources.length > 0 ? (
                 <div className="source-list">
@@ -108,4 +114,8 @@ export function ChatPanel({
       </div>
     </section>
   )
+}
+
+function formatGeneration(generation) {
+  return `${generation.generation_mode}:${generation.provider}`
 }

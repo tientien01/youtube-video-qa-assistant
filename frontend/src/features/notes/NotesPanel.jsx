@@ -33,9 +33,15 @@ export function NotesPanel({
         <article className="notes-result">
           <div className="answer-heading">
             <p className="question-text">Study notes</p>
-            <span>{notes.cached ? 'cached' : 'new'}</span>
+            <div className="status-tags">
+              <span>{notes.cached ? 'cached' : 'new'}</span>
+              {notes.generation ? <span>{formatGeneration(notes.generation)}</span> : null}
+            </div>
           </div>
           <p className="answer-text">{notes.notes}</p>
+          {notes.generation?.fallback_reason ? (
+            <p className="muted-text">Fallback: {notes.generation.fallback_reason}</p>
+          ) : null}
 
           {notes.sources.length > 0 ? (
             <div className="source-list">
@@ -60,4 +66,8 @@ export function NotesPanel({
       )}
     </section>
   )
+}
+
+function formatGeneration(generation) {
+  return `${generation.generation_mode}:${generation.provider}`
 }

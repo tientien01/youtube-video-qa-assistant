@@ -280,6 +280,101 @@ class ApiRoutesTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_quiz_endpoint_generates_quiz(self):
+        chunk = TranscriptChunk(
+            chunk_id="dQw4w9WgXcQ-0001",
+            video_id="dQw4w9WgXcQ",
+            text="Quiz generation uses transcript chunks as grounded source material.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("dQw4w9WgXcQ", [chunk])
+
+            with (
+                patch("app.services.learning.quiz_service.rag_store", store),
+                patch("app.services.learning.quiz_service.generated_output_store", output_store),
+            ):
+                response = self.client.post(
+                    "/api/v1/videos/dQw4w9WgXcQ/quiz",
+                    json={
+                        "question_count": 1,
+                        "difficulty": "medium",
+                        "question_type": "multiple_choice",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["cached"])
+        self.assertEqual(len(response.json()["questions"]), 1)
+        self.assertEqual(response.json()["questions"][0]["question_type"], "multiple_choice")
+        self.assertEqual(response.json()["questions"][0]["source"]["chunk_id"], chunk.chunk_id)
+
+    def test_quiz_endpoint_returns_404_for_unindexed_video(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+
+            with (
+                patch("app.services.learning.quiz_service.rag_store", store),
+                patch("app.services.learning.quiz_service.generated_output_store", output_store),
+            ):
+                response = self.client.post(
+                    "/api/v1/videos/missing0000/quiz",
+                    json={"question_count": 1},
+                )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_debug_retrieve_endpoint_returns_chunks_and_latency(self):
+        chunk = TranscriptChunk(
+            chunk_id="dQw4w9WgXcQ-0001",
+            video_id="dQw4w9WgXcQ",
+            text="Hybrid retrieval combines lexical and vector scores.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            store.upsert_video("dQw4w9WgXcQ", [chunk])
+
+            with patch("app.services.rag.retrieval_service.rag_store", store):
+                response = self.client.post(
+                    "/api/v1/debug/retrieve",
+                    json={
+                        "video_id": "dQw4w9WgXcQ",
+                        "question": "How does hybrid retrieval work?",
+                        "retrieval_mode": "bm25",
+                        "top_k": 1,
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["retrieval_mode"], "bm25")
+        self.assertEqual(response.json()["top_k"], 1)
+        self.assertGreaterEqual(response.json()["latency_ms"], 0)
+        self.assertEqual(response.json()["chunks"][0]["chunk_id"], chunk.chunk_id)
+
+    def test_debug_retrieve_endpoint_returns_404_for_unindexed_video(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+
+            with patch("app.services.rag.retrieval_service.rag_store", store):
+                response = self.client.post(
+                    "/api/v1/debug/retrieve",
+                    json={
+                        "video_id": "missing0000",
+                        "question": "What is retrieval?",
+                        "retrieval_mode": "bm25",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 404)
+
     def test_chat_rejects_empty_question(self):
         response = self.client.post(
             "/api/v1/chat/ask",

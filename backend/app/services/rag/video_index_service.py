@@ -5,7 +5,7 @@ from app.schemas.video import VideoDeleteResponse, VideoIngestResponse, VideoMet
 from app.services.extraction.transcript_service import fetch_transcript
 from app.services.extraction.video_url_service import extract_youtube_video_id
 from app.services.learning.generated_output_store import generated_output_store
-from app.services.rag.generation_service import generate_answer
+from app.services.rag.generation_service import generate_answer_with_metadata
 from app.services.rag.local_store import VideoNotIndexedError, rag_store
 from app.services.rag.metadata_store import VideoMetadata, metadata_store
 from app.services.rag.retrieval_service import RetrievalMode, retrieve_chunks
@@ -125,7 +125,7 @@ def ask_video_question(
         mode=retrieval_mode,
         top_k=4,
     )
-    answer = generate_answer(question=question, retrieved_chunks=retrieved_chunks)
+    generation_result = generate_answer_with_metadata(question=question, retrieved_chunks=retrieved_chunks)
     logger.info(
         "Generated answer for video_id=%s source_count=%s",
         video_id,
@@ -133,7 +133,7 @@ def ask_video_question(
     )
 
     return ChatAskResponse(
-        answer=answer,
+        answer=generation_result.answer,
         retrieval_mode=retrieval_mode,
         sources=[
             ChatSource(
@@ -145,6 +145,7 @@ def ask_video_question(
             )
             for item in retrieved_chunks
         ],
+        generation=generation_result.generation,
     )
 
 

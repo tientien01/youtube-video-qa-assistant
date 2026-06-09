@@ -9,6 +9,9 @@ Tài liệu này ghi các việc nên làm tiếp theo sau khi đã có:
 - Summary fallback/LLM-ready.
 - Study notes fallback/LLM-ready.
 - Export Markdown frontend.
+- Quiz fallback từ transcript chunks.
+- RAG Debug View.
+- Evaluation runner baseline.
 ```
 
 Hiện tại chưa cần gắn API key. Khi gần demo hoặc cần đánh giá chất lượng generation thật, chỉ cần cấu hình:
@@ -60,22 +63,21 @@ Trạng thái: đã triển khai baseline ở frontend.
 - Copy Markdown.
 - Download Markdown.
 - Preview Markdown.
-- Export video metadata, summary, study notes và timestamp sources.
+- Export video metadata, summary, study notes, quiz và timestamp sources.
 ```
 
 Việc có thể polish sau:
 
 ```text
 - Kiểm tra thủ công copy/download trên trình duyệt.
-- Có thể thêm quiz vào export sau Phase F.
 - Có thể thêm selected chat answers nếu cần demo workflow học tập sâu hơn.
 ```
 
 ## 3. Phase F - Quiz
 
-Đây là bước nên làm tiếp theo.
+Trạng thái: đã triển khai baseline.
 
-Backend dự kiến:
+Đã có backend:
 
 ```text
 backend/app/schemas/quiz.py
@@ -83,7 +85,7 @@ backend/app/services/learning/quiz_service.py
 backend/app/api/v1/routes/quiz.py
 ```
 
-Frontend dự kiến:
+Đã có frontend:
 
 ```text
 frontend/src/features/quiz/
@@ -91,23 +93,33 @@ frontend/src/features/quiz/
   QuizPanel.jsx
 ```
 
-Fallback quiz ban đầu có thể tạo từ transcript chunks:
+Baseline hiện có:
 
 ```text
-- multiple choice đơn giản.
-- true/false đơn giản.
+- multiple choice.
+- true/false.
+- short answer.
+- mixed mode.
+- difficulty: easy, medium, hard.
 - explanation từ source chunk.
 - timestamp source để xem lại.
+- chấm điểm tự động cho câu có options.
+- quiz được đưa vào Export Markdown nếu đã tạo.
 ```
 
-Sau này khi có API key:
+Việc có thể polish sau:
 
 ```text
 chunks -> grounded quiz prompt -> Gemini -> quiz tốt hơn
 fallback -> quiz baseline
+- LLM quiz prompt và parser.
+- Shuffle tốt hơn theo seed.
+- Lưu câu trả lời user nếu cần review lại.
 ```
 
 ## 4. Phase G - RAG Debug View
+
+Trạng thái: đã triển khai baseline.
 
 Mục tiêu:
 
@@ -141,9 +153,17 @@ frontend/src/features/debug/
   RagDebugPanel.jsx
 ```
 
+Đã có:
+
+```text
+- Debug retrieve API.
+- Debug UI hiển thị question, retrieval mode, top_k, chunks, scores, timestamp sources và latency.
+- Generation metadata cho chat, summary và study notes.
+```
+
 ## 5. Phase H - Evaluation nhỏ
 
-Chỉ làm sau khi có Debug View hoặc retrieval output rõ ràng.
+Trạng thái: đã có runner và report template baseline.
 
 Dataset nhỏ:
 
@@ -169,6 +189,24 @@ So sánh:
 BM25
 Embedding baseline
 Hybrid
+```
+
+Đã có:
+
+```text
+backend/evaluation/eval_dataset.example.json
+backend/evaluation/metrics.py
+backend/evaluation/run_retrieval_eval.py
+docs/EVALUATION_RESULTS.md
+```
+
+Việc cần làm thủ công trước khi có kết quả thật:
+
+```text
+- Ingest 3-5 video demo.
+- Tạo 10-20 câu hỏi thật.
+- Gán expected_chunk_ids thủ công.
+- Chạy runner và điền docs/EVALUATION_RESULTS.md.
 ```
 
 ## 6. Phase I - Nâng cấp embedding/vector store
@@ -233,12 +271,10 @@ Agent output:
 ## 9. Thứ tự khuyến nghị ngắn gọn
 
 ```text
-1. Test thủ công Chat/Summary/Study Notes.
-2. Test thủ công Export Markdown.
-3. Phase F: Quiz.
-4. Phase G: RAG Debug View.
-5. Phase H: Evaluation nhỏ.
-6. Nâng cấp embedding/vector store nếu evaluation cho thấy cần.
-7. Agentic AI.
-8. Gắn Gemini API key để polish chất lượng generation trước demo.
+1. Test thủ công Chat/Summary/Study Notes/Quiz/Debug.
+2. Tạo evaluation dataset nhỏ bằng video đã ingest thật.
+3. Chạy evaluation và điền docs/EVALUATION_RESULTS.md.
+4. Nâng cấp embedding/vector store nếu evaluation cho thấy cần.
+5. Agentic AI.
+6. Gắn Gemini API key để polish chất lượng generation trước demo.
 ```

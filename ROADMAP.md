@@ -67,6 +67,8 @@ Các phần đã có:
 - Endpoint /api/v1/chat/ask.
 - Endpoint /api/v1/videos/{video_id}/summary.
 - Endpoint /api/v1/videos/{video_id}/study-notes.
+- Endpoint /api/v1/videos/{video_id}/quiz.
+- Endpoint /api/v1/debug/retrieve.
 - Video metadata store local.
 - Cache ingest, không fetch transcript lại nếu video đã index.
 - Optional Gemini grounded answer cho chat.
@@ -79,7 +81,11 @@ Các phần đã có:
 - Frontend hiển thị answer, retrieval mode và timestamp sources.
 - Frontend tạo summary.
 - Frontend tạo study notes.
-- Frontend export Markdown với video metadata, summary, study notes và timestamp sources.
+- Frontend tạo quiz và chấm điểm câu trắc nghiệm.
+- Frontend export Markdown với video metadata, summary, study notes, quiz và timestamp sources.
+- Frontend RAG Debug View hiển thị chunks, scores, mode, timestamp và latency.
+- Generation metadata cho chat, summary và study notes.
+- Evaluation runner baseline để so sánh BM25, embedding và hybrid.
 - Tests cơ bản cho URL parsing, API routes, RAG store, metadata store, vector store và retrieval.
 ```
 
@@ -89,11 +95,10 @@ Giới hạn hiện tại:
 - LLM hiện mới có Gemini optional, chưa có Groq hoặc OpenRouter adapter.
 - Embedding hiện là hashing embedding local, chưa phải semantic embedding model.
 - Vector store hiện là JSON local, chưa phải ChromaDB hoặc database chuyên dụng.
-- Chưa có quiz.
-- Chưa có RAG Debug View.
-- Chưa có evaluation dataset để so sánh BM25, embedding và hybrid.
+- Evaluation hiện mới có runner và dataset example, chưa có dataset thật hoặc kết quả thật.
 - Chưa có agentic AI thật.
-- Export Markdown hiện làm ở frontend, chưa export quiz hoặc selected chat answers.
+- Quiz hiện là fallback baseline từ transcript chunks, chưa dùng LLM để sinh câu hỏi tốt hơn.
+- Export Markdown hiện làm ở frontend, chưa export selected chat answers.
 ```
 
 ## 3. Định vị điểm nổi bật với nhà tuyển dụng
@@ -416,13 +421,13 @@ Nội dung export hiện có:
 - Video metadata.
 - Summary.
 - Study notes.
+- Quiz, nếu đã tạo.
 - Timestamp links.
 ```
 
 Việc có thể bổ sung sau:
 
 ```text
-- Quiz, sau Phase F.
 - Selected chat answers, nếu cần.
 - Backend export service nếu cần lưu artifact hoặc chia sẻ server-side.
 ```
@@ -450,6 +455,8 @@ End-to-end learning artifact export.
 ## 11. Phase F - Quiz
 
 Mục tiêu: giúp người dùng kiểm tra mức hiểu bài sau khi học video.
+
+Trạng thái hiện tại: đã có baseline backend/frontend tạo quiz từ transcript chunks, gồm multiple choice, true/false, short answer, mixed mode, difficulty, explanation, timestamp source và chấm điểm tự động cho câu có options.
 
 API đề xuất:
 
@@ -524,9 +531,19 @@ App không chỉ trả lời, mà còn giúp user ôn tập chủ động.
 Grounded quiz generation with explanation and timestamp review.
 ```
 
+Việc có thể nâng cấp sau:
+
+```text
+- Prompt LLM grounded quiz khi đã cấu hình provider.
+- Parser response LLM an toàn, fallback về quiz baseline nếu lỗi.
+- Lưu kết quả làm bài nếu cần review lại.
+```
+
 ## 12. Phase G - RAG Debug View và evaluation
 
 Mục tiêu: chứng minh bạn hiểu RAG, không chỉ dùng thư viện hoặc API.
+
+Trạng thái hiện tại: đã có baseline Debug API/UI, generation metadata và evaluation runner/report template. Cần tạo dataset thật và điền kết quả evaluation trước khi dùng làm số liệu portfolio.
 
 RAG Debug View nên hiển thị:
 
@@ -556,6 +573,15 @@ Backend có thể mở rộng response hoặc thêm endpoint:
 
 ```http
 POST /api/v1/debug/retrieve
+```
+
+Implementation hiện tại:
+
+```text
+backend/app/schemas/debug.py
+backend/app/api/v1/routes/debug.py
+frontend/src/features/debug/debugApi.js
+frontend/src/features/debug/RagDebugPanel.jsx
 ```
 
 Evaluation nhỏ:
@@ -592,6 +618,12 @@ backend/evaluation/
   eval_dataset.example.json
   run_retrieval_eval.py
   metrics.py
+```
+
+Report template:
+
+```text
+docs/EVALUATION_RESULTS.md
 ```
 
 Không commit dataset lớn. Nếu có dataset nhỏ tự tạo để demo, giữ gọn và không chứa dữ liệu nhạy cảm.
@@ -850,7 +882,7 @@ Stabilize
 -> Agent
 ```
 
-Tính đến 2026-06-09, các bước đến Export đã có baseline. Bước triển khai tiếp theo nên là Quiz.
+Tính đến 2026-06-09, các bước đến RAG Debug View và evaluation runner đã có baseline. Bước tiếp theo nên là tạo dataset evaluation thật rồi quyết định có nâng embedding/vector store hay không.
 
 ## 17. Kiến trúc mục tiêu
 

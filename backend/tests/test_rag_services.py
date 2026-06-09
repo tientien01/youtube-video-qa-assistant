@@ -9,6 +9,7 @@ from app.services.llm.base import LlmError
 from app.services.llm.config import load_llm_settings
 from app.services.learning.generated_output_store import LocalGeneratedOutputStore
 from app.services.learning.notes_service import generate_study_notes
+from app.services.learning.quiz_service import generate_quiz
 from app.services.learning.summary_service import generate_video_summary
 from app.services.rag.generation_service import generate_answer
 from app.services.rag.local_store import LocalRagStore
@@ -449,6 +450,54 @@ class RagServicesTest(unittest.TestCase):
 
         self.assertIn("Mục tiêu bài học", response.notes)
         self.assertIn("Fallback notes", response.notes)
+
+    def test_quiz_service_generates_and_caches_quiz(self):
+        chunks = [
+            TranscriptChunk(
+                chunk_id="video123456-0001",
+                video_id="video123456",
+                text="Retrieval augmented generation answers questions using transcript context.",
+                start_seconds=0,
+                end_seconds=5,
+            ),
+            TranscriptChunk(
+                chunk_id="video123456-0002",
+                video_id="video123456",
+                text="Timestamp citations help learners verify the answer in the source video.",
+                start_seconds=5,
+                end_seconds=10,
+            ),
+        ]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("video123456", chunks)
+
+            with (
+                patch("app.services.learning.quiz_service.rag_store", store),
+                patch("app.services.learning.quiz_service.generated_output_store", output_store),
+            ):
+                first_response = generate_quiz(
+                    video_id="video123456",
+                    question_count=2,
+                    difficulty="medium",
+                    question_type="mixed",
+                )
+                second_response = generate_quiz(
+                    video_id="video123456",
+                    question_count=2,
+                    difficulty="medium",
+                    question_type="mixed",
+                )
+
+        self.assertFalse(first_response.cached)
+        self.assertTrue(second_response.cached)
+        self.assertEqual(len(first_response.questions), 2)
+        self.assertEqual(first_response.questions[0].question_type, "multiple_choice")
+        self.assertEqual(first_response.questions[1].question_type, "true_false")
+        self.assertEqual(first_response.questions[0].correct_answer, second_response.questions[0].correct_answer)
+        self.assertEqual(len(first_response.sources), 2)
 
     def test_generate_answer_has_clear_fallback_without_context(self):
         answer = generate_answer("What is the main idea?", [])

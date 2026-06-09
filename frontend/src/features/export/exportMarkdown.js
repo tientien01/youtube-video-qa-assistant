@@ -1,6 +1,6 @@
 import { buildYouTubeTimestampUrl, formatTimestamp } from '../../shared/utils/time.js'
 
-export function buildLearningMarkdown({ video, summary, notes }) {
+export function buildLearningMarkdown({ video, summary, notes, quiz }) {
   if (!video) {
     return ''
   }
@@ -25,6 +25,7 @@ export function buildLearningMarkdown({ video, summary, notes }) {
 
   if (summary?.summary) {
     lines.push(`Mode: ${safeText(summary.mode || 'unknown')}`, '', summary.summary.trim(), '')
+    appendGeneration(lines, summary.generation)
     appendSources(lines, {
       heading: 'Summary sources',
       sources: summary.sources,
@@ -38,6 +39,7 @@ export function buildLearningMarkdown({ video, summary, notes }) {
 
   if (notes?.notes) {
     lines.push(notes.notes.trim(), '')
+    appendGeneration(lines, notes.generation)
     appendSources(lines, {
       heading: 'Study notes sources',
       sources: notes.sources,
@@ -45,6 +47,32 @@ export function buildLearningMarkdown({ video, summary, notes }) {
     })
   } else {
     lines.push('No study notes have been generated yet.', '')
+  }
+
+  lines.push('## Quiz', '')
+
+  if (quiz?.questions?.length) {
+    lines.push(
+      `Difficulty: ${safeText(quiz.difficulty || 'unknown')}`,
+      `Question type: ${safeText(quiz.question_type || 'unknown')}`,
+      '',
+    )
+    quiz.questions.forEach((question, index) => {
+      lines.push(`${index + 1}. ${safeText(question.question)}`)
+      if (question.options.length > 0) {
+        question.options.forEach((option) => {
+          lines.push(`   - ${safeText(option)}`)
+        })
+      }
+      lines.push(
+        `   - Answer: ${safeText(question.correct_answer)}`,
+        `   - Explanation: ${safeText(question.explanation)}`,
+        `   - Source: [${formatTimestamp(question.source.start_seconds)}](${buildYouTubeTimestampUrl(video.video_id, question.source.start_seconds)})`,
+        '',
+      )
+    })
+  } else {
+    lines.push('No quiz has been generated yet.', '')
   }
 
   return `${lines.join('\n').trim()}\n`
@@ -75,6 +103,20 @@ function appendSources(lines, { heading, sources = [], videoId }) {
     lines.push(`- [${timestamp}](${url}) - ${text}`)
   })
 
+  lines.push('')
+}
+
+function appendGeneration(lines, generation) {
+  if (!generation) {
+    return
+  }
+
+  lines.push(
+    `Generation: ${safeText(generation.generation_mode)} (${safeText(generation.provider)})`,
+  )
+  if (generation.fallback_reason) {
+    lines.push(`Fallback reason: ${safeText(generation.fallback_reason)}`)
+  }
   lines.push('')
 }
 

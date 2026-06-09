@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { askVideoQuestion } from './features/chat/chatApi'
 import { ChatPanel } from './features/chat/ChatPanel'
+import { retrieveDebugContext } from './features/debug/debugApi'
+import { RagDebugPanel } from './features/debug/RagDebugPanel'
 import { ExportPanel } from './features/export/ExportPanel'
 import { generateStudyNotes } from './features/notes/notesApi'
 import { NotesPanel } from './features/notes/NotesPanel'
+import { generateVideoQuiz } from './features/quiz/quizApi'
+import { QuizPanel } from './features/quiz/QuizPanel'
 import { generateVideoSummary } from './features/summary/summaryApi'
 import { SummaryPanel } from './features/summary/SummaryPanel'
 import { deleteVideo, ingestVideo, listVideos } from './features/video/videoApi'
@@ -27,13 +31,19 @@ function App() {
   const [chatError, setChatError] = useState('')
   const [summaryError, setSummaryError] = useState('')
   const [notesError, setNotesError] = useState('')
+  const [quizError, setQuizError] = useState('')
+  const [debugError, setDebugError] = useState('')
   const [messages, setMessages] = useState([])
   const [summary, setSummary] = useState(null)
   const [notes, setNotes] = useState(null)
+  const [quiz, setQuiz] = useState(null)
+  const [debugResult, setDebugResult] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isAsking, setIsAsking] = useState(false)
   const [isSummaryLoading, setIsSummaryLoading] = useState(false)
   const [isNotesLoading, setIsNotesLoading] = useState(false)
+  const [isQuizLoading, setIsQuizLoading] = useState(false)
+  const [isDebugLoading, setIsDebugLoading] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(false)
 
   useEffect(() => {
@@ -72,9 +82,13 @@ function App() {
     setChatError('')
     setSummaryError('')
     setNotesError('')
+    setQuizError('')
+    setDebugError('')
     setMessages([])
     setSummary(null)
     setNotes(null)
+    setQuiz(null)
+    setDebugResult(null)
 
     try {
       const response = await ingestVideo(url)
@@ -106,6 +120,7 @@ function App() {
           question,
           answer: response.answer,
           retrievalMode: response.retrieval_mode,
+          generation: response.generation,
           sources: response.sources,
         },
         ...currentMessages,
@@ -158,6 +173,52 @@ function App() {
     }
   }
 
+  async function handleGenerateQuiz({ questionCount, difficulty, questionType }) {
+    if (!video) {
+      return
+    }
+
+    setIsQuizLoading(true)
+    setQuizError('')
+
+    try {
+      const response = await generateVideoQuiz({
+        videoId: video.video_id,
+        questionCount,
+        difficulty,
+        questionType,
+      })
+      setQuiz(response)
+    } catch (requestError) {
+      setQuizError(requestError.message)
+    } finally {
+      setIsQuizLoading(false)
+    }
+  }
+
+  async function handleDebugRetrieve({ question, retrievalMode, topK }) {
+    if (!video) {
+      return
+    }
+
+    setIsDebugLoading(true)
+    setDebugError('')
+
+    try {
+      const response = await retrieveDebugContext({
+        videoId: video.video_id,
+        question,
+        retrievalMode,
+        topK,
+      })
+      setDebugResult(response)
+    } catch (requestError) {
+      setDebugError(requestError.message)
+    } finally {
+      setIsDebugLoading(false)
+    }
+  }
+
   function handleSelectVideo(nextVideo) {
     applySelectedVideo(nextVideo)
   }
@@ -167,6 +228,8 @@ function App() {
     setChatError('')
     setSummaryError('')
     setNotesError('')
+    setQuizError('')
+    setDebugError('')
 
     try {
       await deleteVideo(videoId)
@@ -185,6 +248,8 @@ function App() {
       setVideo(null)
       setSummary(null)
       setNotes(null)
+      setQuiz(null)
+      setDebugResult(null)
     }
   }
 
@@ -196,9 +261,13 @@ function App() {
     setMessages([])
     setSummary(null)
     setNotes(null)
+    setQuiz(null)
+    setDebugResult(null)
     setChatError('')
     setSummaryError('')
     setNotesError('')
+    setQuizError('')
+    setDebugError('')
   }
 
   return (
@@ -243,7 +312,23 @@ function App() {
           error={notesError}
         />
 
-        <ExportPanel video={video} summary={summary} notes={notes} />
+        <QuizPanel
+          video={video}
+          quiz={quiz}
+          onGenerate={handleGenerateQuiz}
+          isLoading={isQuizLoading}
+          error={quizError}
+        />
+
+        <ExportPanel video={video} summary={summary} notes={notes} quiz={quiz} />
+
+        <RagDebugPanel
+          video={video}
+          debugResult={debugResult}
+          onRetrieve={handleDebugRetrieve}
+          isLoading={isDebugLoading}
+          error={debugError}
+        />
 
         <ChatPanel
           video={video}

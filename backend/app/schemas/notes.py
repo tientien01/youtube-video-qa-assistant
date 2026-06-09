@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.schemas.generation import GenerationMetadata
+
 
 class StudyNotesSource(BaseModel):
     chunk_id: str
@@ -13,3 +15,4 @@ class StudyNotesResponse(BaseModel):
     notes: str
     sources: list[StudyNotesSource]
     cached: bool
+    generation: GenerationMetadata
