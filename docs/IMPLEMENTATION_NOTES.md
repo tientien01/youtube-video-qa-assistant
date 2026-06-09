@@ -149,3 +149,26 @@ File này ghi lại các thay đổi đã thực hiện theo roadmap để dễ 
 - Nếu cần bám sát production RAG hơn, thay `LocalVectorStore` bằng ChromaDB adapter.
 - Nếu máy đủ tài nguyên, thay `HashingEmbeddingService` bằng sentence-transformers local.
 - Kéo một phần Phase 7 lên sớm để thêm evaluation và debug view.
+
+## 2026-06-09 - Stabilize current code
+
+### Đã thay đổi
+
+- Cập nhật `ROADMAP.md` theo thứ tự phase mới phù hợp với trạng thái hiện tại của dự án.
+- Sửa error handling trong `backend/app/api/v1/routes/video.py` để `TranscriptNotFoundError` được xử lý ở endpoint ingest.
+- Loại bỏ nhánh catch `TranscriptNotFoundError` khỏi endpoint delete vì delete không fetch transcript.
+- Thêm test API đảm bảo `/api/v1/videos/ingest` trả `404` khi transcript không có.
+
+### Lý do
+
+- Route ingest là nơi có thể phát sinh lỗi transcript unavailable, nên lỗi này cần được map sang response rõ ràng tại đúng endpoint.
+- Endpoint delete chỉ thao tác local store, metadata store và vector store, không nên chứa error handling của transcript extraction.
+- Đây là bước dọn nền trước khi thêm LLM grounded answer, summary, notes và các tính năng học tập.
+
+### Kiểm tra
+
+- Đã chạy `python -m py_compile app\api\v1\routes\video.py tests\test_api_routes.py`.
+- Đã chạy `python -m unittest tests.test_video_url_service`.
+- Đã tạo virtualenv backend tại `backend/.venv` và cài dependency từ `backend/requirements.txt`.
+- Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
+- Kết quả: 25 tests pass.

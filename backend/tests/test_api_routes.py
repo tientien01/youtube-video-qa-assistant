@@ -6,6 +6,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.extraction.transcript_service import TranscriptNotFoundError
 from app.services.rag.local_store import LocalRagStore
 from app.services.rag.metadata_store import LocalVideoMetadataStore
 from app.services.rag.models import TranscriptChunk
@@ -30,6 +31,19 @@ class ApiRoutesTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("YouTube", response.json()["detail"])
+
+    def test_ingest_returns_404_when_transcript_is_unavailable(self):
+        with patch(
+            "app.api.v1.routes.video.ingest_video_content",
+            side_effect=TranscriptNotFoundError("Transcript not found for this video."),
+        ):
+            response = self.client.post(
+                "/api/v1/videos/ingest",
+                json={"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+            )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["detail"], "Transcript not found for this video.")
 
     def test_ingest_returns_cached_video(self):
         chunk = TranscriptChunk(

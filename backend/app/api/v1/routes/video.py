@@ -36,6 +36,12 @@ def ingest_video(request: VideoIngestRequest) -> VideoIngestResponse:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error),
         ) from error
+    except TranscriptNotFoundError as error:
+        logger.warning("Transcript unavailable during ingest: %s", error)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
 
 
 @router.get("/{video_id}", response_model=VideoMetadataResponse)
@@ -52,9 +58,3 @@ def delete_video(video_id: str) -> VideoDeleteResponse:
         return delete_ingested_video(video_id)
     except VideoNotIndexedError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
-    except TranscriptNotFoundError as error:
-        logger.warning("Transcript unavailable during ingest: %s", error)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
