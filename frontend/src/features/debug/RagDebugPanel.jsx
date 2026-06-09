@@ -5,6 +5,7 @@ export function RagDebugPanel({
   video,
   debugResult,
   onRetrieve,
+  onAskInChat,
   isLoading,
   error,
 }) {
@@ -115,6 +116,12 @@ export function RagDebugPanel({
               <dd>{debugResult.chunks.length}</dd>
             </div>
           </dl>
+
+          <div className="debug-actions">
+            <button type="button" onClick={onAskInChat}>
+              Gửi câu này sang Chat
+            </button>
+          </div>
 
           <div className="debug-chunk-list">
             {debugResult.chunks.length === 0 ? (

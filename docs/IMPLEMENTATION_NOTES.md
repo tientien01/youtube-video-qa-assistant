@@ -442,3 +442,22 @@ File này ghi lại các thay đổi đã thực hiện theo roadmap để dễ 
 - Đã chạy `npm run build`.
 - Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
 - Kết quả backend: 51 tests pass.
+
+## 2026-06-09 - Workspace polish nhỏ sau Phase H
+
+### Đã thay đổi
+
+- Lưu tab workspace đang mở vào `localStorage`.
+- Khi reload app, frontend mở lại đúng tab gần nhất nếu tab đó hợp lệ.
+- Thêm nút trong RAG Debug View để gửi câu debug hiện tại sang Chat.
+- Khi bấm nút này, app chuyển sang tab Chat và hỏi lại cùng câu với retrieval mode đã dùng trong Debug.
+
+### Lý do
+
+- Tab persistence giúp user không bị mất ngữ cảnh làm việc sau khi reload.
+- Gửi câu debug sang Chat giúp nối workflow quan sát retrieval -> tạo câu trả lời, giảm thao tác nhập lại câu hỏi.
+
+### Kiểm tra
+
+- Đã chạy `npm run lint`.
+- Đã chạy `npm run build`.

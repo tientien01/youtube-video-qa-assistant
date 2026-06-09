@@ -34,6 +34,7 @@ const WORKSPACE_TABS = [
   { id: 'export', label: 'Export' },
   { id: 'debug', label: 'Debug' },
 ]
+const ACTIVE_TAB_KEY = 'youtube-qa-active-workspace-tab'
 
 function App() {
   const [video, setVideo] = useState(() => readCurrentVideo())
@@ -49,7 +50,7 @@ function App() {
   const [notes, setNotes] = useState(null)
   const [quiz, setQuiz] = useState(null)
   const [debugResult, setDebugResult] = useState(null)
-  const [activeTab, setActiveTab] = useState('chat')
+  const [activeTab, setActiveTab] = useState(() => readActiveWorkspaceTab())
   const [isLoading, setIsLoading] = useState(false)
   const [isAsking, setIsAsking] = useState(false)
   const [isSummaryLoading, setIsSummaryLoading] = useState(false)
@@ -239,6 +240,20 @@ function App() {
     applySelectedVideo(nextVideo)
   }
 
+  function handleChangeTab(tabId) {
+    setActiveTab(tabId)
+    localStorage.setItem(ACTIVE_TAB_KEY, tabId)
+  }
+
+  function handleAskDebugQuestion() {
+    if (!debugResult) {
+      return
+    }
+
+    handleChangeTab('chat')
+    handleAsk(debugResult.question, debugResult.retrieval_mode)
+  }
+
   function handleToggleMessageExport(messageId) {
     if (!video) {
       return
@@ -346,7 +361,7 @@ function App() {
                 aria-selected={activeTab === tab.id}
                 className="tab-button"
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleChangeTab(tab.id)}
               >
                 {tab.label}
               </button>
@@ -411,6 +426,7 @@ function App() {
                 video={video}
                 debugResult={debugResult}
                 onRetrieve={handleDebugRetrieve}
+                onAskInChat={handleAskDebugQuestion}
                 isLoading={isDebugLoading}
                 error={debugError}
               />
@@ -420,6 +436,11 @@ function App() {
       </section>
     </main>
   )
+}
+
+function readActiveWorkspaceTab() {
+  const storedTab = localStorage.getItem(ACTIVE_TAB_KEY)
+  return WORKSPACE_TABS.some((tab) => tab.id === storedTab) ? storedTab : 'chat'
 }
 
 function normalizeVideo(video) {

@@ -438,6 +438,7 @@
 
 .quiz-form button,
 .debug-options button,
+.debug-actions button,
 .quiz-actions button {
   min-width: 140px;
   border: 1px solid var(--accent);
@@ -543,6 +544,7 @@
 .notes-action:disabled,
 .quiz-form button:disabled,
 .debug-options button:disabled,
+.debug-actions button:disabled,
 .summary-form button:disabled {
   cursor: not-allowed;
   opacity: 0.7;
@@ -642,6 +644,12 @@
 .debug-chunk-list {
   display: grid;
   gap: 8px;
+}
+
+.debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .debug-chunk {
@@ -866,6 +874,7 @@
   }
 
   .debug-options button,
+  .debug-actions button,
   .quiz-form button,
   .quiz-actions button {
     width: 100%;
