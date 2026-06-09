@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { askVideoQuestion } from './features/chat/chatApi'
 import { ChatPanel } from './features/chat/ChatPanel'
+import { generateStudyNotes } from './features/notes/notesApi'
+import { NotesPanel } from './features/notes/NotesPanel'
 import { generateVideoSummary } from './features/summary/summaryApi'
 import { SummaryPanel } from './features/summary/SummaryPanel'
 import { deleteVideo, ingestVideo, listVideos } from './features/video/videoApi'
@@ -23,11 +25,14 @@ function App() {
   const [error, setError] = useState('')
   const [chatError, setChatError] = useState('')
   const [summaryError, setSummaryError] = useState('')
+  const [notesError, setNotesError] = useState('')
   const [messages, setMessages] = useState([])
   const [summary, setSummary] = useState(null)
+  const [notes, setNotes] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isAsking, setIsAsking] = useState(false)
   const [isSummaryLoading, setIsSummaryLoading] = useState(false)
+  const [isNotesLoading, setIsNotesLoading] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(false)
 
   useEffect(() => {
@@ -65,8 +70,10 @@ function App() {
     setError('')
     setChatError('')
     setSummaryError('')
+    setNotesError('')
     setMessages([])
     setSummary(null)
+    setNotes(null)
 
     try {
       const response = await ingestVideo(url)
@@ -130,6 +137,26 @@ function App() {
     }
   }
 
+  async function handleGenerateNotes() {
+    if (!video) {
+      return
+    }
+
+    setIsNotesLoading(true)
+    setNotesError('')
+
+    try {
+      const response = await generateStudyNotes({
+        videoId: video.video_id,
+      })
+      setNotes(response)
+    } catch (requestError) {
+      setNotesError(requestError.message)
+    } finally {
+      setIsNotesLoading(false)
+    }
+  }
+
   function handleSelectVideo(nextVideo) {
     applySelectedVideo(nextVideo)
   }
@@ -138,6 +165,7 @@ function App() {
     setError('')
     setChatError('')
     setSummaryError('')
+    setNotesError('')
 
     try {
       await deleteVideo(videoId)
@@ -155,6 +183,7 @@ function App() {
     if (video?.video_id === videoId) {
       setVideo(null)
       setSummary(null)
+      setNotes(null)
     }
   }
 
@@ -165,8 +194,10 @@ function App() {
     setVideoHistory(saveVideoToHistory(normalizedVideo))
     setMessages([])
     setSummary(null)
+    setNotes(null)
     setChatError('')
     setSummaryError('')
+    setNotesError('')
   }
 
   return (
@@ -201,6 +232,14 @@ function App() {
           onGenerate={handleGenerateSummary}
           isLoading={isSummaryLoading}
           error={summaryError}
+        />
+
+        <NotesPanel
+          video={video}
+          notes={notes}
+          onGenerate={handleGenerateNotes}
+          isLoading={isNotesLoading}
+          error={notesError}
         />
 
         <ChatPanel

@@ -1,13 +1,7 @@
-import logging
-
-from app.services.llm.base import LlmClient, LlmError
-from app.services.llm.config import load_llm_settings
-from app.services.llm.gemini_client import GeminiClient
+from app.services.llm.base import LlmClient
+from app.services.llm.generation import generate_optional_llm_text
 from app.services.llm.prompt_builder import build_grounded_answer_prompt
 from app.services.rag.models import RetrievedChunk
-
-
-logger = logging.getLogger(__name__)
 
 
 def generate_answer(
@@ -18,43 +12,19 @@ def generate_answer(
     if not retrieved_chunks:
         return _fallback_answer(question=question, retrieved_chunks=retrieved_chunks)
 
-    client = llm_client or _build_configured_llm_client()
-    if client is None:
-        return _fallback_answer(question=question, retrieved_chunks=retrieved_chunks)
-
     prompt = build_grounded_answer_prompt(
         question=question,
         retrieved_chunks=retrieved_chunks,
     )
-    try:
-        generated_text = client.generate_text(prompt).strip()
-    except LlmError as error:
-        logger.warning("LLM generation failed, using fallback answer: %s", error)
-        return _fallback_answer(question=question, retrieved_chunks=retrieved_chunks)
+    generated_text = generate_optional_llm_text(
+        prompt,
+        llm_client=llm_client,
+        fallback_log_message="LLM answer generation failed, using fallback answer",
+    )
+    if generated_text is not None:
+        return generated_text
 
-    if not generated_text:
-        logger.warning("LLM generation returned empty text, using fallback answer")
-        return _fallback_answer(question=question, retrieved_chunks=retrieved_chunks)
-
-    return generated_text
-
-
-def _build_configured_llm_client() -> LlmClient | None:
-    settings = load_llm_settings()
-    if settings.is_gemini_enabled and settings.gemini_api_key is not None:
-        return GeminiClient(
-            api_key=settings.gemini_api_key,
-            model=settings.gemini_model,
-            timeout_seconds=settings.timeout_seconds,
-        )
-
-    if settings.provider not in {"fallback", "none"}:
-        logger.warning(
-            "LLM provider '%s' is not configured, using fallback answer",
-            settings.provider,
-        )
-
-    return None
+    return _fallback_answer(question=question, retrieved_chunks=retrieved_chunks)
 
 
 def _fallback_answer(question: str, retrieved_chunks: list[RetrievedChunk]) -> str:

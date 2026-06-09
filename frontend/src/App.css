@@ -101,6 +101,7 @@
 .empty-state,
 .result-panel,
 .chat-panel,
+.notes-panel,
 .summary-panel,
 .history-panel {
   padding: 24px;
@@ -112,6 +113,7 @@
 .empty-state h2,
 .result-panel h2,
 .chat-panel h2,
+.notes-panel h2,
 .summary-panel h2,
 .history-panel h2 {
   margin: 0 0 8px;
@@ -319,11 +321,25 @@
   cursor: pointer;
 }
 
+.notes-action {
+  min-width: 140px;
+  margin-bottom: 18px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: #ffffff;
+  background: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .question-form button:disabled {
   cursor: not-allowed;
   opacity: 0.7;
 }
 
+.notes-action:disabled,
 .summary-form button:disabled {
   cursor: not-allowed;
   opacity: 0.7;
@@ -343,6 +359,13 @@
 }
 
 .summary-result {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.notes-result {
   display: grid;
   gap: 12px;
   padding-top: 16px;
@@ -434,6 +457,10 @@
   }
 
   .summary-form button {
+    width: 100%;
+  }
+
+  .notes-action {
     width: 100%;
   }
 

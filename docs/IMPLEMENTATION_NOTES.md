@@ -231,3 +231,52 @@ File này ghi lại các thay đổi đã thực hiện theo roadmap để dễ 
 - Đã chạy `npm run build`.
 - Đã chạy `npm run lint`.
 - Kết quả backend: 36 tests pass.
+
+## 2026-06-09 - Phase D: Study notes fallback baseline
+
+### Đã thay đổi
+
+- Thêm schema study notes response với `notes`, `sources` và `cached`.
+- Thêm `notes_service.py` tạo study notes fallback từ transcript chunks.
+- Thêm endpoint `POST /api/v1/videos/{video_id}/study-notes`.
+- Dùng lại `LocalGeneratedOutputStore` để cache study notes theo video.
+- Thêm frontend `NotesPanel` và `notesApi.js`.
+- Cập nhật `App.jsx` để user tạo study notes sau khi ingest/chọn video.
+- Thêm tests cho notes service và notes API.
+
+### Lý do
+
+- Study notes là bước tiếp theo sau summary để biến app thành learning workspace.
+- Làm fallback trước giúp hoàn thiện workflow mà chưa cần API key.
+- Khi bật LLM sau này, service có thể nâng chất lượng nội dung mà không đổi API/frontend contract.
+
+### Kiểm tra
+
+- Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
+- Đã chạy `npm run build`.
+- Đã chạy `npm run lint`.
+- Kết quả backend: 40 tests pass.
+
+## 2026-06-09 - Phase B/C/D: Optional LLM cho chat, summary và study notes
+
+### Đã thay đổi
+
+- Thêm `app.services.llm.generation` để dùng chung logic gọi LLM optional và fallback.
+- Cập nhật chat generation để dùng helper chung thay vì tự build Gemini client trong RAG service.
+- Thêm prompt builder cho summary và study notes.
+- Cập nhật `summary_service.py` để gọi LLM nếu đã cấu hình API key, fallback về summary extractive nếu thiếu key hoặc LLM lỗi.
+- Cập nhật `notes_service.py` để gọi LLM nếu đã cấu hình API key, fallback về notes extractive nếu thiếu key hoặc LLM lỗi.
+- Thêm tests cho summary và study notes khi dùng mock LLM client.
+- Thêm tests cho fallback khi LLM lỗi.
+
+### Lý do
+
+- Project có thể tiếp tục phát triển mà chưa cần API key.
+- Khi gần hoàn thiện, chỉ cần set `LLM_PROVIDER=gemini` và `GEMINI_API_KEY` là chat, summary và study notes đều dùng LLM.
+- Nếu provider lỗi, hết quota hoặc key sai, app vẫn hoạt động bằng fallback.
+
+### Kiểm tra
+
+- Đã chạy `.\.venv\Scripts\python.exe -m py_compile app\services\llm\generation.py app\services\llm\prompt_builder.py app\services\rag\generation_service.py app\services\learning\summary_service.py app\services\learning\notes_service.py tests\test_api_routes.py tests\test_rag_services.py`.
+- Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
+- Kết quả backend: 44 tests pass.

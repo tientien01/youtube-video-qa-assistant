@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.routes import chat, health, summary, video
+from app.api.v1.routes import chat, health, notes, summary, video
 
 
 api_router = APIRouter()
@@ -8,4 +8,5 @@ api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(video.router)
 api_router.include_router(summary.router)
+api_router.include_router(notes.router)
 api_router.include_router(chat.router)

@@ -17,10 +17,12 @@ MVP hiện có:
 - Optional LLM grounded answer với Gemini API.
 - Fallback extractive answer khi chưa cấu hình API key.
 - Summary fallback theo các mode `short`, `detailed`, `timeline`.
+- Study notes fallback từ transcript chunks.
 - Endpoint `/api/v1/videos/ingest`.
 - Endpoint `/api/v1/chat/ask`.
 - Endpoint `/api/v1/videos/{video_id}/summary`.
-- Frontend ingest video, tạo summary, chat và hiển thị sources timestamp.
+- Endpoint `/api/v1/videos/{video_id}/study-notes`.
+- Frontend ingest video, tạo summary, study notes, chat và hiển thị sources timestamp.
 
 ## Setup backend
 
@@ -108,7 +110,7 @@ Trạng thái hiện tại đã qua MVP nền, video history/cache ingest và hy
 
 - Hoàn thiện Phase B: LLM grounded answer với Gemini optional và fallback ổn định.
 - Hoàn thiện Phase C: Summary frontend/backend và cache generated output.
-- Phase D: Study notes.
+- Hoàn thiện Phase D: Study notes frontend/backend và cache generated output.
 - Phase E: Export Markdown.
 - Phase F: Quiz.
 - Phase G: RAG Debug View và evaluation nhỏ.

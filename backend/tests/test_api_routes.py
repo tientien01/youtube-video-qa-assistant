@@ -242,6 +242,44 @@ class ApiRoutesTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_notes_endpoint_generates_study_notes(self):
+        chunk = TranscriptChunk(
+            chunk_id="dQw4w9WgXcQ-0001",
+            video_id="dQw4w9WgXcQ",
+            text="Study notes convert transcript chunks into review material.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("dQw4w9WgXcQ", [chunk])
+
+            with (
+                patch("app.services.learning.notes_service.rag_store", store),
+                patch("app.services.learning.notes_service.generated_output_store", output_store),
+            ):
+                response = self.client.post("/api/v1/videos/dQw4w9WgXcQ/study-notes")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["cached"])
+        self.assertIn("Mục tiêu bài học", response.json()["notes"])
+        self.assertEqual(len(response.json()["sources"]), 1)
+
+    def test_notes_endpoint_returns_404_for_unindexed_video(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+
+            with (
+                patch("app.services.learning.notes_service.rag_store", store),
+                patch("app.services.learning.notes_service.generated_output_store", output_store),
+            ):
+                response = self.client.post("/api/v1/videos/missing0000/study-notes")
+
+        self.assertEqual(response.status_code, 404)
+
     def test_chat_rejects_empty_question(self):
         response = self.client.post(
             "/api/v1/chat/ask",
@@ -279,7 +317,7 @@ class ApiRoutesTest(unittest.TestCase):
                 patch("app.services.rag.retrieval_service.rag_store", store),
                 patch("app.services.rag.retrieval_service.vector_store", vector_store),
                 patch(
-                    "app.services.rag.generation_service._build_configured_llm_client",
+                    "app.services.llm.generation.build_configured_llm_client",
                     return_value=None,
                 ),
             ):
