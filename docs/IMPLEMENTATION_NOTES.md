@@ -280,3 +280,28 @@ File này ghi lại các thay đổi đã thực hiện theo roadmap để dễ 
 - Đã chạy `.\.venv\Scripts\python.exe -m py_compile app\services\llm\generation.py app\services\llm\prompt_builder.py app\services\rag\generation_service.py app\services\learning\summary_service.py app\services\learning\notes_service.py tests\test_api_routes.py tests\test_rag_services.py`.
 - Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
 - Kết quả backend: 44 tests pass.
+
+## 2026-06-09 - Phase E: Export Markdown baseline
+
+### Đã thay đổi
+
+- Cập nhật README, ROADMAP và NEXT_STEPS để phản ánh đúng trạng thái hiện tại: Phase B/C/D đã có baseline và Phase E đã được triển khai.
+- Thêm `frontend/src/features/export/exportMarkdown.js` để build Markdown từ video metadata, summary, study notes và timestamp sources.
+- Thêm `frontend/src/features/export/ExportPanel.jsx` với các thao tác:
+  - Copy Markdown.
+  - Download Markdown.
+  - Preview Markdown.
+- Cập nhật `frontend/src/App.jsx` để hiển thị Export Markdown sau Study Notes.
+- Cập nhật `frontend/src/App.css` để Export panel dùng cùng style với các panel hiện có.
+
+### Lý do
+
+- Export Markdown là bước nhỏ nhưng tăng giá trị sử dụng thật: user có thể lưu lại tài liệu học tập ngoài app.
+- Làm ở frontend trước giúp giảm phạm vi thay đổi, không cần API/backend mới khi dữ liệu summary và notes đã có trong state.
+- Markdown vẫn tạo được khi chưa có summary hoặc study notes, nên workflow không bị crash nếu user chỉ muốn export metadata video.
+
+### Giới hạn hiện tại
+
+- Export chưa bao gồm quiz vì Phase F chưa triển khai.
+- Export chưa bao gồm selected chat answers.
+- Chưa có backend export service hoặc lưu artifact server-side.

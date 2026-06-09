@@ -65,27 +65,35 @@ Các phần đã có:
 - Endpoint /api/v1/videos/{video_id}.
 - Endpoint DELETE /api/v1/videos/{video_id}.
 - Endpoint /api/v1/chat/ask.
+- Endpoint /api/v1/videos/{video_id}/summary.
+- Endpoint /api/v1/videos/{video_id}/study-notes.
 - Video metadata store local.
 - Cache ingest, không fetch transcript lại nếu video đã index.
+- Optional Gemini grounded answer cho chat.
+- Fallback extractive answer khi chưa cấu hình LLM hoặc provider lỗi.
+- Summary fallback/LLM-ready theo mode short, detailed, timeline.
+- Study notes fallback/LLM-ready.
+- Cache generated outputs local cho summary và study notes.
 - Frontend video history.
 - Frontend chọn retrieval mode trước khi hỏi.
 - Frontend hiển thị answer, retrieval mode và timestamp sources.
+- Frontend tạo summary.
+- Frontend tạo study notes.
+- Frontend export Markdown với video metadata, summary, study notes và timestamp sources.
 - Tests cơ bản cho URL parsing, API routes, RAG store, metadata store, vector store và retrieval.
 ```
 
 Giới hạn hiện tại:
 
 ```text
-- Câu trả lời vẫn là extractive/fallback, chưa có LLM grounded answer thật.
+- LLM hiện mới có Gemini optional, chưa có Groq hoặc OpenRouter adapter.
 - Embedding hiện là hashing embedding local, chưa phải semantic embedding model.
 - Vector store hiện là JSON local, chưa phải ChromaDB hoặc database chuyên dụng.
-- Chưa có summary.
-- Chưa có study notes.
 - Chưa có quiz.
-- Chưa có export Markdown.
 - Chưa có RAG Debug View.
 - Chưa có evaluation dataset để so sánh BM25, embedding và hybrid.
 - Chưa có agentic AI thật.
+- Export Markdown hiện làm ở frontend, chưa export quiz hoặc selected chat answers.
 ```
 
 ## 3. Định vị điểm nổi bật với nhà tuyển dụng
@@ -400,31 +408,31 @@ Transcript-to-study-notes for real learning workflow.
 
 Mục tiêu: giúp user dùng lại kết quả học tập ngoài app.
 
-Nên kéo phase này lên trước quiz/agent vì dễ làm, dễ demo và tăng giá trị sản phẩm.
+Trạng thái hiện tại: đã có baseline frontend cho copy, download và preview Markdown từ video metadata, summary, study notes và timestamp sources.
 
-Nội dung export:
+Nội dung export hiện có:
 
 ```text
 - Video metadata.
 - Summary.
 - Study notes.
-- Quiz, nếu đã có.
-- Selected chat answers, nếu cần.
 - Timestamp links.
 ```
 
-Implementation ban đầu có thể làm ở frontend:
+Việc có thể bổ sung sau:
+
+```text
+- Quiz, sau Phase F.
+- Selected chat answers, nếu cần.
+- Backend export service nếu cần lưu artifact hoặc chia sẻ server-side.
+```
+
+Implementation hiện tại:
 
 ```text
 frontend/src/features/export/
   exportMarkdown.js
   ExportPanel.jsx
-```
-
-Sau đó nếu cần backend:
-
-```text
-backend/app/services/learning/export_service.py
 ```
 
 Kết quả cần đạt:
@@ -841,6 +849,8 @@ Stabilize
 -> Better semantic retrieval
 -> Agent
 ```
+
+Tính đến 2026-06-09, các bước đến Export đã có baseline. Bước triển khai tiếp theo nên là Quiz.
 
 ## 17. Kiến trúc mục tiêu
 

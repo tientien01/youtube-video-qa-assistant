@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { askVideoQuestion } from './features/chat/chatApi'
 import { ChatPanel } from './features/chat/ChatPanel'
+import { ExportPanel } from './features/export/ExportPanel'
 import { generateStudyNotes } from './features/notes/notesApi'
 import { NotesPanel } from './features/notes/NotesPanel'
 import { generateVideoSummary } from './features/summary/summaryApi'
@@ -241,6 +242,8 @@ function App() {
           isLoading={isNotesLoading}
           error={notesError}
         />
+
+        <ExportPanel video={video} summary={summary} notes={notes} />
 
         <ChatPanel
           video={video}

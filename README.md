@@ -18,11 +18,12 @@ MVP hiện có:
 - Fallback extractive answer khi chưa cấu hình API key.
 - Summary fallback theo các mode `short`, `detailed`, `timeline`.
 - Study notes fallback từ transcript chunks.
+- Export Markdown từ video metadata, summary, study notes và timestamp sources.
 - Endpoint `/api/v1/videos/ingest`.
 - Endpoint `/api/v1/chat/ask`.
 - Endpoint `/api/v1/videos/{video_id}/summary`.
 - Endpoint `/api/v1/videos/{video_id}/study-notes`.
-- Frontend ingest video, tạo summary, study notes, chat và hiển thị sources timestamp.
+- Frontend ingest video, tạo summary, study notes, export Markdown, chat và hiển thị sources timestamp.
 
 ## Setup backend
 
@@ -106,14 +107,12 @@ python -m unittest discover -s tests
 
 ## Lộ trình gần nhất
 
-Trạng thái hiện tại đã qua MVP nền, video history/cache ingest và hybrid retrieval baseline. Thứ tự phát triển tiếp theo:
+Trạng thái hiện tại đã qua MVP nền, video history/cache ingest, hybrid retrieval baseline, optional LLM, summary, study notes và Export Markdown. Thứ tự phát triển tiếp theo:
 
-- Hoàn thiện Phase B: LLM grounded answer với Gemini optional và fallback ổn định.
-- Hoàn thiện Phase C: Summary frontend/backend và cache generated output.
-- Hoàn thiện Phase D: Study notes frontend/backend và cache generated output.
-- Phase E: Export Markdown.
 - Phase F: Quiz.
 - Phase G: RAG Debug View và evaluation nhỏ.
+- Phase H: Nâng cấp semantic retrieval nếu evaluation cho thấy cần.
+- Phase I: Agentic AI learning assistant.
 
 Phase kỹ thuật RAG hiện có retrieval baseline:
 

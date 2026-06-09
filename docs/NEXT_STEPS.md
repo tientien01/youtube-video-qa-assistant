@@ -8,6 +8,7 @@ Tài liệu này ghi các việc nên làm tiếp theo sau khi đã có:
 - Optional Gemini grounded answer cho chat.
 - Summary fallback/LLM-ready.
 - Study notes fallback/LLM-ready.
+- Export Markdown frontend.
 ```
 
 Hiện tại chưa cần gắn API key. Khi gần demo hoặc cần đánh giá chất lượng generation thật, chỉ cần cấu hình:
@@ -49,51 +50,30 @@ Kiểm tra workflow:
 
 ## 2. Phase E - Export Markdown
 
-Đây là bước nên làm tiếp theo.
+Trạng thái: đã triển khai baseline ở frontend.
 
-Mục tiêu:
-
-```text
-User có thể export summary và study notes ra Markdown để lưu lại hoặc nộp kèm báo cáo/demo.
-```
-
-Nên làm frontend trước:
+Đã có:
 
 ```text
-frontend/src/features/export/
-  exportMarkdown.js
-  ExportPanel.jsx
-```
-
-Nội dung export tối thiểu:
-
-```text
-- Video title.
-- Video URL.
-- Video ID.
-- Summary nếu đã tạo.
-- Study notes nếu đã tạo.
-- Timestamp sources.
-```
-
-Nút nên có:
-
-```text
+- frontend/src/features/export/exportMarkdown.js
+- frontend/src/features/export/ExportPanel.jsx
 - Copy Markdown.
 - Download Markdown.
+- Preview Markdown.
+- Export video metadata, summary, study notes và timestamp sources.
 ```
 
-Test/kiểm tra:
+Việc có thể polish sau:
 
 ```text
-- Không có summary/notes thì export vẫn không crash.
-- Có summary/notes thì Markdown format rõ ràng.
-- Timestamp links mở đúng YouTube video.
+- Kiểm tra thủ công copy/download trên trình duyệt.
+- Có thể thêm quiz vào export sau Phase F.
+- Có thể thêm selected chat answers nếu cần demo workflow học tập sâu hơn.
 ```
 
 ## 3. Phase F - Quiz
 
-Sau Export, thêm Quiz.
+Đây là bước nên làm tiếp theo.
 
 Backend dự kiến:
 
@@ -254,7 +234,7 @@ Agent output:
 
 ```text
 1. Test thủ công Chat/Summary/Study Notes.
-2. Phase E: Export Markdown.
+2. Test thủ công Export Markdown.
 3. Phase F: Quiz.
 4. Phase G: RAG Debug View.
 5. Phase H: Evaluation nhỏ.
