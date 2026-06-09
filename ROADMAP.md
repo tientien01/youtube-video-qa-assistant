@@ -86,6 +86,10 @@ Các phần đã có:
 - Frontend RAG Debug View hiển thị chunks, scores, mode, timestamp và latency.
 - Generation metadata cho chat, summary và study notes.
 - Evaluation runner baseline để so sánh BM25, embedding và hybrid.
+- Frontend workspace dạng tabs.
+- Chat history theo từng video bằng localStorage.
+- Export selected Q&A từ chat history.
+- Quiz review/retry mode.
 - Tests cơ bản cho URL parsing, API routes, RAG store, metadata store, vector store và retrieval.
 ```
 
@@ -98,7 +102,7 @@ Giới hạn hiện tại:
 - Evaluation hiện mới có runner và dataset example, chưa có dataset thật hoặc kết quả thật.
 - Chưa có agentic AI thật.
 - Quiz hiện là fallback baseline từ transcript chunks, chưa dùng LLM để sinh câu hỏi tốt hơn.
-- Export Markdown hiện làm ở frontend, chưa export selected chat answers.
+- Chat history hiện lưu ở frontend localStorage, chưa sync backend/database.
 ```
 
 ## 3. Định vị điểm nổi bật với nhà tuyển dụng
@@ -169,9 +173,10 @@ Phase D: Study notes
 Phase E: Export Markdown
 Phase F: Quiz
 Phase G: RAG Debug View và evaluation
-Phase H: Improve semantic retrieval
-Phase I: Agentic AI learning assistant
-Phase J: Final polish và demo package
+Phase H: Better Study Experience
+Phase I: Improve semantic retrieval
+Phase J: Agentic AI learning assistant
+Phase K: Final polish và demo package
 ```
 
 Lý do:
@@ -640,7 +645,38 @@ Có bảng nhỏ chứng minh hybrid retrieval hoạt động thế nào so vớ
 Observable and evaluated RAG pipeline.
 ```
 
-## 13. Phase H - Improve semantic retrieval
+## 13. Phase H - Better Study Experience
+
+Mục tiêu: làm workspace học tập dễ dùng hơn trước khi tiếp tục nâng cấp kỹ thuật RAG.
+
+Trạng thái hiện tại: đã có baseline frontend.
+
+Đã có:
+
+```text
+- Workspace dạng tabs: Chat, Summary, Notes, Quiz, Export, Debug.
+- Chat history theo từng video bằng localStorage.
+- Chọn từng Q&A để đưa vào Markdown export.
+- Export Markdown có checkbox chọn Summary, Study Notes, Quiz và Selected Q&A.
+- Quiz review mode: xem câu sai, làm lại câu sai, làm lại tất cả.
+```
+
+Giới hạn hiện tại:
+
+```text
+- Chat history mới lưu ở frontend localStorage, chưa sync backend.
+- Chưa lưu quiz attempt/result bền vững theo video.
+- Chưa có route URL riêng cho từng tab.
+- Chưa có E2E test cho workflow học tập.
+```
+
+Kết quả cần đạt:
+
+```text
+User có thể quay lại video cũ, tiếp tục xem lịch sử chat, chọn câu trả lời quan trọng và export thành tài liệu học tập.
+```
+
+## 14. Phase I - Improve semantic retrieval
 
 Mục tiêu: nâng retrieval từ baseline local lên semantic retrieval thực tế hơn.
 
@@ -685,7 +721,7 @@ User hỏi bằng từ khác transcript vẫn tìm được đoạn liên quan t
 Hybrid retrieval with measurable improvement.
 ```
 
-## 14. Phase I - Agentic AI learning assistant
+## 15. Phase J - Agentic AI learning assistant
 
 Mục tiêu: biến app từ Q&A thành trợ lý học tập có khả năng điều phối nhiều công cụ.
 
@@ -776,7 +812,7 @@ User có thể nhập mục tiêu học tập, app tự gọi summary, notes, qu
 Tool-using learning assistant over video transcript.
 ```
 
-## 15. Phase J - Final polish và demo package
+## 16. Phase K - Final polish và demo package
 
 Mục tiêu: hoàn thiện app để demo rõ, chạy ổn và dễ đánh giá.
 
@@ -829,7 +865,7 @@ README cuối nên có:
 - Future work.
 ```
 
-## 16. Thứ tự ưu tiên thực tế
+## 17. Thứ tự ưu tiên thực tế
 
 Nếu thời gian hạn chế, làm theo thứ tự:
 
@@ -884,7 +920,7 @@ Stabilize
 
 Tính đến 2026-06-09, các bước đến RAG Debug View và evaluation runner đã có baseline. Bước tiếp theo nên là tạo dataset evaluation thật rồi quyết định có nâng embedding/vector store hay không.
 
-## 17. Kiến trúc mục tiêu
+## 18. Kiến trúc mục tiêu
 
 Frontend:
 
@@ -948,7 +984,7 @@ Agentic AI service
   -> prompts.py
 ```
 
-## 18. File/folder mục tiêu
+## 19. File/folder mục tiêu
 
 Backend:
 
@@ -1038,7 +1074,7 @@ frontend/src/features/export/
   exportMarkdown.js
 ```
 
-## 19. Cách học song song khi làm
+## 20. Cách học song song khi làm
 
 Thứ tự học nên đi cùng thứ tự implement:
 
@@ -1069,7 +1105,7 @@ Mỗi khi thêm tính năng, tự trả lời:
 - Demo feature này trong 30 giây như thế nào?
 ```
 
-## 20. Tiêu chí hoàn thành portfolio
+## 21. Tiêu chí hoàn thành portfolio
 
 Mức tối thiểu để demo tốt:
 
@@ -1104,7 +1140,7 @@ Mức rất mạnh nếu còn thời gian:
 - Demo video hoặc GIF.
 ```
 
-## 21. Kết luận
+## 22. Kết luận
 
 Roadmap mới tập trung vào hai mục tiêu:
 

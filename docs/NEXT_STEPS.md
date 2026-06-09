@@ -12,6 +12,7 @@ Tài liệu này ghi các việc nên làm tiếp theo sau khi đã có:
 - Quiz fallback từ transcript chunks.
 - RAG Debug View.
 - Evaluation runner baseline.
+- Better Study Experience frontend.
 ```
 
 Hiện tại chưa cần gắn API key. Khi gần demo hoặc cần đánh giá chất lượng generation thật, chỉ cần cấu hình:
@@ -271,10 +272,12 @@ Agent output:
 ## 9. Thứ tự khuyến nghị ngắn gọn
 
 ```text
-1. Test thủ công Chat/Summary/Study Notes/Quiz/Debug.
-2. Tạo evaluation dataset nhỏ bằng video đã ingest thật.
-3. Chạy evaluation và điền docs/EVALUATION_RESULTS.md.
-4. Nâng cấp embedding/vector store nếu evaluation cho thấy cần.
-5. Agentic AI.
-6. Gắn Gemini API key để polish chất lượng generation trước demo.
+1. Test thủ công Chat/Summary/Study Notes/Quiz/Export/Debug trong workspace tabs.
+2. Kiểm tra chat history vẫn còn khi chọn lại video.
+3. Kiểm tra selected Q&A xuất hiện trong Markdown export.
+4. Kiểm tra Quiz review: xem câu sai, làm lại câu sai, làm lại tất cả.
+5. Tạo evaluation dataset nhỏ khi muốn quay lại hướng kỹ thuật RAG.
+6. Nâng cấp embedding/vector store nếu evaluation cho thấy cần.
+7. Agentic AI.
+8. Gắn Gemini API key để polish chất lượng generation trước demo.
 ```

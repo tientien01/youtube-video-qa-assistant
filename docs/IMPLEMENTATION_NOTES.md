@@ -393,3 +393,52 @@ File này ghi lại các thay đổi đã thực hiện theo roadmap để dễ 
 - Đã chạy `npm run lint`.
 - Đã chạy `npm run build`.
 - Kết quả backend: 51 tests pass.
+
+## 2026-06-09 - Phase H: Better Study Experience baseline
+
+### Đã thay đổi
+
+- Thêm chat history theo từng video bằng `localStorage`.
+- Khi chọn lại video cũ, frontend load lại lịch sử hỏi đáp của video đó.
+- Khi xóa video, frontend xóa luôn chat history local của video.
+- Thêm chọn từng câu hỏi/đáp án để đưa vào Markdown export.
+- Cập nhật Export Markdown để hỗ trợ Selected Q&A.
+- Thêm checkbox trong Export panel để chọn nội dung export:
+  - Summary
+  - Study Notes
+  - Quiz
+  - Selected Q&A
+- Chuyển learning workspace sang tabs:
+  - Chat
+  - Summary
+  - Notes
+  - Quiz
+  - Export
+  - Debug
+- Cải thiện Quiz review mode:
+  - Xem câu sai.
+  - Xem tất cả.
+  - Làm lại câu sai.
+  - Làm lại tất cả.
+  - Hiển thị số câu chưa trả lời.
+
+### Lý do
+
+- Sau khi app có nhiều tính năng, layout dọc làm workflow dài và khó tập trung; tabs giúp user học theo từng tác vụ rõ ràng hơn.
+- Chat history theo video giúp user quay lại video cũ và tiếp tục học thay vì mất toàn bộ câu hỏi đã hỏi.
+- Selected Q&A export biến chat thành tài liệu học tập có thể lưu lại.
+- Quiz review/retry giúp user ôn lại phần sai thay vì chỉ xem điểm một lần.
+
+### Giới hạn hiện tại
+
+- Chat history mới lưu ở frontend localStorage, chưa sync backend/database.
+- Chưa lưu quiz attempt/result bền vững theo video.
+- Chưa có route URL riêng cho từng tab.
+- Chưa có E2E test cho workflow học tập.
+
+### Kiểm tra
+
+- Đã chạy `npm run lint`.
+- Đã chạy `npm run build`.
+- Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
+- Kết quả backend: 51 tests pass.

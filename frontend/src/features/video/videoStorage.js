@@ -1,5 +1,6 @@
 const CURRENT_VIDEO_KEY = 'youtube-qa-current-video'
 const VIDEO_HISTORY_KEY = 'youtube-qa-video-history'
+const CHAT_HISTORY_KEY = 'youtube-qa-chat-history'
 
 export function readCurrentVideo() {
   return readJson(CURRENT_VIDEO_KEY, null)
@@ -58,7 +59,46 @@ export function removeVideoFromStorage(videoId) {
     localStorage.removeItem(CURRENT_VIDEO_KEY)
   }
 
+  deleteVideoChatHistory(videoId)
   return nextHistory
+}
+
+export function readVideoChatHistory(videoId) {
+  if (!videoId) {
+    return []
+  }
+
+  const allMessages = readJson(CHAT_HISTORY_KEY, {})
+  const messages = allMessages?.[videoId]
+  return Array.isArray(messages) ? messages : []
+}
+
+export function saveVideoChatHistory(videoId, messages) {
+  if (!videoId) {
+    return []
+  }
+
+  const allMessages = readJson(CHAT_HISTORY_KEY, {})
+  const nextMessages = Array.isArray(messages) ? messages : []
+  localStorage.setItem(
+    CHAT_HISTORY_KEY,
+    JSON.stringify({
+      ...allMessages,
+      [videoId]: nextMessages,
+    }),
+  )
+  return nextMessages
+}
+
+export function deleteVideoChatHistory(videoId) {
+  const allMessages = readJson(CHAT_HISTORY_KEY, {})
+  if (!allMessages || !Object.prototype.hasOwnProperty.call(allMessages, videoId)) {
+    return
+  }
+
+  const nextMessages = { ...allMessages }
+  delete nextMessages[videoId]
+  localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(nextMessages))
 }
 
 function readJson(key, fallbackValue) {

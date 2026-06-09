@@ -5,6 +5,8 @@ export function ChatPanel({
   video,
   messages,
   onAsk,
+  onToggleExport,
+  onClearHistory,
   isAsking,
   error,
 }) {
@@ -77,39 +79,54 @@ export function ChatPanel({
         {messages.length === 0 ? (
           <p className="muted-text">Chưa có câu hỏi nào cho video này.</p>
         ) : (
-          messages.map((message) => (
-            <article className="answer-card" key={message.id}>
-              <div className="answer-heading">
-                <p className="question-text">{message.question}</p>
-                <div className="status-tags">
-                  <span>{message.retrievalMode || 'hybrid'}</span>
-                  {message.generation ? <span>{formatGeneration(message.generation)}</span> : null}
-                </div>
-              </div>
-              <p className="answer-text">{message.answer}</p>
-              {message.generation?.fallback_reason ? (
-                <p className="muted-text">Fallback: {message.generation.fallback_reason}</p>
-              ) : null}
+          <>
+            <div className="chat-history-actions">
+              <p className="muted-text">{messages.length} câu hỏi đã lưu cho video này.</p>
+              <button type="button" onClick={onClearHistory}>Xóa lịch sử chat</button>
+            </div>
 
-              {message.sources.length > 0 ? (
-                <div className="source-list">
-                  <h3>Nguồn transcript</h3>
-                  {message.sources.map((source) => (
-                    <a
-                      className="source-item"
-                      href={buildYouTubeTimestampUrl(video.video_id, source.start_seconds)}
-                      target="_blank"
-                      rel="noreferrer"
-                      key={source.chunk_id}
-                    >
-                      <span>{formatTimestamp(source.start_seconds)}</span>
-                      <span>{source.text}</span>
-                    </a>
-                  ))}
+            {messages.map((message) => (
+              <article className="answer-card" key={message.id}>
+                <div className="answer-heading">
+                  <p className="question-text">{message.question}</p>
+                  <div className="status-tags">
+                    <span>{message.retrievalMode || 'hybrid'}</span>
+                    {message.generation ? <span>{formatGeneration(message.generation)}</span> : null}
+                  </div>
                 </div>
-              ) : null}
-            </article>
-          ))
+                <label className="export-message-toggle">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(message.selectedForExport)}
+                    onChange={() => onToggleExport(message.id)}
+                  />
+                  <span>Đưa câu này vào Markdown export</span>
+                </label>
+                <p className="answer-text">{message.answer}</p>
+                {message.generation?.fallback_reason ? (
+                  <p className="muted-text">Fallback: {message.generation.fallback_reason}</p>
+                ) : null}
+
+                {message.sources.length > 0 ? (
+                  <div className="source-list">
+                    <h3>Nguồn transcript</h3>
+                    {message.sources.map((source) => (
+                      <a
+                        className="source-item"
+                        href={buildYouTubeTimestampUrl(video.video_id, source.start_seconds)}
+                        target="_blank"
+                        rel="noreferrer"
+                        key={source.chunk_id}
+                      >
+                        <span>{formatTimestamp(source.start_seconds)}</span>
+                        <span>{source.text}</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </>
         )}
       </div>
     </section>

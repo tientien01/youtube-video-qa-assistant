@@ -10,6 +10,7 @@ export function QuizPanel({
 }) {
   const [answers, setAnswers] = useState({})
   const [isChecked, setIsChecked] = useState(false)
+  const [reviewFilter, setReviewFilter] = useState('all')
 
   const score = useMemo(() => {
     if (!quiz || !isChecked) {
@@ -24,14 +25,31 @@ export function QuizPanel({
     return {
       correctCount,
       totalCount: gradableQuestions.length,
+      missedIds: gradableQuestions
+        .filter((question) => answers[question.question_id] !== question.correct_answer)
+        .map((question) => question.question_id),
+      unansweredCount: quiz.questions.filter((question) => !answers[question.question_id]).length,
     }
   }, [answers, isChecked, quiz])
+
+  const displayedQuestions = useMemo(() => {
+    if (!quiz) {
+      return []
+    }
+
+    if (!isChecked || reviewFilter === 'all' || !score) {
+      return quiz.questions
+    }
+
+    return quiz.questions.filter((question) => score.missedIds.includes(question.question_id))
+  }, [isChecked, quiz, reviewFilter, score])
 
   function handleSubmit(event) {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     setAnswers({})
     setIsChecked(false)
+    setReviewFilter('all')
     onGenerate({
       questionCount: Number(formData.get('question-count')),
       difficulty: formData.get('difficulty'),
@@ -45,6 +63,34 @@ export function QuizPanel({
       [questionId]: answer,
     }))
     setIsChecked(false)
+    setReviewFilter('all')
+  }
+
+  function handleCheckAnswers() {
+    setIsChecked(true)
+    setReviewFilter('all')
+  }
+
+  function handleRetryMissed() {
+    if (!score) {
+      return
+    }
+
+    setAnswers((currentAnswers) => {
+      const nextAnswers = { ...currentAnswers }
+      score.missedIds.forEach((questionId) => {
+        delete nextAnswers[questionId]
+      })
+      return nextAnswers
+    })
+    setIsChecked(false)
+    setReviewFilter('all')
+  }
+
+  function handleResetAnswers() {
+    setAnswers({})
+    setIsChecked(false)
+    setReviewFilter('all')
   }
 
   if (!video) {
@@ -113,7 +159,11 @@ export function QuizPanel({
           </div>
 
           <div className="quiz-list">
-            {quiz.questions.map((question, index) => (
+            {displayedQuestions.length === 0 ? (
+              <p className="success-message">Không còn câu sai trong phần trắc nghiệm.</p>
+            ) : null}
+
+            {displayedQuestions.map((question, index) => (
               <article className="quiz-question" key={question.question_id}>
                 <div className="quiz-question-heading">
                   <h3>Câu {index + 1}</h3>
@@ -177,13 +227,28 @@ export function QuizPanel({
           </div>
 
           <div className="quiz-actions">
-            <button type="button" onClick={() => setIsChecked(true)}>
+            <button type="button" onClick={handleCheckAnswers}>
               Chấm điểm
             </button>
+            <button type="button" onClick={handleResetAnswers}>
+              Làm lại tất cả
+            </button>
             {score ? (
-              <p className="quiz-score">
-                Điểm tự động: {score.correctCount}/{score.totalCount} câu trắc nghiệm
-              </p>
+              <>
+                <button type="button" onClick={() => setReviewFilter('missed')}>
+                  Xem câu sai
+                </button>
+                <button type="button" onClick={() => setReviewFilter('all')}>
+                  Xem tất cả
+                </button>
+                <button type="button" onClick={handleRetryMissed} disabled={score.missedIds.length === 0}>
+                  Làm lại câu sai
+                </button>
+                <p className="quiz-score">
+                  Điểm tự động: {score.correctCount}/{score.totalCount} câu trắc nghiệm
+                  {score.unansweredCount > 0 ? ` · Chưa trả lời: ${score.unansweredCount}` : ''}
+                </p>
+              </>
             ) : null}
           </div>
         </div>

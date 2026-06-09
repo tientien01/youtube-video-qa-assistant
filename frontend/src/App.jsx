@@ -18,11 +18,22 @@ import { VideoResult } from './features/video/VideoResult'
 import {
   mergeVideoHistory,
   readCurrentVideo,
+  readVideoChatHistory,
   readVideoHistory,
   removeVideoFromStorage,
   saveCurrentVideo,
+  saveVideoChatHistory,
   saveVideoToHistory,
 } from './features/video/videoStorage'
+
+const WORKSPACE_TABS = [
+  { id: 'chat', label: 'Chat' },
+  { id: 'summary', label: 'Summary' },
+  { id: 'notes', label: 'Notes' },
+  { id: 'quiz', label: 'Quiz' },
+  { id: 'export', label: 'Export' },
+  { id: 'debug', label: 'Debug' },
+]
 
 function App() {
   const [video, setVideo] = useState(() => readCurrentVideo())
@@ -33,11 +44,12 @@ function App() {
   const [notesError, setNotesError] = useState('')
   const [quizError, setQuizError] = useState('')
   const [debugError, setDebugError] = useState('')
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState(() => readVideoChatHistory(readCurrentVideo()?.video_id))
   const [summary, setSummary] = useState(null)
   const [notes, setNotes] = useState(null)
   const [quiz, setQuiz] = useState(null)
   const [debugResult, setDebugResult] = useState(null)
+  const [activeTab, setActiveTab] = useState('chat')
   const [isLoading, setIsLoading] = useState(false)
   const [isAsking, setIsAsking] = useState(false)
   const [isSummaryLoading, setIsSummaryLoading] = useState(false)
@@ -84,7 +96,6 @@ function App() {
     setNotesError('')
     setQuizError('')
     setDebugError('')
-    setMessages([])
     setSummary(null)
     setNotes(null)
     setQuiz(null)
@@ -114,7 +125,8 @@ function App() {
         question,
         retrievalMode,
       })
-      setMessages((currentMessages) => [
+      setMessages((currentMessages) => {
+        const nextMessages = [
         {
           id: `${Date.now()}-${currentMessages.length}`,
           question,
@@ -122,9 +134,13 @@ function App() {
           retrievalMode: response.retrieval_mode,
           generation: response.generation,
           sources: response.sources,
+          selectedForExport: true,
         },
         ...currentMessages,
-      ])
+        ]
+        saveVideoChatHistory(video.video_id, nextMessages)
+        return nextMessages
+      })
     } catch (requestError) {
       setChatError(requestError.message)
     } finally {
@@ -223,6 +239,31 @@ function App() {
     applySelectedVideo(nextVideo)
   }
 
+  function handleToggleMessageExport(messageId) {
+    if (!video) {
+      return
+    }
+
+    setMessages((currentMessages) => {
+      const nextMessages = currentMessages.map((message) =>
+        message.id === messageId
+          ? { ...message, selectedForExport: !message.selectedForExport }
+          : message,
+      )
+      saveVideoChatHistory(video.video_id, nextMessages)
+      return nextMessages
+    })
+  }
+
+  function handleClearChatHistory() {
+    if (!video) {
+      return
+    }
+
+    saveVideoChatHistory(video.video_id, [])
+    setMessages([])
+  }
+
   async function handleDeleteVideo(videoId) {
     setError('')
     setChatError('')
@@ -258,7 +299,7 @@ function App() {
     setVideo(normalizedVideo)
     saveCurrentVideo(normalizedVideo)
     setVideoHistory(saveVideoToHistory(normalizedVideo))
-    setMessages([])
+    setMessages(readVideoChatHistory(normalizedVideo.video_id))
     setSummary(null)
     setNotes(null)
     setQuiz(null)
@@ -296,47 +337,86 @@ function App() {
 
         <VideoResult video={video} />
 
-        <SummaryPanel
-          video={video}
-          summary={summary}
-          onGenerate={handleGenerateSummary}
-          isLoading={isSummaryLoading}
-          error={summaryError}
-        />
+        <section className="workspace-tabs" aria-label="Learning workspace">
+          <div className="tab-list" role="tablist" aria-label="Workspace sections">
+            {WORKSPACE_TABS.map((tab) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className="tab-button"
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-        <NotesPanel
-          video={video}
-          notes={notes}
-          onGenerate={handleGenerateNotes}
-          isLoading={isNotesLoading}
-          error={notesError}
-        />
+          <div className="tab-panel" role="tabpanel">
+            {activeTab === 'chat' ? (
+              <ChatPanel
+                video={video}
+                messages={messages}
+                onAsk={handleAsk}
+                onToggleExport={handleToggleMessageExport}
+                onClearHistory={handleClearChatHistory}
+                isAsking={isAsking}
+                error={chatError}
+              />
+            ) : null}
 
-        <QuizPanel
-          video={video}
-          quiz={quiz}
-          onGenerate={handleGenerateQuiz}
-          isLoading={isQuizLoading}
-          error={quizError}
-        />
+            {activeTab === 'summary' ? (
+              <SummaryPanel
+                video={video}
+                summary={summary}
+                onGenerate={handleGenerateSummary}
+                isLoading={isSummaryLoading}
+                error={summaryError}
+              />
+            ) : null}
 
-        <ExportPanel video={video} summary={summary} notes={notes} quiz={quiz} />
+            {activeTab === 'notes' ? (
+              <NotesPanel
+                video={video}
+                notes={notes}
+                onGenerate={handleGenerateNotes}
+                isLoading={isNotesLoading}
+                error={notesError}
+              />
+            ) : null}
 
-        <RagDebugPanel
-          video={video}
-          debugResult={debugResult}
-          onRetrieve={handleDebugRetrieve}
-          isLoading={isDebugLoading}
-          error={debugError}
-        />
+            {activeTab === 'quiz' ? (
+              <QuizPanel
+                video={video}
+                quiz={quiz}
+                onGenerate={handleGenerateQuiz}
+                isLoading={isQuizLoading}
+                error={quizError}
+              />
+            ) : null}
 
-        <ChatPanel
-          video={video}
-          messages={messages}
-          onAsk={handleAsk}
-          isAsking={isAsking}
-          error={chatError}
-        />
+            {activeTab === 'export' ? (
+              <ExportPanel
+                video={video}
+                summary={summary}
+                notes={notes}
+                quiz={quiz}
+                selectedMessages={messages.filter((message) => message.selectedForExport)}
+              />
+            ) : null}
+
+            {activeTab === 'debug' ? (
+              <RagDebugPanel
+                video={video}
+                debugResult={debugResult}
+                onRetrieve={handleDebugRetrieve}
+                isLoading={isDebugLoading}
+                error={debugError}
+              />
+            ) : null}
+          </div>
+        </section>
       </section>
     </main>
   )

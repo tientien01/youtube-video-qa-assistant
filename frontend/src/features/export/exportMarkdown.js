@@ -1,6 +1,13 @@
 import { buildYouTubeTimestampUrl, formatTimestamp } from '../../shared/utils/time.js'
 
-export function buildLearningMarkdown({ video, summary, notes, quiz }) {
+export function buildLearningMarkdown({
+  video,
+  summary,
+  notes,
+  quiz,
+  selectedMessages = [],
+  exportOptions = defaultExportOptions(),
+}) {
   if (!video) {
     return ''
   }
@@ -21,61 +28,99 @@ export function buildLearningMarkdown({ video, summary, notes, quiz }) {
     lines.push(`- Duration: ${safeText(video.duration_seconds)} seconds`)
   }
 
-  lines.push('', '## Summary', '')
+  if (exportOptions.summary) {
+    lines.push('', '## Summary', '')
 
-  if (summary?.summary) {
-    lines.push(`Mode: ${safeText(summary.mode || 'unknown')}`, '', summary.summary.trim(), '')
-    appendGeneration(lines, summary.generation)
-    appendSources(lines, {
-      heading: 'Summary sources',
-      sources: summary.sources,
-      videoId: video.video_id,
-    })
-  } else {
-    lines.push('No summary has been generated yet.', '')
+    if (summary?.summary) {
+      lines.push(`Mode: ${safeText(summary.mode || 'unknown')}`, '', summary.summary.trim(), '')
+      appendGeneration(lines, summary.generation)
+      appendSources(lines, {
+        heading: 'Summary sources',
+        sources: summary.sources,
+        videoId: video.video_id,
+      })
+    } else {
+      lines.push('No summary has been generated yet.', '')
+    }
   }
 
-  lines.push('## Study Notes', '')
+  if (exportOptions.notes) {
+    lines.push('## Study Notes', '')
 
-  if (notes?.notes) {
-    lines.push(notes.notes.trim(), '')
-    appendGeneration(lines, notes.generation)
-    appendSources(lines, {
-      heading: 'Study notes sources',
-      sources: notes.sources,
-      videoId: video.video_id,
-    })
-  } else {
-    lines.push('No study notes have been generated yet.', '')
+    if (notes?.notes) {
+      lines.push(notes.notes.trim(), '')
+      appendGeneration(lines, notes.generation)
+      appendSources(lines, {
+        heading: 'Study notes sources',
+        sources: notes.sources,
+        videoId: video.video_id,
+      })
+    } else {
+      lines.push('No study notes have been generated yet.', '')
+    }
   }
 
-  lines.push('## Quiz', '')
+  if (exportOptions.quiz) {
+    lines.push('## Quiz', '')
 
-  if (quiz?.questions?.length) {
-    lines.push(
-      `Difficulty: ${safeText(quiz.difficulty || 'unknown')}`,
-      `Question type: ${safeText(quiz.question_type || 'unknown')}`,
-      '',
-    )
-    quiz.questions.forEach((question, index) => {
-      lines.push(`${index + 1}. ${safeText(question.question)}`)
-      if (question.options.length > 0) {
-        question.options.forEach((option) => {
-          lines.push(`   - ${safeText(option)}`)
-        })
-      }
+    if (quiz?.questions?.length) {
       lines.push(
-        `   - Answer: ${safeText(question.correct_answer)}`,
-        `   - Explanation: ${safeText(question.explanation)}`,
-        `   - Source: [${formatTimestamp(question.source.start_seconds)}](${buildYouTubeTimestampUrl(video.video_id, question.source.start_seconds)})`,
+        `Difficulty: ${safeText(quiz.difficulty || 'unknown')}`,
+        `Question type: ${safeText(quiz.question_type || 'unknown')}`,
         '',
       )
-    })
-  } else {
-    lines.push('No quiz has been generated yet.', '')
+      quiz.questions.forEach((question, index) => {
+        lines.push(`${index + 1}. ${safeText(question.question)}`)
+        if (question.options.length > 0) {
+          question.options.forEach((option) => {
+            lines.push(`   - ${safeText(option)}`)
+          })
+        }
+        lines.push(
+          `   - Answer: ${safeText(question.correct_answer)}`,
+          `   - Explanation: ${safeText(question.explanation)}`,
+          `   - Source: [${formatTimestamp(question.source.start_seconds)}](${buildYouTubeTimestampUrl(video.video_id, question.source.start_seconds)})`,
+          '',
+        )
+      })
+    } else {
+      lines.push('No quiz has been generated yet.', '')
+    }
+  }
+
+  if (exportOptions.chat) {
+    lines.push('## Selected Q&A', '')
+
+    if (selectedMessages.length > 0) {
+      selectedMessages.forEach((message, index) => {
+        lines.push(
+          `${index + 1}. ${safeText(message.question)}`,
+          '',
+          safeText(message.answer),
+          '',
+        )
+        appendGeneration(lines, message.generation)
+        appendSources(lines, {
+          heading: 'Q&A sources',
+          sources: message.sources,
+          videoId: video.video_id,
+        })
+      })
+    } else {
+      lines.push('No chat answers have been selected for export.', '')
+    }
   }
 
   return `${lines.join('\n').trim()}\n`
+}
+
+export function defaultExportOptions() {
+  return {
+    summary: true,
+    notes: true,
+    quiz: true,
+    chat: true,
+  }
 }
 
 export function buildMarkdownFilename(video) {

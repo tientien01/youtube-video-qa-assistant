@@ -34,6 +34,44 @@
   gap: 20px;
 }
 
+.workspace-tabs {
+  display: grid;
+  gap: 16px;
+}
+
+.tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-button {
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  padding: 10px 14px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab-button[aria-selected='true'] {
+  border-color: var(--border);
+  color: var(--text-strong);
+  background: var(--surface);
+}
+
+.tab-button:focus {
+  outline: 3px solid var(--focus);
+}
+
+.tab-panel {
+  display: grid;
+}
+
 .ingest-form {
   display: grid;
   gap: 10px;
@@ -432,6 +470,35 @@
   margin-bottom: 18px;
 }
 
+.export-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.export-options legend {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+.export-options label,
+.export-message-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  color: var(--text-strong);
+}
+
+.export-options input,
+.export-message-toggle input {
+  margin-top: 4px;
+}
+
 .export-actions button {
   min-width: 160px;
   border: 1px solid var(--accent);
@@ -485,6 +552,25 @@
   display: grid;
   gap: 16px;
   margin-top: 20px;
+}
+
+.chat-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-history-actions button {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--danger);
+  background: var(--bg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .answer-card {
@@ -664,6 +750,11 @@
   align-items: center;
 }
 
+.quiz-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .quiz-score {
   margin: 0;
   color: var(--text-strong);
@@ -788,8 +879,23 @@
     display: grid;
   }
 
+  .export-options {
+    grid-template-columns: 1fr;
+  }
+
   .export-actions button {
     width: 100%;
+  }
+
+  .tab-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-bottom: 0;
+  }
+
+  .tab-button {
+    border: 1px solid var(--border);
+    border-radius: 6px;
   }
 
   .question-options,

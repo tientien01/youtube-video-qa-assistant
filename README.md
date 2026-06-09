@@ -22,13 +22,16 @@ MVP hiện có:
 - Export Markdown từ video metadata, summary, study notes, quiz và timestamp sources.
 - RAG Debug View để xem retrieved chunks, scores và latency.
 - Evaluation runner nhỏ để so sánh retrieval modes.
+- Chat history theo từng video bằng localStorage.
+- Workspace dạng tabs cho Chat, Summary, Notes, Quiz, Export và Debug.
+- Export selected Q&A từ lịch sử chat.
 - Endpoint `/api/v1/videos/ingest`.
 - Endpoint `/api/v1/chat/ask`.
 - Endpoint `/api/v1/videos/{video_id}/summary`.
 - Endpoint `/api/v1/videos/{video_id}/study-notes`.
 - Endpoint `/api/v1/videos/{video_id}/quiz`.
 - Endpoint `/api/v1/debug/retrieve`.
-- Frontend ingest video, tạo summary, study notes, quiz, export Markdown, RAG debug, chat và hiển thị sources timestamp.
+- Frontend ingest video, tạo summary, study notes, quiz, export Markdown, RAG debug, chat history theo video và hiển thị sources timestamp.
 
 ## Setup backend
 
@@ -112,10 +115,10 @@ python -m unittest discover -s tests
 
 ## Lộ trình gần nhất
 
-Trạng thái hiện tại đã qua MVP nền, video history/cache ingest, hybrid retrieval baseline, optional LLM, summary, study notes, quiz, Export Markdown, RAG Debug View và evaluation runner baseline. Thứ tự phát triển tiếp theo:
+Trạng thái hiện tại đã qua MVP nền, video history/cache ingest, hybrid retrieval baseline, optional LLM, summary, study notes, quiz, Export Markdown, RAG Debug View, evaluation runner baseline và Better Study Experience frontend. Thứ tự phát triển tiếp theo:
 
-- Phase H: Nâng cấp semantic retrieval nếu evaluation cho thấy cần.
-- Phase I: Agentic AI learning assistant.
+- Phase I: Nâng cấp semantic retrieval nếu evaluation cho thấy cần.
+- Phase J: Agentic AI learning assistant.
 
 Phase kỹ thuật RAG hiện có retrieval baseline:
 
