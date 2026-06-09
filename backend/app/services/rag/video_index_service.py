@@ -4,6 +4,7 @@ from app.schemas.chat import ChatAskResponse, ChatSource
 from app.schemas.video import VideoDeleteResponse, VideoIngestResponse, VideoMetadataResponse
 from app.services.extraction.transcript_service import fetch_transcript
 from app.services.extraction.video_url_service import extract_youtube_video_id
+from app.services.learning.generated_output_store import generated_output_store
 from app.services.rag.generation_service import generate_answer
 from app.services.rag.local_store import VideoNotIndexedError, rag_store
 from app.services.rag.metadata_store import VideoMetadata, metadata_store
@@ -99,7 +100,8 @@ def delete_ingested_video(video_id: str) -> VideoDeleteResponse:
     deleted_chunks = rag_store.delete_video(video_id)
     deleted_vectors = vector_store.delete_video(video_id)
     deleted_metadata = metadata_store.delete_video(video_id)
-    if not deleted_chunks and not deleted_vectors and not deleted_metadata:
+    deleted_outputs = generated_output_store.delete_video(video_id)
+    if not deleted_chunks and not deleted_vectors and not deleted_metadata and not deleted_outputs:
         raise VideoNotIndexedError("Video has not been indexed yet.")
 
     logger.info("Deleted video_id=%s from local library", video_id)

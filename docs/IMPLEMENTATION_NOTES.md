@@ -205,3 +205,29 @@ File này ghi lại các thay đổi đã thực hiện theo roadmap để dễ 
 - Đã chạy `.\.venv\Scripts\python.exe -m py_compile app\services\llm\base.py app\services\llm\config.py app\services\llm\prompt_builder.py app\services\llm\gemini_client.py app\services\rag\generation_service.py tests\test_rag_services.py`.
 - Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
 - Kết quả: 27 tests pass.
+
+## 2026-06-09 - Phase C: Summary fallback baseline
+
+### Đã thay đổi
+
+- Thêm schema summary với các mode `short`, `detailed`, `timeline`.
+- Thêm `LocalGeneratedOutputStore` để cache generated outputs local bằng JSON.
+- Thêm `summary_service.py` tạo summary fallback từ transcript chunks, chưa cần API key.
+- Thêm endpoint `POST /api/v1/videos/{video_id}/summary`.
+- Khi xóa video, backend xóa cả generated outputs liên quan để tránh cache mồ côi.
+- Thêm frontend `SummaryPanel` và `summaryApi.js`.
+- Cập nhật `App.jsx` để user tạo summary sau khi ingest/chọn video.
+- Thêm tests cho summary service, summary API, generated output cache và delete cleanup.
+
+### Lý do
+
+- Summary là bước đầu của learning workspace, giúp user hiểu nhanh video mà chưa cần LLM thật.
+- Cache generated outputs giúp tránh generate lại cùng một summary mode nhiều lần.
+- Làm fallback trước giúp tiếp tục phát triển sản phẩm mà chưa cần gắn API key.
+
+### Kiểm tra
+
+- Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
+- Đã chạy `npm run build`.
+- Đã chạy `npm run lint`.
+- Kết quả backend: 36 tests pass.

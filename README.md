@@ -16,9 +16,11 @@ MVP hiện có:
 - Retrieval modes: `bm25`, `embedding`, `hybrid`.
 - Optional LLM grounded answer với Gemini API.
 - Fallback extractive answer khi chưa cấu hình API key.
+- Summary fallback theo các mode `short`, `detailed`, `timeline`.
 - Endpoint `/api/v1/videos/ingest`.
 - Endpoint `/api/v1/chat/ask`.
-- Frontend ingest video, chat và hiển thị sources timestamp.
+- Endpoint `/api/v1/videos/{video_id}/summary`.
+- Frontend ingest video, tạo summary, chat và hiển thị sources timestamp.
 
 ## Setup backend
 
@@ -105,7 +107,7 @@ python -m unittest discover -s tests
 Trạng thái hiện tại đã qua MVP nền, video history/cache ingest và hybrid retrieval baseline. Thứ tự phát triển tiếp theo:
 
 - Hoàn thiện Phase B: LLM grounded answer với Gemini optional và fallback ổn định.
-- Phase C: Summary cho video.
+- Hoàn thiện Phase C: Summary frontend/backend và cache generated output.
 - Phase D: Study notes.
 - Phase E: Export Markdown.
 - Phase F: Quiz.

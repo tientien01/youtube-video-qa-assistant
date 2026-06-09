@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { askVideoQuestion } from './features/chat/chatApi'
 import { ChatPanel } from './features/chat/ChatPanel'
+import { generateVideoSummary } from './features/summary/summaryApi'
+import { SummaryPanel } from './features/summary/SummaryPanel'
 import { deleteVideo, ingestVideo, listVideos } from './features/video/videoApi'
 import { VideoHistory } from './features/video/VideoHistory'
 import { VideoIngestForm } from './features/video/VideoIngestForm'
@@ -20,9 +22,12 @@ function App() {
   const [videoHistory, setVideoHistory] = useState(() => readVideoHistory())
   const [error, setError] = useState('')
   const [chatError, setChatError] = useState('')
+  const [summaryError, setSummaryError] = useState('')
   const [messages, setMessages] = useState([])
+  const [summary, setSummary] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isAsking, setIsAsking] = useState(false)
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(false)
 
   useEffect(() => {
@@ -59,7 +64,9 @@ function App() {
     setIsLoading(true)
     setError('')
     setChatError('')
+    setSummaryError('')
     setMessages([])
+    setSummary(null)
 
     try {
       const response = await ingestVideo(url)
@@ -102,6 +109,27 @@ function App() {
     }
   }
 
+  async function handleGenerateSummary(mode) {
+    if (!video) {
+      return
+    }
+
+    setIsSummaryLoading(true)
+    setSummaryError('')
+
+    try {
+      const response = await generateVideoSummary({
+        videoId: video.video_id,
+        mode,
+      })
+      setSummary(response)
+    } catch (requestError) {
+      setSummaryError(requestError.message)
+    } finally {
+      setIsSummaryLoading(false)
+    }
+  }
+
   function handleSelectVideo(nextVideo) {
     applySelectedVideo(nextVideo)
   }
@@ -109,6 +137,7 @@ function App() {
   async function handleDeleteVideo(videoId) {
     setError('')
     setChatError('')
+    setSummaryError('')
 
     try {
       await deleteVideo(videoId)
@@ -125,6 +154,7 @@ function App() {
 
     if (video?.video_id === videoId) {
       setVideo(null)
+      setSummary(null)
     }
   }
 
@@ -134,7 +164,9 @@ function App() {
     saveCurrentVideo(normalizedVideo)
     setVideoHistory(saveVideoToHistory(normalizedVideo))
     setMessages([])
+    setSummary(null)
     setChatError('')
+    setSummaryError('')
   }
 
   return (
@@ -162,6 +194,14 @@ function App() {
         />
 
         <VideoResult video={video} />
+
+        <SummaryPanel
+          video={video}
+          summary={summary}
+          onGenerate={handleGenerateSummary}
+          isLoading={isSummaryLoading}
+          error={summaryError}
+        />
 
         <ChatPanel
           video={video}

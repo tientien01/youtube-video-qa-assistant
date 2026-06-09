@@ -101,6 +101,7 @@
 .empty-state,
 .result-panel,
 .chat-panel,
+.summary-panel,
 .history-panel {
   padding: 24px;
   border: 1px solid var(--border);
@@ -111,6 +112,7 @@
 .empty-state h2,
 .result-panel h2,
 .chat-panel h2,
+.summary-panel h2,
 .history-panel h2 {
   margin: 0 0 8px;
 }
@@ -224,7 +226,15 @@
   gap: 10px;
 }
 
+.summary-form {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
 .question-form label,
+.summary-mode-field,
 .retrieval-mode-field {
   color: var(--text-strong);
   font-size: 14px;
@@ -244,6 +254,13 @@
   min-width: 160px;
 }
 
+.summary-mode-field {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.summary-mode-field select,
 .retrieval-mode-field select {
   width: 100%;
   border: 1px solid var(--border);
@@ -254,6 +271,7 @@
   font: inherit;
 }
 
+.summary-mode-field select:focus,
 .retrieval-mode-field select:focus {
   border-color: var(--accent);
   outline: 3px solid var(--focus);
@@ -289,7 +307,24 @@
   cursor: pointer;
 }
 
+.summary-form button {
+  min-width: 140px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: #ffffff;
+  background: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .question-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.summary-form button:disabled {
   cursor: not-allowed;
   opacity: 0.7;
 }
@@ -301,6 +336,13 @@
 }
 
 .answer-card {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.summary-result {
   display: grid;
   gap: 12px;
   padding-top: 16px;
@@ -387,11 +429,20 @@
     width: 100%;
   }
 
+  .summary-form {
+    display: grid;
+  }
+
+  .summary-form button {
+    width: 100%;
+  }
+
   .question-options,
   .answer-heading {
     display: grid;
   }
 
+  .summary-mode-field,
   .retrieval-mode-field {
     min-width: 0;
   }

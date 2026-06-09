@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.services.extraction.transcript_service import TranscriptNotFoundError
+from app.services.learning.generated_output_store import LocalGeneratedOutputStore
 from app.services.rag.local_store import LocalRagStore
 from app.services.rag.metadata_store import LocalVideoMetadataStore
 from app.services.rag.models import TranscriptChunk
@@ -22,6 +23,19 @@ class ApiRoutesTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok"})
+
+    def test_cors_allows_vite_fallback_port(self):
+        response = self.client.options(
+            "/api/v1/videos/ingest",
+            headers={
+                "Origin": "http://localhost:5174",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["access-control-allow-origin"], "http://localhost:5174")
 
     def test_ingest_rejects_non_youtube_url(self):
         response = self.client.post(
@@ -144,6 +158,7 @@ class ApiRoutesTest(unittest.TestCase):
             store = LocalRagStore(Path(temp_dir) / "index.json")
             metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
             vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
             store.upsert_video("dQw4w9WgXcQ", [chunk])
             metadata_store.upsert_video(
                 video_id="dQw4w9WgXcQ",
@@ -153,19 +168,79 @@ class ApiRoutesTest(unittest.TestCase):
                 transcript_language="en",
                 chunk_count=1,
             )
+            output_store.upsert_output(
+                video_id="dQw4w9WgXcQ",
+                output_type="summary",
+                mode="short",
+                content="Cached summary",
+                source_chunk_ids=[chunk.chunk_id],
+            )
 
             with (
                 patch("app.services.rag.video_index_service.rag_store", store),
                 patch("app.services.rag.video_index_service.vector_store", vector_store),
                 patch("app.services.rag.video_index_service.metadata_store", metadata_store),
+                patch("app.services.rag.video_index_service.generated_output_store", output_store),
             ):
                 response = self.client.delete("/api/v1/videos/dQw4w9WgXcQ")
 
             self.assertFalse(store.has_video("dQw4w9WgXcQ"))
             self.assertIsNone(metadata_store.get_video("dQw4w9WgXcQ"))
+            self.assertIsNone(
+                output_store.get_output(
+                    video_id="dQw4w9WgXcQ",
+                    output_type="summary",
+                    mode="short",
+                )
+            )
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["deleted"])
+
+    def test_summary_endpoint_generates_short_summary(self):
+        chunk = TranscriptChunk(
+            chunk_id="dQw4w9WgXcQ-0001",
+            video_id="dQw4w9WgXcQ",
+            text="RAG retrieves transcript chunks before generation.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("dQw4w9WgXcQ", [chunk])
+
+            with (
+                patch("app.services.learning.summary_service.rag_store", store),
+                patch("app.services.learning.summary_service.generated_output_store", output_store),
+            ):
+                response = self.client.post(
+                    "/api/v1/videos/dQw4w9WgXcQ/summary",
+                    json={"mode": "short"},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["mode"], "short")
+        self.assertFalse(response.json()["cached"])
+        self.assertIn("Tóm tắt ngắn", response.json()["summary"])
+        self.assertEqual(len(response.json()["sources"]), 1)
+
+    def test_summary_endpoint_returns_404_for_unindexed_video(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+
+            with (
+                patch("app.services.learning.summary_service.rag_store", store),
+                patch("app.services.learning.summary_service.generated_output_store", output_store),
+            ):
+                response = self.client.post(
+                    "/api/v1/videos/missing0000/summary",
+                    json={"mode": "short"},
+                )
+
+        self.assertEqual(response.status_code, 404)
 
     def test_chat_rejects_empty_question(self):
         response = self.client.post(

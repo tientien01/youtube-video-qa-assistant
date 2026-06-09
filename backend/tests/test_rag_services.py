@@ -7,6 +7,8 @@ from app.core.config import get_settings
 from app.schemas.transcript import TranscriptSegment
 from app.services.llm.base import LlmError
 from app.services.llm.config import load_llm_settings
+from app.services.learning.generated_output_store import LocalGeneratedOutputStore
+from app.services.learning.summary_service import generate_video_summary
 from app.services.rag.generation_service import generate_answer
 from app.services.rag.local_store import LocalRagStore
 from app.services.rag.metadata_store import LocalVideoMetadataStore
@@ -247,6 +249,65 @@ class RagServicesTest(unittest.TestCase):
             videos = store.list_videos()
 
         self.assertEqual([video.video_id for video in videos], ["secondvid2", "firstvideo1"])
+
+    def test_summary_service_generates_and_caches_short_summary(self):
+        chunks = [
+            TranscriptChunk(
+                chunk_id="video123456-0001",
+                video_id="video123456",
+                text="Retrieval finds relevant transcript context.",
+                start_seconds=0,
+                end_seconds=5,
+            ),
+            TranscriptChunk(
+                chunk_id="video123456-0002",
+                video_id="video123456",
+                text="Generation uses the retrieved context to answer.",
+                start_seconds=5,
+                end_seconds=10,
+            ),
+        ]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("video123456", chunks)
+
+            with (
+                patch("app.services.learning.summary_service.rag_store", store),
+                patch("app.services.learning.summary_service.generated_output_store", output_store),
+            ):
+                first_response = generate_video_summary("video123456", mode="short")
+                second_response = generate_video_summary("video123456", mode="short")
+
+        self.assertFalse(first_response.cached)
+        self.assertTrue(second_response.cached)
+        self.assertIn("Tóm tắt ngắn", first_response.summary)
+        self.assertEqual(first_response.summary, second_response.summary)
+        self.assertEqual(len(first_response.sources), 2)
+
+    def test_summary_service_supports_timeline_mode(self):
+        chunk = TranscriptChunk(
+            chunk_id="video123456-0001",
+            video_id="video123456",
+            text="Timeline summaries keep timestamp context.",
+            start_seconds=65,
+            end_seconds=70,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("video123456", [chunk])
+
+            with (
+                patch("app.services.learning.summary_service.rag_store", store),
+                patch("app.services.learning.summary_service.generated_output_store", output_store),
+            ):
+                response = generate_video_summary("video123456", mode="timeline")
+
+        self.assertIn("01:05-01:10", response.summary)
+        self.assertEqual(response.mode, "timeline")
 
     def test_generate_answer_has_clear_fallback_without_context(self):
         answer = generate_answer("What is the main idea?", [])
