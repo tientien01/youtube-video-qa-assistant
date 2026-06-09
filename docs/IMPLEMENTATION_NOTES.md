@@ -172,3 +172,36 @@ File này ghi lại các thay đổi đã thực hiện theo roadmap để dễ 
 - Đã tạo virtualenv backend tại `backend/.venv` và cài dependency từ `backend/requirements.txt`.
 - Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
 - Kết quả: 25 tests pass.
+
+## 2026-06-09 - Phase B: LLM grounded answer baseline
+
+### Đã thay đổi
+
+- Thêm package `backend/app/services/llm/` cho LLM abstraction.
+- Thêm `LlmClient` protocol và `LlmError` để tách generation khỏi provider cụ thể.
+- Thêm config đọc từ environment variables: `LLM_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `LLM_TIMEOUT_SECONDS`.
+- Thêm Gemini REST client dùng endpoint `generateContent`.
+- Thêm prompt builder cho grounded answer dựa trên transcript context.
+- Cập nhật `generation_service.py` để ưu tiên LLM nếu đã cấu hình, nhưng fallback về extractive answer nếu thiếu key, provider lỗi hoặc response rỗng.
+- Cập nhật README với hướng dẫn cấu hình Gemini optional.
+- Thêm test cho LLM client mock và fallback khi LLM lỗi.
+- Cập nhật test chat API để không vô tình gọi network nếu máy có `GEMINI_API_KEY`.
+
+### Lý do
+
+- Phase B cần câu trả lời tự nhiên hơn nhưng app vẫn phải chạy được khi sinh viên chưa có API key.
+- Gemini được tích hợp trước vì phù hợp với học tập, có free tier và dễ bật qua Google AI Studio.
+- Fallback extractive giữ app ổn định cho local development, test và demo offline.
+
+### Chưa làm trong bước này
+
+- Chưa thêm UI hiển thị answer đang dùng provider nào.
+- Chưa thêm provider Groq hoặc OpenRouter.
+- Chưa cache LLM answer.
+- Chưa có endpoint riêng cho debug prompt hoặc latency.
+
+### Kiểm tra
+
+- Đã chạy `.\.venv\Scripts\python.exe -m py_compile app\services\llm\base.py app\services\llm\config.py app\services\llm\prompt_builder.py app\services\llm\gemini_client.py app\services\rag\generation_service.py tests\test_rag_services.py`.
+- Đã chạy `.\.venv\Scripts\python.exe -m unittest discover -s tests`.
+- Kết quả: 27 tests pass.

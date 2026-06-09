@@ -203,6 +203,10 @@ class ApiRoutesTest(unittest.TestCase):
             with (
                 patch("app.services.rag.retrieval_service.rag_store", store),
                 patch("app.services.rag.retrieval_service.vector_store", vector_store),
+                patch(
+                    "app.services.rag.generation_service._build_configured_llm_client",
+                    return_value=None,
+                ),
             ):
                 response = self.client.post(
                     "/api/v1/chat/ask",

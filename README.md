@@ -14,6 +14,8 @@ MVP hiện có:
 - Lưu RAG index local bằng JSON.
 - Retrieval baseline theo BM25-style lexical search.
 - Retrieval modes: `bm25`, `embedding`, `hybrid`.
+- Optional LLM grounded answer với Gemini API.
+- Fallback extractive answer khi chưa cấu hình API key.
 - Endpoint `/api/v1/videos/ingest`.
 - Endpoint `/api/v1/chat/ask`.
 - Frontend ingest video, chat và hiển thị sources timestamp.
@@ -46,6 +48,29 @@ Kiểm tra health endpoint:
 GET http://127.0.0.1:8000/api/v1/health
 ```
 
+## Optional LLM config
+
+App vẫn chạy được khi không có API key. Khi chưa cấu hình LLM, backend dùng fallback extractive answer từ retrieved chunks.
+
+Backend tự load `backend/.env` cho local development nếu file này tồn tại. Khi deploy, cấu hình các biến này bằng environment variables hoặc secret manager của nền tảng deploy.
+
+Mặc định có thể để:
+
+```powershell
+$env:LLM_PROVIDER="fallback"
+```
+
+Nếu muốn bật Gemini grounded answer, set environment variables trước khi chạy backend hoặc cấu hình tương đương trong `backend/.env`:
+
+```powershell
+$env:LLM_PROVIDER="gemini"
+$env:GEMINI_API_KEY="your-api-key"
+$env:GEMINI_MODEL="gemini-2.5-flash"
+$env:LLM_TIMEOUT_SECONDS="20"
+```
+
+Không commit API key hoặc file `.env`.
+
 ## Setup frontend
 
 Chạy trong thư mục `frontend`:
@@ -77,14 +102,16 @@ python -m unittest discover -s tests
 
 ## Lộ trình gần nhất
 
-Trước khi qua Phase 1, cần đảm bảo Phase 0 ổn:
+Trạng thái hiện tại đã qua MVP nền, video history/cache ingest và hybrid retrieval baseline. Thứ tự phát triển tiếp theo:
 
-- Backend tests chạy được.
-- API lỗi cơ bản rõ ràng.
-- Logging cơ bản cho ingest và ask.
-- Baseline BM25 đủ ổn để so sánh với semantic/hybrid RAG sau này.
+- Hoàn thiện Phase B: LLM grounded answer với Gemini optional và fallback ổn định.
+- Phase C: Summary cho video.
+- Phase D: Study notes.
+- Phase E: Export Markdown.
+- Phase F: Quiz.
+- Phase G: RAG Debug View và evaluation nhỏ.
 
-Phase kỹ thuật RAG hiện đã có semantic retrieval baseline:
+Phase kỹ thuật RAG hiện có retrieval baseline:
 
 - Local hashing embedding.
 - Local vector store bằng JSON.

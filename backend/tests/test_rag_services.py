@@ -3,11 +3,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from app.core.config import get_settings
 from app.schemas.transcript import TranscriptSegment
+from app.services.llm.base import LlmError
+from app.services.llm.config import load_llm_settings
 from app.services.rag.generation_service import generate_answer
 from app.services.rag.local_store import LocalRagStore
 from app.services.rag.metadata_store import LocalVideoMetadataStore
-from app.services.rag.models import TranscriptChunk
+from app.services.rag.models import RetrievedChunk, TranscriptChunk
 from app.services.rag.retrieval_service import retrieve_chunks
 from app.services.rag.text_processing import chunk_transcript, tokenize
 from app.services.rag.vector_store import LocalVectorStore
@@ -249,6 +252,98 @@ class RagServicesTest(unittest.TestCase):
         answer = generate_answer("What is the main idea?", [])
 
         self.assertIn("chưa tìm thấy", answer.lower())
+
+    def test_generate_answer_uses_llm_client_when_available(self):
+        chunk = TranscriptChunk(
+            chunk_id="video123456-0001",
+            video_id="video123456",
+            text="Grounded answers must only use transcript context.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+        llm_client = FakeLlmClient("Câu trả lời từ LLM dựa trên transcript.")
+
+        answer = generate_answer(
+            question="Grounded answer hoạt động thế nào?",
+            retrieved_chunks=[RetrievedChunk(chunk=chunk, score=0.9)],
+            llm_client=llm_client,
+        )
+
+        self.assertEqual(answer, "Câu trả lời từ LLM dựa trên transcript.")
+        self.assertIsNotNone(llm_client.last_prompt)
+        self.assertIn("Chỉ trả lời dựa trên transcript context", llm_client.last_prompt)
+        self.assertIn("Grounded answers", llm_client.last_prompt)
+
+    def test_generate_answer_falls_back_when_llm_fails(self):
+        chunk = TranscriptChunk(
+            chunk_id="video123456-0001",
+            video_id="video123456",
+            text="Fallback answer keeps the app usable without an LLM.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        answer = generate_answer(
+            question="Fallback dùng khi nào?",
+            retrieved_chunks=[RetrievedChunk(chunk=chunk, score=0.9)],
+            llm_client=FailingLlmClient(),
+        )
+
+        self.assertIn("Dựa trên các đoạn transcript", answer)
+        self.assertIn("Fallback answer", answer)
+
+    def test_llm_settings_default_to_fallback_without_api_key(self):
+        with patch.dict("os.environ", {}, clear=True):
+            settings = load_llm_settings()
+
+        self.assertEqual(settings.provider, "fallback")
+        self.assertFalse(settings.is_gemini_enabled)
+
+    def test_llm_settings_use_fallback_when_gemini_key_is_empty(self):
+        with patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "gemini",
+                "GEMINI_API_KEY": "",
+            },
+            clear=True,
+        ):
+            settings = load_llm_settings()
+
+        self.assertEqual(settings.provider, "fallback")
+        self.assertFalse(settings.is_gemini_enabled)
+
+    def test_core_settings_enable_gemini_from_environment(self):
+        with patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "gemini",
+                "GEMINI_API_KEY": "test-key",
+                "GEMINI_MODEL": "gemini-test-model",
+                "LLM_TIMEOUT_SECONDS": "7",
+            },
+            clear=True,
+        ):
+            settings = get_settings()
+
+        self.assertEqual(settings.llm_provider, "gemini")
+        self.assertEqual(settings.gemini_api_key, "test-key")
+        self.assertEqual(settings.gemini_model, "gemini-test-model")
+        self.assertEqual(settings.llm_timeout_seconds, 7)
+
+class FakeLlmClient:
+    def __init__(self, response: str) -> None:
+        self._response = response
+        self.last_prompt = None
+
+    def generate_text(self, prompt: str) -> str:
+        self.last_prompt = prompt
+        return self._response
+
+
+class FailingLlmClient:
+    def generate_text(self, prompt: str) -> str:
+        raise LlmError("Provider failed.")
 
 
 if __name__ == "__main__":
