@@ -8,6 +8,10 @@ from dotenv import load_dotenv
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 LOCAL_ENV_FILE = BACKEND_ROOT / ".env"
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+DEFAULT_EMBEDDING_PROVIDER = "hashing"
+DEFAULT_EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+DEFAULT_VECTOR_STORE_PROVIDER = "local_json"
+DEFAULT_CHROMA_PERSIST_DIR = BACKEND_ROOT / "data" / "vector_store" / "chroma"
 
 
 load_dotenv(LOCAL_ENV_FILE)
@@ -19,6 +23,12 @@ class Settings:
     gemini_api_key: str | None
     gemini_model: str
     llm_timeout_seconds: float
+    embedding_provider: str
+    embedding_model_name: str
+    vector_store_provider: str
+    chroma_persist_dir: Path
+    reranker_enabled: bool
+    rerank_top_k: int
 
 
 def get_settings() -> Settings:
@@ -35,6 +45,12 @@ def get_settings() -> Settings:
         gemini_api_key=gemini_api_key,
         gemini_model=_read_optional_env("GEMINI_MODEL") or DEFAULT_GEMINI_MODEL,
         llm_timeout_seconds=_read_timeout_seconds("LLM_TIMEOUT_SECONDS", default=20.0),
+        embedding_provider=(_read_optional_env("EMBEDDING_PROVIDER") or DEFAULT_EMBEDDING_PROVIDER).lower(),
+        embedding_model_name=_read_optional_env("EMBEDDING_MODEL_NAME") or DEFAULT_EMBEDDING_MODEL_NAME,
+        vector_store_provider=(_read_optional_env("VECTOR_STORE_PROVIDER") or DEFAULT_VECTOR_STORE_PROVIDER).lower(),
+        chroma_persist_dir=_read_backend_path("CHROMA_PERSIST_DIR", default=DEFAULT_CHROMA_PERSIST_DIR),
+        reranker_enabled=_read_bool("RERANKER_ENABLED", default=False),
+        rerank_top_k=_read_positive_int("RERANK_TOP_K", default=8),
     )
 
 
@@ -56,3 +72,38 @@ def _read_timeout_seconds(name: str, *, default: float) -> float:
         return max(float(raw_value), 1.0)
     except ValueError:
         return default
+
+
+def _read_bool(name: str, *, default: bool) -> bool:
+    raw_value = _read_optional_env(name)
+    if raw_value is None:
+        return default
+
+    return raw_value.lower() in {"1", "true", "yes", "on"}
+
+
+def _read_positive_int(name: str, *, default: int) -> int:
+    raw_value = _read_optional_env(name)
+    if raw_value is None:
+        return default
+
+    try:
+        return max(int(raw_value), 1)
+    except ValueError:
+        return default
+
+
+def _read_backend_path(name: str, *, default: Path) -> Path:
+    raw_value = _read_optional_env(name)
+    if raw_value is None:
+        return default
+
+    path = Path(raw_value)
+    if path.is_absolute():
+        return path
+
+    parts = path.parts
+    if parts and parts[0].lower() == "backend":
+        return BACKEND_ROOT.joinpath(*parts[1:])
+
+    return BACKEND_ROOT / path

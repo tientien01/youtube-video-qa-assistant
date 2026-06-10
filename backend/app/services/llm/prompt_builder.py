@@ -30,9 +30,18 @@ def build_summary_prompt(mode: SummaryMode, chunks: list[TranscriptChunk]) -> st
         for index, chunk in enumerate(chunks, start=1)
     )
     mode_instruction = {
-        "short": "Tạo summary ngắn 5-7 gạch đầu dòng.",
-        "detailed": "Tạo summary chi tiết theo các ý chính, có cấu trúc rõ ràng.",
-        "timeline": "Tạo summary theo timeline, giữ thứ tự nội dung trong video.",
+        "short": (
+            "Tạo đúng 5-7 gạch đầu dòng. "
+            "Mỗi gạch đầu dòng là một câu hoàn chỉnh, súc tích, không bị bỏ dở."
+        ),
+        "detailed": (
+            "Tạo summary chi tiết theo các ý chính, có cấu trúc rõ ràng. "
+            "Mỗi ý phải là câu hoàn chỉnh và chỉ dùng thông tin trong transcript."
+        ),
+        "timeline": (
+            "Tạo summary theo timeline, giữ thứ tự nội dung trong video. "
+            "Mỗi dòng phải có timestamp từ transcript context và một câu hoàn chỉnh."
+        ),
     }[mode]
 
     return f"""Bạn là trợ lý học tập tóm tắt video YouTube.
@@ -41,6 +50,8 @@ Không bịa thêm thông tin ngoài transcript.
 Trả lời bằng tiếng Việt.
 {mode_instruction}
 Không tự tạo timestamp mới nếu transcript context không có mốc tương ứng.
+Không viết lời mở đầu như "Dưới đây là...".
+Không kết thúc bằng câu hoặc gạch đầu dòng đang dang dở.
 
 Transcript context:
 {context}
@@ -59,11 +70,12 @@ Chỉ sử dụng transcript context được cung cấp.
 Không bịa thêm thông tin ngoài transcript.
 Trả lời bằng tiếng Việt.
 Tạo ghi chú học tập có cấu trúc sau:
-- Mục tiêu bài học
-- Khái niệm chính
-- Giải thích dễ hiểu
-- Ví dụ hoặc chi tiết đáng chú ý trong transcript
-- Timestamp nên xem lại
+- Mục tiêu bài học: 2 gạch đầu dòng.
+- Khái niệm chính: 4-6 gạch đầu dòng.
+- Giải thích dễ hiểu: 1 đoạn ngắn, tối đa 5 câu.
+- Ví dụ hoặc chi tiết đáng chú ý trong transcript: 3 gạch đầu dòng.
+- Timestamp nên xem lại: 3-5 dòng, dùng timestamp có trong transcript context.
+Không viết quá dài. Không lặp lại nguyên văn transcript dài. Không tự tạo timestamp mới.
 
 Transcript context:
 {context}

@@ -2,7 +2,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from app.services.rag.embedding_service import cosine_similarity, embedding_service
+from app.core.config import get_settings
+from app.services.rag.embedding_service import EmbeddingService, cosine_similarity, embedding_service
 from app.services.rag.models import RetrievedChunk, TranscriptChunk
 
 
@@ -13,19 +14,25 @@ class VectorRecord:
 
 
 class LocalVectorStore:
-    def __init__(self, storage_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        storage_path: Path | None = None,
+        text_embedding_service: EmbeddingService | None = None,
+    ) -> None:
         self._storage_path = storage_path or _default_storage_path()
+        self._embedding_service = text_embedding_service or embedding_service
         self._index: dict[str, list[VectorRecord]] = {}
         self._loaded = False
 
     def upsert_video(self, video_id: str, chunks: list[TranscriptChunk]) -> None:
         self._ensure_loaded()
+        embeddings = self._embedding_service.embed_texts([chunk.text for chunk in chunks])
         self._index[video_id] = [
             VectorRecord(
                 chunk=chunk,
-                embedding=embedding_service.embed_text(chunk.text),
+                embedding=embeddings[index],
             )
-            for chunk in chunks
+            for index, chunk in enumerate(chunks)
         ]
         self._save()
 
@@ -48,7 +55,7 @@ class LocalVectorStore:
         if not records:
             return []
 
-        query_embedding = embedding_service.embed_text(question)
+        query_embedding = self._embedding_service.embed_text(question)
         scored_chunks = [
             RetrievedChunk(
                 chunk=record.chunk,
@@ -96,9 +103,128 @@ class LocalVectorStore:
         )
 
 
+class ChromaVectorStore:
+    def __init__(
+        self,
+        persist_directory: Path | None = None,
+        collection_name: str = "youtube_video_chunks",
+        text_embedding_service: EmbeddingService | None = None,
+    ) -> None:
+        try:
+            import chromadb
+        except ImportError as error:
+            raise RuntimeError("chromadb is required when VECTOR_STORE_PROVIDER=chroma.") from error
+
+        settings = get_settings()
+        self._persist_directory = persist_directory or settings.chroma_persist_dir
+        self._embedding_service = text_embedding_service or embedding_service
+        self._persist_directory.mkdir(parents=True, exist_ok=True)
+        self._client = chromadb.PersistentClient(path=str(self._persist_directory))
+        self._collection = self._client.get_or_create_collection(
+            name=collection_name,
+            metadata={"hnsw:space": "cosine"},
+        )
+
+    def upsert_video(self, video_id: str, chunks: list[TranscriptChunk]) -> None:
+        self.delete_video(video_id)
+        if not chunks:
+            return
+
+        embeddings = self._embedding_service.embed_texts([chunk.text for chunk in chunks])
+        self._collection.upsert(
+            ids=[chunk.chunk_id for chunk in chunks],
+            documents=[chunk.text for chunk in chunks],
+            embeddings=embeddings,
+            metadatas=[
+                {
+                    "video_id": chunk.video_id,
+                    "start_seconds": chunk.start_seconds,
+                    "end_seconds": chunk.end_seconds,
+                }
+                for chunk in chunks
+            ],
+        )
+
+    def has_video(self, video_id: str) -> bool:
+        result = self._collection.get(
+            where={"video_id": video_id},
+            limit=1,
+            include=["metadatas"],
+        )
+        return bool(result.get("ids"))
+
+    def delete_video(self, video_id: str) -> bool:
+        existing = self._collection.get(
+            where={"video_id": video_id},
+            include=["metadatas"],
+        )
+        ids = existing.get("ids", [])
+        if not ids:
+            return False
+
+        self._collection.delete(ids=ids)
+        return True
+
+    def retrieve(self, video_id: str, question: str, top_k: int = 4) -> list[RetrievedChunk]:
+        if top_k <= 0:
+            return []
+
+        query_embedding = self._embedding_service.embed_text(question)
+        result = self._collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k,
+            where={"video_id": video_id},
+            include=["documents", "metadatas", "distances"],
+        )
+
+        ids = result.get("ids", [[]])[0]
+        documents = result.get("documents", [[]])[0]
+        metadatas = result.get("metadatas", [[]])[0]
+        distances = result.get("distances", [[]])[0]
+
+        retrieved_chunks = []
+        for index, chunk_id in enumerate(ids):
+            metadata = metadatas[index]
+            distance = distances[index]
+            score = max(0.0, round(1.0 - float(distance), 6))
+            if score <= 0:
+                continue
+
+            retrieved_chunks.append(
+                RetrievedChunk(
+                    chunk=TranscriptChunk(
+                        chunk_id=chunk_id,
+                        video_id=str(metadata["video_id"]),
+                        text=documents[index],
+                        start_seconds=float(metadata["start_seconds"]),
+                        end_seconds=float(metadata["end_seconds"]),
+                    ),
+                    score=score,
+                )
+            )
+
+        return retrieved_chunks
+
+
 def _default_storage_path() -> Path:
     backend_root = Path(__file__).resolve().parents[3]
     return backend_root / "data" / "vector_store" / "local_vector_index.json"
 
 
-vector_store = LocalVectorStore()
+def build_vector_store(provider: str | None = None):
+    settings = get_settings()
+    selected_provider = (provider or settings.vector_store_provider).lower()
+
+    if selected_provider in {"local_json", "local"}:
+        return LocalVectorStore(text_embedding_service=embedding_service)
+
+    if selected_provider == "chroma":
+        return ChromaVectorStore(
+            persist_directory=settings.chroma_persist_dir,
+            text_embedding_service=embedding_service,
+        )
+
+    raise ValueError(f"Unsupported vector store provider: {selected_provider}")
+
+
+vector_store = build_vector_store()

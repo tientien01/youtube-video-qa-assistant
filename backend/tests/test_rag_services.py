@@ -1,20 +1,28 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+os.environ["LLM_PROVIDER"] = "fallback"
+os.environ["EMBEDDING_PROVIDER"] = "hashing"
+os.environ["VECTOR_STORE_PROVIDER"] = "local_json"
+
 from app.core.config import get_settings
 from app.schemas.transcript import TranscriptSegment
 from app.services.llm.base import LlmError
 from app.services.llm.config import load_llm_settings
+from app.services.llm.generation import OptionalLlmResult
 from app.services.learning.generated_output_store import LocalGeneratedOutputStore
 from app.services.learning.notes_service import generate_study_notes
 from app.services.learning.quiz_service import generate_quiz
 from app.services.learning.summary_service import generate_video_summary
 from app.services.rag.generation_service import generate_answer
+from app.services.rag.embedding_service import HashingEmbeddingService
 from app.services.rag.local_store import LocalRagStore
 from app.services.rag.metadata_store import LocalVideoMetadataStore
 from app.services.rag.models import RetrievedChunk, TranscriptChunk
+from app.services.rag.reranker import LexicalReranker
 from app.services.rag.retrieval_service import retrieve_chunks
 from app.services.rag.text_processing import chunk_transcript, tokenize
 from app.services.rag.vector_store import LocalVectorStore
@@ -22,6 +30,20 @@ from app.services.rag.video_index_service import ingest_video_content
 
 
 class RagServicesTest(unittest.TestCase):
+    def setUp(self):
+        self._env_patcher = patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "fallback",
+                "EMBEDDING_PROVIDER": "hashing",
+                "VECTOR_STORE_PROVIDER": "local_json",
+            },
+        )
+        self._env_patcher.start()
+
+    def tearDown(self):
+        self._env_patcher.stop()
+
     def test_tokenize_supports_vietnamese_words(self):
         tokens = tokenize("Truy xuất ngữ nghĩa giúp tìm kiếm tốt hơn.")
 
@@ -190,6 +212,29 @@ class RagServicesTest(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].chunk.chunk_id, "video123456-0001")
 
+    def test_vector_store_accepts_injected_embedding_service(self):
+        chunks = [
+            TranscriptChunk(
+                chunk_id="video123456-0001",
+                video_id="video123456",
+                text="Semantic retrieval chunk.",
+                start_seconds=0,
+                end_seconds=5,
+            )
+        ]
+        embedding_service = HashingEmbeddingService(dimensions=32)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalVectorStore(
+                Path(temp_dir) / "vectors.json",
+                text_embedding_service=embedding_service,
+            )
+            store.upsert_video("video123456", chunks)
+            results = store.retrieve("video123456", "semantic retrieval", top_k=1)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].chunk.chunk_id, "video123456-0001")
+
     def test_retrieval_service_supports_hybrid_mode(self):
         chunks = [
             TranscriptChunk(
@@ -227,6 +272,39 @@ class RagServicesTest(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].chunk.chunk_id, "video123456-0001")
+
+    def test_lexical_reranker_uses_query_overlap_after_retrieval_score(self):
+        candidates = [
+            RetrievedChunk(
+                chunk=TranscriptChunk(
+                    chunk_id="video123456-0001",
+                    video_id="video123456",
+                    text="Unrelated cooking instructions.",
+                    start_seconds=0,
+                    end_seconds=5,
+                ),
+                score=1.0,
+            ),
+            RetrievedChunk(
+                chunk=TranscriptChunk(
+                    chunk_id="video123456-0002",
+                    video_id="video123456",
+                    text="Hybrid retrieval combines BM25 and semantic embeddings.",
+                    start_seconds=5,
+                    end_seconds=10,
+                ),
+                score=0.5,
+            ),
+        ]
+
+        results = LexicalReranker().rerank(
+            question="hybrid retrieval embeddings",
+            candidates=candidates,
+            top_k=1,
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].chunk.chunk_id, "video123456-0002")
 
     def test_metadata_store_lists_newest_video_first(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -363,6 +441,69 @@ class RagServicesTest(unittest.TestCase):
 
         self.assertIn("Tóm tắt ngắn", response.summary)
         self.assertIn("Fallback summary", response.summary)
+
+    def test_summary_service_falls_back_when_llm_summary_is_incomplete(self):
+        chunk = TranscriptChunk(
+            chunk_id="video123456-0001",
+            video_id="video123456",
+            text="Reading changes the brain by connecting vision, sound, language, and attention.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("video123456", [chunk])
+
+            with (
+                patch("app.services.learning.summary_service.rag_store", store),
+                patch("app.services.learning.summary_service.generated_output_store", output_store),
+                patch(
+                    "app.services.learning.summary_service.generate_optional_llm_result",
+                    return_value=OptionalLlmResult(
+                        text="* Đọc không phải là một khả năng b",
+                        generation_mode="llm",
+                        provider="gemini",
+                    ),
+                ),
+            ):
+                response = generate_video_summary("video123456", mode="short")
+
+        self.assertEqual(response.generation.generation_mode, "fallback")
+        self.assertEqual(response.generation.provider, "gemini")
+        self.assertIn("too short", response.generation.fallback_reason)
+        self.assertIn("Tóm tắt ngắn", response.summary)
+
+    def test_summary_service_ignores_incomplete_cached_summary(self):
+        chunk = TranscriptChunk(
+            chunk_id="video123456-0001",
+            video_id="video123456",
+            text="Reading changes the brain by connecting vision, sound, language, and attention.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("video123456", [chunk])
+            output_store.upsert_output(
+                video_id="video123456",
+                output_type="summary",
+                mode="short",
+                content="* Đọc không phải là một khả năng b",
+                source_chunk_ids=[chunk.chunk_id],
+            )
+
+            with (
+                patch("app.services.learning.summary_service.rag_store", store),
+                patch("app.services.learning.summary_service.generated_output_store", output_store),
+            ):
+                response = generate_video_summary("video123456", mode="short")
+
+        self.assertFalse(response.cached)
+        self.assertNotEqual(response.summary, "* Đọc không phải là một khả năng b")
 
     def test_notes_service_generates_and_caches_study_notes(self):
         chunks = [
@@ -581,6 +722,38 @@ class RagServicesTest(unittest.TestCase):
         self.assertEqual(settings.gemini_api_key, "test-key")
         self.assertEqual(settings.gemini_model, "gemini-test-model")
         self.assertEqual(settings.llm_timeout_seconds, 7)
+
+    def test_core_settings_read_phase_i_retrieval_options(self):
+        with patch.dict(
+            "os.environ",
+            {
+                "EMBEDDING_PROVIDER": "sentence_transformers",
+                "EMBEDDING_MODEL_NAME": "all-MiniLM-L6-v2",
+                "VECTOR_STORE_PROVIDER": "chroma",
+                "CHROMA_PERSIST_DIR": "backend/data/vector_store/chroma-test",
+                "RERANKER_ENABLED": "true",
+                "RERANK_TOP_K": "12",
+            },
+            clear=True,
+        ):
+            settings = get_settings()
+
+        self.assertEqual(settings.embedding_provider, "sentence_transformers")
+        self.assertEqual(settings.embedding_model_name, "all-MiniLM-L6-v2")
+        self.assertEqual(settings.vector_store_provider, "chroma")
+        self.assertTrue(settings.reranker_enabled)
+        self.assertEqual(settings.rerank_top_k, 12)
+
+    def test_core_settings_resolve_chroma_path_under_backend_root(self):
+        with patch.dict(
+            "os.environ",
+            {"CHROMA_PERSIST_DIR": "backend/data/vector_store/chroma-test"},
+            clear=True,
+        ):
+            settings = get_settings()
+
+        self.assertTrue(str(settings.chroma_persist_dir).endswith("backend\\data\\vector_store\\chroma-test"))
+        self.assertNotIn("backend\\backend", str(settings.chroma_persist_dir))
 
 class FakeLlmClient:
     def __init__(self, response: str) -> None:

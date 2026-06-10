@@ -34,7 +34,7 @@ def generate_video_summary(
         mode=mode,
     )
     chunk_by_id = {chunk.chunk_id: chunk for chunk in chunks}
-    if cached_output is not None:
+    if cached_output is not None and not _looks_incomplete(cached_output.content):
         return SummaryResponse(
             video_id=video_id,
             mode=mode,
@@ -85,6 +85,17 @@ def _generate_summary_text(
         fallback_log_message="LLM summary generation failed, using fallback summary",
     )
     if llm_result.text is not None:
+        if llm_result.provider != "injected" and not _is_usable_llm_summary(mode, llm_result.text):
+            fallback_reason = "LLM summary was too short or looked incomplete."
+            return GeneratedSummary(
+                text=_build_fallback_summary(mode=mode, chunks=chunks),
+                generation=GenerationMetadata(
+                    generation_mode="fallback",
+                    provider=llm_result.provider,
+                    fallback_reason=fallback_reason,
+                ),
+            )
+
         return GeneratedSummary(
             text=llm_result.text,
             generation=GenerationMetadata(
@@ -102,6 +113,36 @@ def _generate_summary_text(
             fallback_reason=llm_result.fallback_reason,
         ),
     )
+
+
+def _is_usable_llm_summary(mode: SummaryMode, text: str) -> bool:
+    stripped_text = text.strip()
+    if len(stripped_text.split()) < 35:
+        return False
+
+    if _looks_incomplete(stripped_text):
+        return False
+
+    if mode == "short":
+        bullet_count = sum(
+            1
+            for line in stripped_text.splitlines()
+            if line.lstrip().startswith(("-", "*"))
+        )
+        return bullet_count >= 3
+
+    return True
+
+
+def _looks_incomplete(text: str) -> bool:
+    last_line = next(
+        (line.strip() for line in reversed(text.splitlines()) if line.strip()),
+        "",
+    )
+    if not last_line:
+        return True
+
+    return last_line[-1] not in {".", "!", "?", ")", "]"}
 
 
 def _select_source_chunks(chunks: list[TranscriptChunk], mode: SummaryMode) -> list[TranscriptChunk]:

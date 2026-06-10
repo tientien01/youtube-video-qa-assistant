@@ -34,7 +34,7 @@ class GeminiClient:
             ],
             "generationConfig": {
                 "temperature": 0.2,
-                "maxOutputTokens": 512,
+                "maxOutputTokens": 3072,
             },
         }
 
@@ -58,6 +58,10 @@ def _extract_text(payload: dict) -> str:
         raise LlmError("Gemini response did not include candidates.")
 
     first_candidate = candidates[0]
+    finish_reason = first_candidate.get("finishReason")
+    if finish_reason == "MAX_TOKENS":
+        raise LlmError("Gemini response was truncated because it reached the token limit.")
+
     content = first_candidate.get("content") or {}
     parts = content.get("parts") or []
     text = "\n".join(

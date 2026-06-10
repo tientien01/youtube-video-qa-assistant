@@ -1,10 +1,20 @@
 import hashlib
 import math
+from typing import Protocol
 
+from app.core.config import get_settings
 from app.services.rag.text_processing import clean_text, tokenize
 
 
 EMBEDDING_DIMENSIONS = 256
+
+
+class EmbeddingService(Protocol):
+    def embed_text(self, text: str) -> list[float]:
+        ...
+
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        ...
 
 
 class HashingEmbeddingService:
@@ -21,6 +31,39 @@ class HashingEmbeddingService:
                 _add_feature(vector, f"ngram:{ngram}", 0.35)
 
         return _normalize(vector)
+
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        return [self.embed_text(text) for text in texts]
+
+
+class SentenceTransformerEmbeddingService:
+    def __init__(self, model_name: str) -> None:
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as error:
+            raise RuntimeError(
+                "sentence-transformers is required when EMBEDDING_PROVIDER=sentence_transformers."
+            ) from error
+
+        self._model_name = model_name
+        self._model = SentenceTransformer(model_name)
+
+    def embed_text(self, text: str) -> list[float]:
+        return self.embed_texts([text])[0]
+
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+
+        embeddings = self._model.encode(
+            texts,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+        )
+        return [
+            [round(float(value), 6) for value in embedding]
+            for embedding in embeddings
+        ]
 
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:
@@ -53,4 +96,16 @@ def _normalize(vector: list[float]) -> list[float]:
     return [round(value / magnitude, 6) for value in vector]
 
 
-embedding_service = HashingEmbeddingService()
+def build_embedding_service(provider: str | None = None, model_name: str | None = None) -> EmbeddingService:
+    settings = get_settings()
+    selected_provider = (provider or settings.embedding_provider).lower()
+    if selected_provider == "hashing":
+        return HashingEmbeddingService()
+
+    if selected_provider in {"sentence_transformers", "sentence-transformers"}:
+        return SentenceTransformerEmbeddingService(model_name or settings.embedding_model_name)
+
+    raise ValueError(f"Unsupported embedding provider: {selected_provider}")
+
+
+embedding_service = build_embedding_service()

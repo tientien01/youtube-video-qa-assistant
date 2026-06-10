@@ -1,7 +1,9 @@
 from typing import Literal
 
+from app.core.config import get_settings
 from app.services.rag.local_store import VideoNotIndexedError, rag_store
 from app.services.rag.models import RetrievedChunk
+from app.services.rag.reranker import reranker
 from app.services.rag.vector_store import vector_store
 
 
@@ -15,16 +17,21 @@ def retrieve_chunks(
     mode: RetrievalMode = "hybrid",
     top_k: int = 4,
 ) -> list[RetrievedChunk]:
+    candidate_top_k = _candidate_top_k(top_k)
+
     if mode == "bm25":
-        return rag_store.retrieve(video_id=video_id, question=question, top_k=top_k)
+        candidates = rag_store.retrieve(video_id=video_id, question=question, top_k=candidate_top_k)
+        return _maybe_rerank(question=question, candidates=candidates, top_k=top_k)
 
     _ensure_vector_index(video_id)
 
     if mode == "embedding":
-        return vector_store.retrieve(video_id=video_id, question=question, top_k=top_k)
+        candidates = vector_store.retrieve(video_id=video_id, question=question, top_k=candidate_top_k)
+        return _maybe_rerank(question=question, candidates=candidates, top_k=top_k)
 
     if mode == "hybrid":
-        return _retrieve_hybrid(video_id=video_id, question=question, top_k=top_k)
+        candidates = _retrieve_hybrid(video_id=video_id, question=question, top_k=candidate_top_k)
+        return _maybe_rerank(question=question, candidates=candidates, top_k=top_k)
 
     raise ValueError(f"Unsupported retrieval mode: {mode}")
 
@@ -56,6 +63,27 @@ def _retrieve_hybrid(video_id: str, question: str, top_k: int) -> list[Retrieved
     ]
     scored_chunks.sort(key=lambda item: item.score, reverse=True)
     return [item for item in scored_chunks[:top_k] if item.score > 0]
+
+
+def _candidate_top_k(top_k: int) -> int:
+    settings = get_settings()
+    if not settings.reranker_enabled:
+        return top_k
+
+    return max(top_k, settings.rerank_top_k)
+
+
+def _maybe_rerank(
+    *,
+    question: str,
+    candidates: list[RetrievedChunk],
+    top_k: int,
+) -> list[RetrievedChunk]:
+    settings = get_settings()
+    if not settings.reranker_enabled:
+        return candidates[:top_k]
+
+    return reranker.rerank(question=question, candidates=candidates, top_k=top_k)
 
 
 def _ensure_vector_index(video_id: str) -> None:

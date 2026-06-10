@@ -14,6 +14,7 @@ MVP hiện có:
 - Lưu RAG index local bằng JSON.
 - Retrieval baseline theo BM25-style lexical search.
 - Retrieval modes: `bm25`, `embedding`, `hybrid`.
+- Optional semantic retrieval stack với `sentence-transformers`, ChromaDB và reranking.
 - Optional LLM grounded answer với Gemini API.
 - Fallback extractive answer khi chưa cấu hình API key.
 - Summary fallback theo các mode `short`, `detailed`, `timeline`.
@@ -84,6 +85,23 @@ $env:LLM_TIMEOUT_SECONDS="20"
 
 Không commit API key hoặc file `.env`.
 
+## Optional semantic retrieval config
+
+Mặc định backend vẫn dùng hashing embedding và local JSON vector store để chạy nhẹ, ổn định và không cần tải model.
+
+Nếu muốn bật Phase I semantic retrieval stack, cài lại backend dependencies rồi set environment variables trước khi chạy backend:
+
+```powershell
+$env:EMBEDDING_PROVIDER="sentence_transformers"
+$env:EMBEDDING_MODEL_NAME="all-MiniLM-L6-v2"
+$env:VECTOR_STORE_PROVIDER="chroma"
+$env:CHROMA_PERSIST_DIR="data/vector_store/chroma"
+$env:RERANKER_ENABLED="true"
+$env:RERANK_TOP_K="12"
+```
+
+BM25 vẫn được giữ làm baseline và `hybrid` vẫn kết hợp lexical retrieval với vector retrieval. ChromaDB lưu dữ liệu trong `backend/data/`, không commit thư mục này.
+
 ## Setup frontend
 
 Chạy trong thư mục `frontend`:
@@ -124,4 +142,7 @@ Phase kỹ thuật RAG hiện có retrieval baseline:
 
 - Local hashing embedding.
 - Local vector store bằng JSON.
+- Optional sentence-transformers embedding adapter.
+- Optional ChromaDB vector store adapter.
+- Optional lexical reranking.
 - Hybrid retrieval kết hợp BM25 và embedding score.

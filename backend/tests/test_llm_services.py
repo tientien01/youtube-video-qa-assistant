@@ -39,12 +39,39 @@ class GeminiClientTest(unittest.TestCase):
             http_post.last_json["contents"][0]["parts"][0]["text"],
             "Use transcript only.",
         )
+        self.assertEqual(
+            http_post.last_json["generationConfig"]["maxOutputTokens"],
+            3072,
+        )
 
     def test_generate_text_raises_llm_error_when_http_fails(self):
         client = GeminiClient(
             api_key="test-key",
             model="gemini-test-model",
             http_post=FakeHttpPost(FailingResponse()),
+        )
+
+        with self.assertRaises(LlmError):
+            client.generate_text("Use transcript only.")
+
+    def test_generate_text_raises_llm_error_when_response_is_truncated(self):
+        client = GeminiClient(
+            api_key="test-key",
+            model="gemini-test-model",
+            http_post=FakeHttpPost(
+                FakeResponse(
+                    {
+                        "candidates": [
+                            {
+                                "finishReason": "MAX_TOKENS",
+                                "content": {
+                                    "parts": [{"text": "Partial answer"}],
+                                },
+                            }
+                        ],
+                    }
+                )
+            ),
         )
 
         with self.assertRaises(LlmError):

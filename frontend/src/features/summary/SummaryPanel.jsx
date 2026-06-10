@@ -72,8 +72,12 @@ export function SummaryPanel({
                   rel="noreferrer"
                   key={source.chunk_id}
                 >
-                  <span>{formatTimestamp(source.start_seconds)}</span>
-                  <span>{source.text}</span>
+                  <span>
+                    {formatTimestamp(source.start_seconds)}
+                    {'-'}
+                    {formatTimestamp(source.end_seconds)}
+                  </span>
+                  <span>{buildSourceExcerpt(source.text)}</span>
                 </a>
               ))}
             </div>
@@ -88,4 +92,13 @@ export function SummaryPanel({
 
 function formatGeneration(generation) {
   return `${generation.generation_mode}:${generation.provider}`
+}
+
+function buildSourceExcerpt(text) {
+  const normalizedText = text.replace(/\s+/g, ' ').trim()
+  if (normalizedText.length <= 220) {
+    return normalizedText
+  }
+
+  return `${normalizedText.slice(0, 217).trim()}...`
 }

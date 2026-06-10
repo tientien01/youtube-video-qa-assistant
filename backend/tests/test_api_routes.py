@@ -1,7 +1,12 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+
+os.environ["LLM_PROVIDER"] = "fallback"
+os.environ["EMBEDDING_PROVIDER"] = "hashing"
+os.environ["VECTOR_STORE_PROVIDER"] = "local_json"
 
 from fastapi.testclient import TestClient
 
