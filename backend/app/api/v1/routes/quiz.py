@@ -20,6 +20,9 @@ def create_quiz(video_id: str, request: QuizRequest) -> QuizResponse:
             question_count=request.question_count,
             difficulty=request.difficulty,
             question_type=request.question_type,
+            mode=request.mode,
+            force=request.force,
+            source_chunk_ids=request.source_chunk_ids,
         )
     except VideoNotIndexedError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error

@@ -15,6 +15,6 @@ router = APIRouter(prefix="/videos", tags=["summary"])
 )
 def summarize_video(video_id: str, request: SummaryRequest) -> SummaryResponse:
     try:
-        return generate_video_summary(video_id=video_id, mode=request.mode)
+        return generate_video_summary(video_id=video_id, mode=request.mode, force=request.force)
     except VideoNotIndexedError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error

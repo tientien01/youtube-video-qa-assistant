@@ -70,6 +70,38 @@ class LocalGeneratedOutputStore:
         self._save()
         return generated_output
 
+    def upsert_outputs(
+        self,
+        outputs: list[GeneratedOutput],
+    ) -> None:
+        self._ensure_loaded()
+        if not outputs:
+            return
+
+        for output in outputs:
+            existing_output = self.get_output(
+                video_id=output.video_id,
+                output_type=output.output_type,
+                mode=output.mode,
+            )
+            generated_output = GeneratedOutput(
+                video_id=output.video_id,
+                output_type=output.output_type,
+                mode=output.mode,
+                content=output.content,
+                source_chunk_ids=output.source_chunk_ids,
+                created_at=existing_output.created_at if existing_output else output.created_at,
+                updated_at=output.updated_at,
+                generation_mode=output.generation_mode,
+                provider=output.provider,
+                fallback_reason=output.fallback_reason,
+            )
+            self._outputs.setdefault(output.output_type, {}).setdefault(output.video_id, {})[
+                output.mode
+            ] = generated_output
+
+        self._save()
+
     def delete_video(self, video_id: str) -> bool:
         self._ensure_loaded()
         deleted = False

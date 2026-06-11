@@ -1,10 +1,13 @@
 import logging
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 
+
+os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
 
 logging.basicConfig(
     level=logging.INFO,

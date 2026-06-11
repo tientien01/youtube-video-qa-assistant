@@ -172,7 +172,7 @@ function App() {
     )
   }
 
-  async function handleGenerateSummary(mode) {
+  async function handleGenerateSummary({ mode, force = false }) {
     if (!video) {
       return
     }
@@ -184,6 +184,7 @@ function App() {
       const response = await generateVideoSummary({
         videoId: video.video_id,
         mode,
+        force,
       })
       setSummary(response)
     } catch (requestError) {
@@ -193,7 +194,7 @@ function App() {
     }
   }
 
-  async function handleGenerateNotes({ mode, learningGoal, force }) {
+  async function handleGenerateNotes({ mode, length, learningGoal, force }) {
     if (!video) {
       return
     }
@@ -205,6 +206,7 @@ function App() {
       const response = await generateStudyNotes({
         videoId: video.video_id,
         mode,
+        length,
         learningGoal,
         force,
       })
@@ -216,7 +218,14 @@ function App() {
     }
   }
 
-  async function handleGenerateQuiz({ questionCount, difficulty, questionType }) {
+  async function handleGenerateQuiz({
+    questionCount,
+    difficulty,
+    questionType,
+    mode,
+    force,
+    sourceChunkIds,
+  }) {
     if (!video) {
       return
     }
@@ -230,6 +239,9 @@ function App() {
         questionCount,
         difficulty,
         questionType,
+        mode,
+        force,
+        sourceChunkIds,
       })
       setQuiz(response)
     } catch (requestError) {

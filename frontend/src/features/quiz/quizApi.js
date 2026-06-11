@@ -5,6 +5,9 @@ export async function generateVideoQuiz({
   questionCount,
   difficulty,
   questionType,
+  mode = 'practice',
+  force = false,
+  sourceChunkIds = [],
 }) {
   const response = await fetch(`${API_BASE_URL}/videos/${videoId}/quiz`, {
     method: 'POST',
@@ -15,6 +18,9 @@ export async function generateVideoQuiz({
       question_count: questionCount,
       difficulty,
       question_type: questionType,
+      mode,
+      force,
+      source_chunk_ids: sourceChunkIds,
     }),
   })
 

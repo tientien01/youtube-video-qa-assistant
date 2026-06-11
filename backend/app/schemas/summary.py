@@ -10,6 +10,7 @@ SummaryMode = Literal["short", "detailed", "timeline"]
 
 class SummaryRequest(BaseModel):
     mode: SummaryMode = "short"
+    force: bool = False
 
 
 class SummarySource(BaseModel):

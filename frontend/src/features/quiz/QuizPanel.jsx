@@ -54,7 +54,70 @@ export function QuizPanel({
       questionCount: Number(formData.get('question-count')),
       difficulty: formData.get('difficulty'),
       questionType: formData.get('question-type'),
+      mode: formData.get('quiz-mode'),
+      force: false,
+      sourceChunkIds: [],
     })
+  }
+
+  function handleRegenerate(event) {
+    const form = event.currentTarget.form
+    if (!form) {
+      return
+    }
+
+    const formData = new FormData(form)
+    setAnswers({})
+    setIsChecked(false)
+    setReviewFilter('all')
+    onGenerate({
+      questionCount: Number(formData.get('question-count')),
+      difficulty: formData.get('difficulty'),
+      questionType: formData.get('question-type'),
+      mode: formData.get('quiz-mode'),
+      force: true,
+      sourceChunkIds: [],
+    })
+  }
+
+  function handleGenerateFromMissed() {
+    if (!score || !quiz) {
+      return
+    }
+
+    const sourceChunkIds = quiz.questions
+      .filter((question) => score.missedIds.includes(question.question_id))
+      .map((question) => question.source.chunk_id)
+
+    if (sourceChunkIds.length === 0) {
+      return
+    }
+
+    onGenerate({
+      questionCount: Math.min(sourceChunkIds.length, 10),
+      difficulty: quiz.difficulty,
+      questionType: quiz.question_type,
+      mode: quiz.mode || 'practice',
+      force: true,
+      sourceChunkIds,
+    })
+    setAnswers({})
+    setIsChecked(false)
+    setReviewFilter('all')
+  }
+
+  function handleGenerateFromSource(sourceChunkId) {
+    onGenerate({
+      questionCount: 3,
+      difficulty: quiz?.difficulty || 'medium',
+      questionType: 'mixed',
+      mode: 'concept_check',
+      force: true,
+      sourceChunkIds: [sourceChunkId],
+    })
+    setAnswers({})
+    setIsChecked(false)
+    setReviewFilter('all')
   }
 
   function updateAnswer(questionId, answer) {
@@ -142,8 +205,20 @@ export function QuizPanel({
           </select>
         </label>
 
+        <label className="quiz-field" htmlFor="quiz-mode">
+          Chế độ
+          <select id="quiz-mode" name="quiz-mode" defaultValue="practice" disabled={isLoading}>
+            <option value="practice">Practice</option>
+            <option value="exam">Exam</option>
+            <option value="concept_check">Concept check</option>
+          </select>
+        </label>
+
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Đang tạo...' : 'Tạo quiz'}
+        </button>
+        <button type="button" onClick={handleRegenerate} disabled={isLoading}>
+          Tạo lại
         </button>
       </form>
 
@@ -153,10 +228,16 @@ export function QuizPanel({
         <div className="quiz-result">
           <div className="answer-heading">
             <p className="question-text">
-              {quiz.question_type} · {quiz.difficulty}
+              {quiz.question_type} · {quiz.difficulty} · {quiz.mode || 'practice'}
             </p>
             <span>{quiz.cached ? 'cached' : 'new'}</span>
           </div>
+          {quiz.generation ? (
+            <p className="muted-text">Generation: {quiz.generation.generation_mode}:{quiz.generation.provider}</p>
+          ) : null}
+          {quiz.attempt_id ? (
+            <p className="muted-text">Attempt: {quiz.attempt_id}</p>
+          ) : null}
 
           <div className="quiz-list">
             {displayedQuestions.length === 0 ? (
@@ -222,6 +303,13 @@ export function QuizPanel({
                   <span>{formatTimestamp(question.source.start_seconds)}</span>
                   <span>{question.source.text}</span>
                 </a>
+                <button
+                  className="quiz-source-action"
+                  type="button"
+                  onClick={() => handleGenerateFromSource(question.source.chunk_id)}
+                >
+                  Tạo quiz từ nguồn này
+                </button>
               </article>
             ))}
           </div>
@@ -243,6 +331,9 @@ export function QuizPanel({
                 </button>
                 <button type="button" onClick={handleRetryMissed} disabled={score.missedIds.length === 0}>
                   Làm lại câu sai
+                </button>
+                <button type="button" onClick={handleGenerateFromMissed} disabled={score.missedIds.length === 0}>
+                  Tạo quiz từ câu sai
                 </button>
                 <p className="quiz-score">
                   Điểm tự động: {score.correctCount}/{score.totalCount} câu trắc nghiệm

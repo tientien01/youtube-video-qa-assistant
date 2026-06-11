@@ -2,6 +2,11 @@ from dataclasses import dataclass
 
 from app.schemas.generation import GenerationMetadata
 from app.services.llm.base import LlmClient
+from app.services.llm.context_budget import (
+    COMPACT_DIRECT_CONTEXT_CHARS,
+    compact_retrieved_chunks,
+    is_token_limit_failure,
+)
 from app.services.llm.generation import generate_optional_llm_result
 from app.services.llm.prompt_builder import build_grounded_answer_prompt
 from app.services.rag.models import RetrievedChunk
@@ -40,15 +45,28 @@ def generate_answer_with_metadata(
             ),
         )
 
+    compacted_chunks = compact_retrieved_chunks(retrieved_chunks)
     prompt = build_grounded_answer_prompt(
         question=question,
-        retrieved_chunks=retrieved_chunks,
+        retrieved_chunks=compacted_chunks,
     )
     llm_result = generate_optional_llm_result(
         prompt,
         llm_client=llm_client,
         fallback_log_message="LLM answer generation failed, using fallback answer",
     )
+    if llm_result.text is None and is_token_limit_failure(llm_result.fallback_reason):
+        compacted_chunks = compact_retrieved_chunks(
+            retrieved_chunks,
+            max_total_chars=COMPACT_DIRECT_CONTEXT_CHARS,
+            max_chunk_chars=450,
+        )
+        llm_result = generate_optional_llm_result(
+            build_grounded_answer_prompt(question=question, retrieved_chunks=compacted_chunks),
+            llm_client=llm_client,
+            fallback_log_message="LLM answer retry failed, using fallback answer",
+        )
+
     if llm_result.text is not None:
         return AnswerGenerationResult(
             answer=llm_result.text,

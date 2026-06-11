@@ -112,6 +112,7 @@ class ChromaVectorStore:
     ) -> None:
         try:
             import chromadb
+            from chromadb.config import Settings as ChromaSettings
         except ImportError as error:
             raise RuntimeError("chromadb is required when VECTOR_STORE_PROVIDER=chroma.") from error
 
@@ -119,7 +120,10 @@ class ChromaVectorStore:
         self._persist_directory = persist_directory or settings.chroma_persist_dir
         self._embedding_service = text_embedding_service or embedding_service
         self._persist_directory.mkdir(parents=True, exist_ok=True)
-        self._client = chromadb.PersistentClient(path=str(self._persist_directory))
+        self._client = chromadb.PersistentClient(
+            path=str(self._persist_directory),
+            settings=ChromaSettings(anonymized_telemetry=False),
+        )
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
             metadata={"hnsw:space": "cosine"},

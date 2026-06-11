@@ -19,6 +19,7 @@ def create_study_notes(video_id: str, request: StudyNotesRequest | None = None) 
         return generate_study_notes(
             video_id=video_id,
             mode=resolved_request.mode,
+            length=resolved_request.length,
             learning_goal=resolved_request.learning_goal,
             force=resolved_request.force,
         )

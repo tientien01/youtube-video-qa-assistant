@@ -10,7 +10,17 @@ export function SummaryPanel({
   function handleSubmit(event) {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
-    onGenerate(formData.get('summary-mode'))
+    onGenerate({ mode: formData.get('summary-mode'), force: false })
+  }
+
+  function handleRegenerate(event) {
+    const form = event.currentTarget.form
+    if (!form) {
+      return
+    }
+
+    const formData = new FormData(form)
+    onGenerate({ mode: formData.get('summary-mode'), force: true })
   }
 
   if (!video) {
@@ -40,6 +50,9 @@ export function SummaryPanel({
         </label>
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Đang tạo...' : 'Tạo summary'}
+        </button>
+        <button type="button" onClick={handleRegenerate} disabled={isLoading}>
+          Tạo lại
         </button>
       </form>
 

@@ -12,6 +12,7 @@ export function NotesPanel({
     const formData = new FormData(event.currentTarget)
     onGenerate({
       mode: formData.get('notes-mode'),
+      length: formData.get('notes-length'),
       learningGoal: formData.get('learning-goal').trim(),
       force: false,
     })
@@ -26,6 +27,7 @@ export function NotesPanel({
     const formData = new FormData(form)
     onGenerate({
       mode: formData.get('notes-mode'),
+      length: formData.get('notes-length'),
       learningGoal: formData.get('learning-goal').trim(),
       force: true,
     })
@@ -56,6 +58,16 @@ export function NotesPanel({
             <option value="timeline">Timeline</option>
             <option value="exam_review">Ôn thi</option>
             <option value="beginner">Dễ hiểu</option>
+            <option value="flashcards">Flashcards</option>
+            <option value="concept_map">Concept map</option>
+          </select>
+        </label>
+        <label className="notes-field" htmlFor="notes-length">
+          Độ dài
+          <select id="notes-length" name="notes-length" disabled={isLoading} defaultValue={notes?.length || 'medium'}>
+            <option value="short">Ngắn</option>
+            <option value="medium">Vừa</option>
+            <option value="long">Dài</option>
           </select>
         </label>
         <label className="notes-field notes-goal-field" htmlFor="learning-goal">
@@ -135,6 +147,8 @@ function formatMode(mode) {
     timeline: 'timeline',
     exam_review: 'ôn thi',
     beginner: 'dễ hiểu',
+    flashcards: 'flashcards',
+    concept_map: 'concept map',
   }
 
   return labels[mode] || mode

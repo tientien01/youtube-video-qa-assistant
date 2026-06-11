@@ -1,14 +1,26 @@
 import json
+import re
 
+from app.schemas.generation import GenerationMetadata
 from app.schemas.quiz import (
     GeneratedQuizQuestionType,
     QuizDifficulty,
+    QuizMode,
     QuizQuestion,
     QuizQuestionType,
     QuizResponse,
     QuizSource,
 )
+from app.services.llm.base import LlmClient
+from app.services.llm.context_budget import (
+    COMPACT_DIRECT_CONTEXT_CHARS,
+    compact_transcript_chunks,
+    is_token_limit_failure,
+)
+from app.services.llm.generation import generate_optional_llm_result
+from app.services.llm.prompt_builder import build_quiz_prompt
 from app.services.learning.generated_output_store import generated_output_store
+from app.services.learning.quiz_attempt_store import quiz_attempt_store
 from app.services.rag.local_store import VideoNotIndexedError, rag_store
 from app.services.rag.models import TranscriptChunk
 
@@ -22,57 +34,109 @@ def generate_quiz(
     question_count: int = 5,
     difficulty: QuizDifficulty = "medium",
     question_type: QuizQuestionType = "mixed",
+    mode: QuizMode = "practice",
+    force: bool = False,
+    source_chunk_ids: list[str] | None = None,
+    llm_client: LlmClient | None = None,
 ) -> QuizResponse:
     chunks = rag_store.get_video_chunks(video_id)
     if not chunks:
         raise VideoNotIndexedError("Video has not been indexed yet.")
 
-    mode = _build_cache_mode(
+    selected_source_chunk_ids = source_chunk_ids or []
+    quiz_mode = mode
+    cache_mode = _build_cache_mode(
         question_count=question_count,
         difficulty=difficulty,
         question_type=question_type,
+        mode=quiz_mode,
+        source_chunk_ids=selected_source_chunk_ids,
     )
     cached_output = generated_output_store.get_output(
         video_id=video_id,
         output_type=QUIZ_OUTPUT_TYPE,
-        mode=mode,
+        mode=cache_mode,
     )
     chunk_by_id = {chunk.chunk_id: chunk for chunk in chunks}
 
-    if cached_output is not None:
+    if cached_output is not None and not force:
         questions = [
             _question_from_payload(question_payload, chunk_by_id)
             for question_payload in json.loads(cached_output.content)
             if question_payload["source_chunk_id"] in chunk_by_id
         ]
+        attempt = quiz_attempt_store.add_attempt(
+            video_id=video_id,
+            mode=quiz_mode,
+            difficulty=difficulty,
+            question_type=question_type,
+            question_count=len(questions),
+            source_chunk_ids=[question.source.chunk_id for question in questions],
+        )
         return QuizResponse(
             video_id=video_id,
             difficulty=difficulty,
             question_type=question_type,
+            mode=quiz_mode,
+            attempt_id=attempt.attempt_id,
             questions=questions,
             sources=_unique_sources([question.source for question in questions]),
             cached=True,
+            generation=GenerationMetadata(
+                generation_mode="cached",
+                provider=cached_output.provider,
+                fallback_reason=cached_output.fallback_reason,
+            ),
         )
 
-    source_chunks = _select_source_chunks(chunks, question_count)
-    questions = [
-        _build_question(
-            chunk=chunk,
+    source_chunks = _select_source_chunks(
+        chunks=chunks,
+        question_count=question_count,
+        source_chunk_ids=selected_source_chunk_ids,
+    )
+    questions, generation = _generate_llm_quiz(
+        chunks=source_chunks,
+        question_count=question_count,
+        difficulty=difficulty,
+        question_type=question_type,
+        mode=quiz_mode,
+        llm_client=llm_client,
+    )
+    if not questions:
+        questions = _build_fallback_questions(
             chunks=chunks,
-            index=index,
-            question_type=_resolve_question_type(question_type, index),
+            source_chunks=source_chunks,
+            question_count=question_count,
             difficulty=difficulty,
+            question_type=question_type,
+            mode=quiz_mode,
         )
-        for index, chunk in enumerate(source_chunks, start=1)
-    ]
+        if generation is None:
+            generation = GenerationMetadata(
+                generation_mode="fallback",
+                provider="fallback",
+                fallback_reason="LLM quiz generation is not configured.",
+            )
+
     generated_output_store.upsert_output(
         video_id=video_id,
         output_type=QUIZ_OUTPUT_TYPE,
-        mode=mode,
+        mode=cache_mode,
         content=json.dumps(
             [_question_to_payload(question) for question in questions],
             ensure_ascii=False,
         ),
+        source_chunk_ids=[question.source.chunk_id for question in questions],
+        generation_mode=generation.generation_mode,
+        provider=generation.provider,
+        fallback_reason=generation.fallback_reason,
+    )
+    attempt = quiz_attempt_store.add_attempt(
+        video_id=video_id,
+        mode=quiz_mode,
+        difficulty=difficulty,
+        question_type=question_type,
+        question_count=len(questions),
         source_chunk_ids=[question.source.chunk_id for question in questions],
     )
 
@@ -80,9 +144,12 @@ def generate_quiz(
         video_id=video_id,
         difficulty=difficulty,
         question_type=question_type,
+        mode=quiz_mode,
+        attempt_id=attempt.attempt_id,
         questions=questions,
         sources=_unique_sources([question.source for question in questions]),
         cached=False,
+        generation=generation,
     )
 
 
@@ -91,24 +158,223 @@ def _build_cache_mode(
     question_count: int,
     difficulty: QuizDifficulty,
     question_type: QuizQuestionType,
+    mode: QuizMode,
+    source_chunk_ids: list[str],
 ) -> str:
-    return f"{question_type}:{difficulty}:{question_count}"
+    source_key = ""
+    if source_chunk_ids:
+        source_key = ":" + ",".join(sorted(source_chunk_ids[:8]))
+
+    return f"{mode}:{question_type}:{difficulty}:{question_count}{source_key}"
 
 
-def _select_source_chunks(chunks: list[TranscriptChunk], question_count: int) -> list[TranscriptChunk]:
-    selected_chunks: list[TranscriptChunk] = []
-    for index in range(question_count):
-        selected_chunks.append(chunks[index % len(chunks)])
+def _select_source_chunks(
+    *,
+    chunks: list[TranscriptChunk],
+    question_count: int,
+    source_chunk_ids: list[str],
+) -> list[TranscriptChunk]:
+    if source_chunk_ids:
+        chunks_by_id = {chunk.chunk_id: chunk for chunk in chunks}
+        selected_chunks = [
+            chunks_by_id[chunk_id]
+            for chunk_id in source_chunk_ids
+            if chunk_id in chunks_by_id
+        ]
+        if selected_chunks:
+            return selected_chunks[:question_count]
 
-    return selected_chunks
+    if len(chunks) <= question_count:
+        return chunks
+
+    step = (len(chunks) - 1) / max(question_count - 1, 1)
+    indexes = sorted({round(index * step) for index in range(question_count)})
+    return [chunks[index] for index in indexes]
+
+
+def _generate_llm_quiz(
+    *,
+    chunks: list[TranscriptChunk],
+    question_count: int,
+    difficulty: QuizDifficulty,
+    question_type: QuizQuestionType,
+    mode: QuizMode,
+    llm_client: LlmClient | None,
+) -> tuple[list[QuizQuestion], GenerationMetadata | None]:
+    compacted_chunks = compact_transcript_chunks(
+        chunks,
+        max_total_chars=6500,
+        max_chunk_chars=700,
+    )
+    prompt = build_quiz_prompt(
+        chunks=compacted_chunks,
+        question_count=question_count,
+        difficulty=difficulty,
+        question_type=question_type,
+        mode=mode,
+    )
+    llm_result = generate_optional_llm_result(
+        prompt,
+        llm_client=llm_client,
+        fallback_log_message="LLM quiz generation failed, using fallback quiz",
+    )
+    if llm_result.text is None:
+        if is_token_limit_failure(llm_result.fallback_reason):
+            compacted_chunks = compact_transcript_chunks(
+                chunks,
+                max_total_chars=COMPACT_DIRECT_CONTEXT_CHARS,
+                max_chunk_chars=350,
+            )
+            llm_result = generate_optional_llm_result(
+                build_quiz_prompt(
+                    chunks=compacted_chunks,
+                    question_count=question_count,
+                    difficulty=difficulty,
+                    question_type=question_type,
+                    mode=mode,
+                ),
+                llm_client=llm_client,
+                fallback_log_message="LLM quiz retry failed, using fallback quiz",
+            )
+
+    if llm_result.text is None:
+        return [], GenerationMetadata(
+            generation_mode="fallback",
+            provider=llm_result.provider,
+            fallback_reason=llm_result.fallback_reason,
+        )
+
+    try:
+        questions = _questions_from_llm_payload(
+            llm_result.text,
+            chunks_by_id={chunk.chunk_id: chunk for chunk in chunks},
+            question_type=question_type,
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+        return [], GenerationMetadata(
+            generation_mode="fallback",
+            provider=llm_result.provider,
+            fallback_reason=f"LLM quiz JSON could not be parsed: {error}",
+        )
+
+    return questions[:question_count], GenerationMetadata(
+        generation_mode="llm",
+        provider=llm_result.provider,
+        fallback_reason=None,
+    )
+
+
+def _questions_from_llm_payload(
+    text: str,
+    *,
+    chunks_by_id: dict[str, TranscriptChunk],
+    question_type: QuizQuestionType,
+) -> list[QuizQuestion]:
+    payload = json.loads(_extract_json_object(text))
+    raw_questions = payload.get("questions")
+    if not isinstance(raw_questions, list):
+        raise ValueError("Missing questions list.")
+
+    questions = []
+    for index, raw_question in enumerate(raw_questions, start=1):
+        source_chunk_id = str(raw_question["source_chunk_id"])
+        if source_chunk_id not in chunks_by_id:
+            continue
+
+        resolved_question_type = _coerce_generated_question_type(
+            str(raw_question["question_type"]),
+            requested_type=question_type,
+        )
+        options = list(raw_question.get("options") or [])
+        if resolved_question_type == "true_false":
+            options = ["Đúng", "Sai"]
+        if resolved_question_type == "short_answer":
+            options = []
+        if resolved_question_type == "multiple_choice" and len(options) != 4:
+            continue
+
+        correct_answer = str(raw_question["correct_answer"])
+        if options and correct_answer not in options:
+            continue
+
+        chunk = chunks_by_id[source_chunk_id]
+        questions.append(
+            QuizQuestion(
+                question_id=f"{source_chunk_id}-llm-q{index}",
+                question_type=resolved_question_type,
+                question=str(raw_question["question"]),
+                options=options,
+                correct_answer=correct_answer,
+                explanation=str(raw_question["explanation"]),
+                source=_chunk_to_source(chunk),
+            )
+        )
+
+    return questions
+
+
+def _extract_json_object(text: str) -> str:
+    stripped_text = text.strip()
+    if stripped_text.startswith("```"):
+        stripped_text = re.sub(r"^```(?:json)?", "", stripped_text).strip()
+        stripped_text = re.sub(r"```$", "", stripped_text).strip()
+
+    start = stripped_text.find("{")
+    end = stripped_text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError("No JSON object found.")
+
+    return stripped_text[start:end + 1]
+
+
+def _coerce_generated_question_type(
+    generated_type: str,
+    *,
+    requested_type: QuizQuestionType,
+) -> GeneratedQuizQuestionType:
+    if requested_type in {"multiple_choice", "true_false", "short_answer"}:
+        return requested_type
+
+    if generated_type in {"multiple_choice", "true_false", "short_answer"}:
+        return generated_type
+
+    return "multiple_choice"
+
+
+def _build_fallback_questions(
+    *,
+    chunks: list[TranscriptChunk],
+    source_chunks: list[TranscriptChunk],
+    question_count: int,
+    difficulty: QuizDifficulty,
+    question_type: QuizQuestionType,
+    mode: QuizMode,
+) -> list[QuizQuestion]:
+    return [
+        _build_question(
+            chunk=chunk,
+            chunks=chunks,
+            index=index,
+            question_type=_resolve_question_type(question_type, index, mode=mode),
+            difficulty=difficulty,
+        )
+        for index, chunk in enumerate(source_chunks[:question_count], start=1)
+    ]
 
 
 def _resolve_question_type(
     question_type: QuizQuestionType,
     index: int,
+    mode: QuizMode = "practice",
 ) -> GeneratedQuizQuestionType:
     if question_type != "mixed":
         return question_type
+
+    if mode == "concept_check":
+        return "short_answer" if index % 3 == 0 else "multiple_choice"
+
+    if mode == "exam":
+        return "multiple_choice" if index % 3 else "short_answer"
 
     return "multiple_choice" if index % 2 else "true_false"
 
@@ -197,9 +463,10 @@ def _build_explanation(chunk: TranscriptChunk, difficulty: QuizDifficulty) -> st
         "medium": "Câu hỏi yêu cầu đối chiếu ý chính với đoạn transcript nguồn.",
         "hard": "Câu hỏi yêu cầu hiểu ý chính và xem lại nguồn để tránh nhầm với đoạn khác.",
     }[difficulty]
+    source_note = _shorten_text(chunk.text, max_length=220)
     return (
-        f"{difficulty_note} Nguồn nằm trong đoạn "
-        f"{_format_timestamp(chunk.start_seconds)}-{_format_timestamp(chunk.end_seconds)}."
+        f"{difficulty_note} Đáp án dựa trên ý trong transcript: \"{source_note}\" "
+        f"Nguồn nằm trong đoạn {_format_timestamp(chunk.start_seconds)}-{_format_timestamp(chunk.end_seconds)}."
     )
 
 
@@ -213,6 +480,14 @@ def _question_to_payload(question: QuizQuestion) -> dict[str, object]:
         "explanation": question.explanation,
         "source_chunk_id": question.source.chunk_id,
     }
+
+
+def _response_mode_from_cache_mode(cache_mode: str) -> QuizMode:
+    mode = cache_mode.split(":", maxsplit=1)[0]
+    if mode in {"practice", "exam", "concept_check"}:
+        return mode
+
+    return "practice"
 
 
 def _question_from_payload(

@@ -46,8 +46,15 @@ class GeminiClient:
                 timeout=self._timeout_seconds,
             )
             response.raise_for_status()
-        except httpx.HTTPError as error:
-            raise LlmError("Gemini request failed.") from error
+        except httpx.HTTPStatusError as error:
+            detail = _short_response_text(error.response)
+            raise LlmError(
+                f"Gemini request failed with HTTP {error.response.status_code}: {detail}"
+            ) from error
+        except httpx.TimeoutException as error:
+            raise LlmError("Gemini request timed out.") from error
+        except httpx.RequestError as error:
+            raise LlmError(f"Gemini request failed before receiving a response: {error}") from error
 
         return _extract_text(response.json())
 
@@ -74,3 +81,11 @@ def _extract_text(payload: dict) -> str:
         raise LlmError("Gemini response did not include text.")
 
     return text
+
+
+def _short_response_text(response: httpx.Response) -> str:
+    text = response.text.strip()
+    if not text:
+        return "empty response body"
+
+    return text[:500]
