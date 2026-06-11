@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../../shared/config/api'
+import { requestJson } from '../../shared/api/request'
 
 export async function retrieveDebugContext({
   videoId,
@@ -6,7 +7,7 @@ export async function retrieveDebugContext({
   retrievalMode,
   topK,
 }) {
-  const response = await fetch(`${API_BASE_URL}/debug/retrieve`, {
+  return requestJson(`${API_BASE_URL}/debug/retrieve`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -17,13 +18,5 @@ export async function retrieveDebugContext({
       retrieval_mode: retrievalMode,
       top_k: topK,
     }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.detail || 'Could not run RAG debug.')
-  }
-
-  return data
+  }, 'Could not run RAG debug.')
 }

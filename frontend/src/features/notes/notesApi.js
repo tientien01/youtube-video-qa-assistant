@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../../shared/config/api'
+import { requestJson } from '../../shared/api/request'
 
 export async function generateStudyNotes({
   videoId,
@@ -7,7 +8,7 @@ export async function generateStudyNotes({
   learningGoal = '',
   force = false,
 }) {
-  const response = await fetch(`${API_BASE_URL}/videos/${videoId}/study-notes`, {
+  return requestJson(`${API_BASE_URL}/videos/${videoId}/study-notes`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -18,13 +19,5 @@ export async function generateStudyNotes({
       learning_goal: learningGoal || null,
       force,
     }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.detail || 'Could not generate study notes.')
-  }
-
-  return data
+  }, 'Could not generate study notes.')
 }

@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../../shared/config/api'
+import { requestJson } from '../../shared/api/request'
 
 export async function askVideoQuestion({
   videoId,
@@ -6,7 +7,7 @@ export async function askVideoQuestion({
   retrievalMode,
   sourceChunkIds = [],
 }) {
-  const response = await fetch(`${API_BASE_URL}/chat/ask`, {
+  return requestJson(`${API_BASE_URL}/chat/ask`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -17,37 +18,15 @@ export async function askVideoQuestion({
       retrieval_mode: retrievalMode,
       source_chunk_ids: sourceChunkIds,
     }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.detail || 'Could not send this question.')
-  }
-
-  return data
+  }, 'Could not send this question.')
 }
 
 export async function getChatHistory(videoId) {
-  const response = await fetch(`${API_BASE_URL}/chat/history/${videoId}`)
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.detail || 'Could not load chat history.')
-  }
-
-  return data
+  return requestJson(`${API_BASE_URL}/chat/history/${videoId}`, {}, 'Could not load chat history.')
 }
 
 export async function clearBackendChatHistory(videoId) {
-  const response = await fetch(`${API_BASE_URL}/chat/history/${videoId}`, {
+  return requestJson(`${API_BASE_URL}/chat/history/${videoId}`, {
     method: 'DELETE',
-  })
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.detail || 'Could not clear chat history.')
-  }
-
-  return data
+  }, 'Could not clear chat history.')
 }

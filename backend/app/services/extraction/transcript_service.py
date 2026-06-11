@@ -1,7 +1,13 @@
+from requests import exceptions as requests_exceptions
 from youtube_transcript_api import (
+    CouldNotRetrieveTranscript,
+    IpBlocked,
     NoTranscriptFound,
+    RequestBlocked,
     TranscriptsDisabled,
+    VideoUnavailable,
     YouTubeTranscriptApi,
+    YouTubeRequestFailed,
 )
 from youtube_transcript_api.proxies import GenericProxyConfig
 
@@ -16,6 +22,10 @@ class TranscriptNotFoundError(Exception):
     """Raised when a video transcript cannot be found or used."""
 
 
+class TranscriptFetchError(Exception):
+    """Raised when YouTube transcript retrieval fails before transcript selection."""
+
+
 def fetch_transcript(video_id: str) -> tuple[list[TranscriptSegment], str]:
     try:
         transcript_api = _build_transcript_api()
@@ -24,6 +34,21 @@ def fetch_transcript(video_id: str) -> tuple[list[TranscriptSegment], str]:
         raw_segments = transcript.fetch()
     except (NoTranscriptFound, TranscriptsDisabled) as error:
         raise TranscriptNotFoundError("Transcript not found for this video.") from error
+    except VideoUnavailable as error:
+        raise TranscriptNotFoundError("Video is unavailable or cannot be accessed.") from error
+    except requests_exceptions.SSLError as error:
+        raise TranscriptFetchError(
+            "Could not connect to YouTube transcript service because SSL certificate verification failed. "
+            "Check local certificate settings, proxy configuration, or SCRAPER_API_KEY."
+        ) from error
+    except requests_exceptions.RequestException as error:
+        raise TranscriptFetchError(
+            "Could not connect to YouTube transcript service. Check network or proxy configuration."
+        ) from error
+    except (RequestBlocked, IpBlocked, YouTubeRequestFailed, CouldNotRetrieveTranscript) as error:
+        raise TranscriptFetchError(
+            "YouTube transcript retrieval was blocked or failed. Check SCRAPER_API_KEY proxy settings."
+        ) from error
 
     language_code = transcript.language_code
     segments = [
@@ -40,7 +65,7 @@ def fetch_transcript(video_id: str) -> tuple[list[TranscriptSegment], str]:
 
 def _build_transcript_api() -> YouTubeTranscriptApi:
     settings = get_settings()
-    if not settings.scraper_api_key:
+    if not settings.transcript_proxy_enabled or not settings.scraper_api_key:
         return YouTubeTranscriptApi()
 
     proxy_url = f"http://scraperapi:{settings.scraper_api_key}@proxy-server.scraperapi.com:8001"

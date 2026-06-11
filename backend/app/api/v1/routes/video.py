@@ -9,7 +9,7 @@ from app.schemas.video import (
     VideoMetadataResponse,
     VideoRebuildIndexResponse,
 )
-from app.services.extraction.transcript_service import TranscriptNotFoundError
+from app.services.extraction.transcript_service import TranscriptFetchError, TranscriptNotFoundError
 from app.services.rag.local_store import VideoNotIndexedError
 from app.services.rag.video_index_service import (
     delete_ingested_video,
@@ -47,6 +47,12 @@ def ingest_video(request: VideoIngestRequest) -> VideoIngestResponse:
         logger.warning("Transcript unavailable during ingest: %s", error)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+    except TranscriptFetchError as error:
+        logger.warning("Transcript fetch failed during ingest: %s", error)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(error),
         ) from error
 

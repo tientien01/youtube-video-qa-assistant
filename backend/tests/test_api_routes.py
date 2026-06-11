@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.services.chat_history_store import LocalChatHistoryStore
-from app.services.extraction.transcript_service import TranscriptNotFoundError
+from app.services.extraction.transcript_service import TranscriptFetchError, TranscriptNotFoundError
 from app.services.learning.generated_output_store import LocalGeneratedOutputStore
 from app.services.rag.local_store import LocalRagStore
 from app.services.rag.metadata_store import LocalVideoMetadataStore
@@ -64,6 +64,19 @@ class ApiRoutesTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json()["detail"], "Transcript not found for this video.")
+
+    def test_ingest_returns_503_when_transcript_fetch_fails(self):
+        with patch(
+            "app.api.v1.routes.video.ingest_video_content",
+            side_effect=TranscriptFetchError("Could not connect to YouTube transcript service."),
+        ):
+            response = self.client.post(
+                "/api/v1/videos/ingest",
+                json={"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["detail"], "Could not connect to YouTube transcript service.")
 
     def test_ingest_returns_cached_video(self):
         chunk = TranscriptChunk(

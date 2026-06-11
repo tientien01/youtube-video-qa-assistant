@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../../shared/config/api'
+import { requestJson } from '../../shared/api/request'
 
 export async function generateVideoQuiz({
   videoId,
@@ -9,7 +10,7 @@ export async function generateVideoQuiz({
   force = false,
   sourceChunkIds = [],
 }) {
-  const response = await fetch(`${API_BASE_URL}/videos/${videoId}/quiz`, {
+  return requestJson(`${API_BASE_URL}/videos/${videoId}/quiz`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -22,13 +23,5 @@ export async function generateVideoQuiz({
       force,
       source_chunk_ids: sourceChunkIds,
     }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.detail || 'Could not generate a quiz.')
-  }
-
-  return data
+  }, 'Could not generate a quiz.')
 }
