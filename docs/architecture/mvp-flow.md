@@ -47,6 +47,48 @@ backend/data/
 
 `backend/data/` là runtime data, không nên commit.
 
+## 2.1 Deploy Shape
+
+Recommended MVP deployment:
+
+```text
+Frontend React build
+-> Vercel / Netlify
+
+Backend FastAPI
+-> Render / Railway / similar Python host
+
+Runtime data
+-> persistent disk for MVP
+-> database later for production
+```
+
+Required deploy env:
+
+```text
+Frontend:
+VITE_API_BASE_URL=https://your-backend-domain.com/api/v1
+
+Backend:
+CORS_ORIGINS=https://your-frontend-domain.com
+```
+
+Backend start command:
+
+```text
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+For first deploy, keep the lightweight retrieval defaults:
+
+```text
+EMBEDDING_PROVIDER=hashing
+VECTOR_STORE_PROVIDER=local_json
+RERANKER_ENABLED=false
+```
+
+Enable ChromaDB and sentence-transformers only after the host has enough CPU/RAM and persistent storage.
+
 ## 3. Backend Layers
 
 ### API routes

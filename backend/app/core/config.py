@@ -19,6 +19,7 @@ load_dotenv(LOCAL_ENV_FILE)
 
 @dataclass(frozen=True)
 class Settings:
+    cors_origins: list[str]
     llm_provider: str
     gemini_api_key: str | None
     gemini_model: str
@@ -41,6 +42,13 @@ def get_settings() -> Settings:
         provider = "fallback"
 
     return Settings(
+        cors_origins=_read_list_env(
+            "CORS_ORIGINS",
+            default=[
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+            ],
+        ),
         llm_provider=provider,
         gemini_api_key=gemini_api_key,
         gemini_model=_read_optional_env("GEMINI_MODEL") or DEFAULT_GEMINI_MODEL,
@@ -61,6 +69,19 @@ def _read_optional_env(name: str) -> str | None:
 
     stripped_value = value.strip()
     return stripped_value or None
+
+
+def _read_list_env(name: str, *, default: list[str]) -> list[str]:
+    raw_value = _read_optional_env(name)
+    if raw_value is None:
+        return default
+
+    values = [
+        item.strip()
+        for item in raw_value.split(",")
+        if item.strip()
+    ]
+    return values or default
 
 
 def _read_timeout_seconds(name: str, *, default: float) -> float:

@@ -117,6 +117,7 @@ Public config keys are documented in `backend/.env.example`.
 Common local defaults:
 
 ```text
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 LLM_PROVIDER=fallback
 EMBEDDING_PROVIDER=hashing
 VECTOR_STORE_PROVIDER=local_json
@@ -131,6 +132,14 @@ GEMINI_API_KEY=<your-key>
 GEMINI_MODEL=gemini-2.5-flash
 LLM_TIMEOUT_SECONDS=20
 ```
+
+Frontend config:
+
+```text
+VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1
+```
+
+For deploy, set `VITE_API_BASE_URL` to the deployed backend URL and set `CORS_ORIGINS` on the backend to the deployed frontend origin.
 
 To use sentence-transformers:
 
@@ -174,6 +183,7 @@ Không có test mới được thêm trong vòng chỉnh sửa gần đây vì n
 - Chưa có streaming response.
 - Chưa có background job/task queue cho summary/notes/quiz dài.
 - Storage vẫn là local JSON/file, chưa có database production.
+- Deploy host không có persistent disk sẽ mất `backend/data` khi service restart.
 - Evaluation chính thức chưa làm: chưa có dataset đo retrieval/summary/notes/quiz.
 - Reranking còn đơn giản, chưa có cross-encoder reranker.
 - Chunking chưa phải semantic/topic-based chunking thật sự.

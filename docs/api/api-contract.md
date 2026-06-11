@@ -6,6 +6,12 @@ Base URL when running locally:
 http://127.0.0.1:8000/api/v1
 ```
 
+Frontend should read this from:
+
+```text
+VITE_API_BASE_URL
+```
+
 All JSON field names use `snake_case`.
 
 Common error shape:
