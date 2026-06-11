@@ -22,7 +22,7 @@ export async function retrieveDebugContext({
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể chạy RAG debug.')
+    throw new Error(data.detail || 'Could not run RAG debug.')
   }
 
   return data

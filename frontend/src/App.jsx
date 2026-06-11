@@ -27,12 +27,12 @@ import {
 } from './features/video/videoStorage'
 
 const WORKSPACE_TABS = [
-  { id: 'chat', label: 'Chat' },
-  { id: 'summary', label: 'Summary' },
-  { id: 'notes', label: 'Notes' },
-  { id: 'quiz', label: 'Quiz' },
-  { id: 'export', label: 'Export' },
-  { id: 'debug', label: 'Debug' },
+  { id: 'chat', label: 'Chat', description: 'Ask grounded questions' },
+  { id: 'summary', label: 'Summary', description: 'Short, detailed, timeline' },
+  { id: 'notes', label: 'Notes', description: 'Study notes and cards' },
+  { id: 'quiz', label: 'Quiz', description: 'Practice and review' },
+  { id: 'export', label: 'Export', description: 'Markdown handoff' },
+  { id: 'debug', label: 'Debug', description: 'Inspect retrieval' },
 ]
 const ACTIVE_TAB_KEY = 'youtube-qa-active-workspace-tab'
 
@@ -403,118 +403,130 @@ function App() {
     <main className="app-shell">
       <section className="intro-section">
         <p className="eyebrow">YouTube Video Q&A Assistant</p>
-        <h1>Hỏi đáp theo nội dung transcript của video YouTube.</h1>
+        <h1>Turn YouTube transcripts into a focused learning workspace.</h1>
         <p className="intro-copy">
-          Nhập URL YouTube, hệ thống sẽ lấy transcript, chia chunk, tạo index
-          local và trả lời câu hỏi kèm timestamp tham chiếu.
+          Ingest a video once, then ask questions, generate summaries, build study notes,
+          create quizzes and export a clean study pack with timestamped sources.
         </p>
       </section>
 
-      <section className="workspace" aria-label="Video ingest workspace">
-        <VideoIngestForm
-          onSubmit={handleIngest}
-          isLoading={isLoading}
-          ingestStage={ingestStage}
-        />
+      <section className="workspace" aria-label="Video learning workspace">
+        <aside className="workspace-sidebar" aria-label="Video controls">
+          <VideoIngestForm
+            onSubmit={handleIngest}
+            isLoading={isLoading}
+            ingestStage={ingestStage}
+          />
 
-        {error ? <p className="error-message">{error}</p> : null}
+          {error ? <p className="error-message">{error}</p> : null}
 
-        <VideoHistory
-          videos={videoHistory}
-          currentVideoId={video?.video_id}
-          onSelect={handleSelectVideo}
-          onDelete={handleDeleteVideo}
-          isLoading={isHistoryLoading}
-        />
+          <VideoHistory
+            videos={videoHistory}
+            currentVideoId={video?.video_id}
+            onSelect={handleSelectVideo}
+            onDelete={handleDeleteVideo}
+            isLoading={isHistoryLoading}
+          />
+        </aside>
 
-        <VideoResult
-          video={video}
-          onRebuildIndex={handleRebuildIndex}
-          isRebuilding={isRebuildingIndex}
-        />
+        <section className="workspace-main" aria-label="Learning tools">
+          <VideoResult
+            video={video}
+            onRebuildIndex={handleRebuildIndex}
+            isRebuilding={isRebuildingIndex}
+          />
 
-        <section className="workspace-tabs" aria-label="Learning workspace">
-          <div className="tab-list" role="tablist" aria-label="Workspace sections">
-            {WORKSPACE_TABS.map((tab) => (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                className="tab-button"
-                key={tab.id}
-                onClick={() => handleChangeTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div className="workspace-status" aria-label="Workspace status">
+            <StatusMetric label="Chat" value={`${messages.length} saved`} />
+            <StatusMetric label="Summary" value={summary ? statusValue(summary) : 'Not generated'} />
+            <StatusMetric label="Notes" value={notes ? statusValue(notes) : 'Not generated'} />
+            <StatusMetric label="Quiz" value={quiz ? `${quiz.questions.length} questions` : 'Not generated'} />
           </div>
 
-          <div className="tab-panel" role="tabpanel">
-            {activeTab === 'chat' ? (
-              <ChatPanel
-                video={video}
-                messages={messages}
-                onAsk={handleAsk}
-                onRegenerate={handleRegenerateAnswer}
-                onAskWithSource={handleAskWithSource}
-                onToggleExport={handleToggleMessageExport}
-                onClearHistory={handleClearChatHistory}
-                isAsking={isAsking}
-                error={chatError}
-              />
-            ) : null}
+          <section className="workspace-tabs" aria-label="Learning workspace">
+            <div className="tab-list" role="tablist" aria-label="Workspace sections">
+              {WORKSPACE_TABS.map((tab) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className="tab-button"
+                  key={tab.id}
+                  onClick={() => handleChangeTab(tab.id)}
+                >
+                  <span>{tab.label}</span>
+                  <small>{tab.description}</small>
+                </button>
+              ))}
+            </div>
 
-            {activeTab === 'summary' ? (
-              <SummaryPanel
-                video={video}
-                summary={summary}
-                onGenerate={handleGenerateSummary}
-                isLoading={isSummaryLoading}
-                error={summaryError}
-              />
-            ) : null}
+            <div className="tab-panel" role="tabpanel">
+              {activeTab === 'chat' ? (
+                <ChatPanel
+                  video={video}
+                  messages={messages}
+                  onAsk={handleAsk}
+                  onRegenerate={handleRegenerateAnswer}
+                  onAskWithSource={handleAskWithSource}
+                  onToggleExport={handleToggleMessageExport}
+                  onClearHistory={handleClearChatHistory}
+                  isAsking={isAsking}
+                  error={chatError}
+                />
+              ) : null}
 
-            {activeTab === 'notes' ? (
-              <NotesPanel
-                video={video}
-                notes={notes}
-                onGenerate={handleGenerateNotes}
-                isLoading={isNotesLoading}
-                error={notesError}
-              />
-            ) : null}
+              {activeTab === 'summary' ? (
+                <SummaryPanel
+                  video={video}
+                  summary={summary}
+                  onGenerate={handleGenerateSummary}
+                  isLoading={isSummaryLoading}
+                  error={summaryError}
+                />
+              ) : null}
 
-            {activeTab === 'quiz' ? (
-              <QuizPanel
-                video={video}
-                quiz={quiz}
-                onGenerate={handleGenerateQuiz}
-                isLoading={isQuizLoading}
-                error={quizError}
-              />
-            ) : null}
+              {activeTab === 'notes' ? (
+                <NotesPanel
+                  video={video}
+                  notes={notes}
+                  onGenerate={handleGenerateNotes}
+                  isLoading={isNotesLoading}
+                  error={notesError}
+                />
+              ) : null}
 
-            {activeTab === 'export' ? (
-              <ExportPanel
-                video={video}
-                summary={summary}
-                notes={notes}
-                quiz={quiz}
-                selectedMessages={messages.filter((message) => message.selectedForExport)}
-              />
-            ) : null}
+              {activeTab === 'quiz' ? (
+                <QuizPanel
+                  video={video}
+                  quiz={quiz}
+                  onGenerate={handleGenerateQuiz}
+                  isLoading={isQuizLoading}
+                  error={quizError}
+                />
+              ) : null}
 
-            {activeTab === 'debug' ? (
-              <RagDebugPanel
-                video={video}
-                debugResult={debugResult}
-                onRetrieve={handleDebugRetrieve}
-                onAskInChat={handleAskDebugQuestion}
-                isLoading={isDebugLoading}
-                error={debugError}
-              />
-            ) : null}
-          </div>
+              {activeTab === 'export' ? (
+                <ExportPanel
+                  video={video}
+                  summary={summary}
+                  notes={notes}
+                  quiz={quiz}
+                  selectedMessages={messages.filter((message) => message.selectedForExport)}
+                />
+              ) : null}
+
+              {activeTab === 'debug' ? (
+                <RagDebugPanel
+                  video={video}
+                  debugResult={debugResult}
+                  onRetrieve={handleDebugRetrieve}
+                  onAskInChat={handleAskDebugQuestion}
+                  isLoading={isDebugLoading}
+                  error={debugError}
+                />
+              ) : null}
+            </div>
+          </section>
         </section>
       </section>
     </main>
@@ -527,10 +539,10 @@ function readActiveWorkspaceTab() {
 }
 
 function startIngestStages(setIngestStage) {
-  setIngestStage('Fetching transcript...')
+  setIngestStage('Fetching metadata and transcript...')
   return [
     setTimeout(() => setIngestStage('Chunking transcript...'), 700),
-    setTimeout(() => setIngestStage('Indexing BM25 and vector store...'), 1400),
+    setTimeout(() => setIngestStage('Building retrieval index...'), 1400),
   ]
 }
 
@@ -555,6 +567,23 @@ function normalizeChatMessage(message, overrides = {}) {
     selectedForExport: overrides.selectedForExport ?? true,
     createdAt: message.created_at || new Date().toISOString(),
   }
+}
+
+function StatusMetric({ label, value }) {
+  return (
+    <div className="status-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  )
+}
+
+function statusValue(output) {
+  if (output.cached) {
+    return 'Cached'
+  }
+
+  return output.generation?.generation_mode || 'New'
 }
 
 export default App

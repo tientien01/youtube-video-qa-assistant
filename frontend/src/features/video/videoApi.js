@@ -12,7 +12,7 @@ export async function ingestVideo(url) {
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể ingest video.')
+    throw new Error(data.detail || 'Could not ingest this video.')
   }
 
   return data
@@ -23,7 +23,7 @@ export async function listVideos() {
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể tải danh sách video.')
+    throw new Error(data.detail || 'Could not load the video library.')
   }
 
   return data
@@ -34,7 +34,7 @@ export async function getVideo(videoId) {
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể tải thông tin video.')
+    throw new Error(data.detail || 'Could not load this video.')
   }
 
   return data
@@ -47,7 +47,7 @@ export async function deleteVideo(videoId) {
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể xóa video.')
+    throw new Error(data.detail || 'Could not delete this video.')
   }
 
   return data
@@ -60,7 +60,7 @@ export async function rebuildVideoIndex(videoId) {
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể rebuild index.')
+    throw new Error(data.detail || 'Could not rebuild the index.')
   }
 
   return data

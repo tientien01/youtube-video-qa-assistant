@@ -12,7 +12,7 @@ export async function generateVideoSummary({ videoId, mode, force = false }) {
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể tạo summary.')
+    throw new Error(data.detail || 'Could not generate a summary.')
   }
 
   return data

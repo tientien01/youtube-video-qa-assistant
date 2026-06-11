@@ -1,3 +1,5 @@
+import { formatDuration } from '../../shared/utils/time'
+
 export function VideoHistory({
   videos,
   currentVideoId,
@@ -6,16 +8,16 @@ export function VideoHistory({
   isLoading,
 }) {
   return (
-    <section className="history-panel" aria-label="Video đã xử lý">
-      <div className="panel-heading">
-        <h2>Video đã xử lý</h2>
-        <p className="muted-text">Chọn lại video cũ để hỏi tiếp mà không cần dán URL lại.</p>
+    <section className="history-panel" aria-label="Ingested videos">
+      <div className="panel-heading compact-heading">
+        <h2>Video library</h2>
+        <p className="muted-text">Previously indexed videos are ready to use again.</p>
       </div>
 
-      {isLoading ? <p className="muted-text">Đang tải danh sách video...</p> : null}
+      {isLoading ? <p className="muted-text">Loading videos...</p> : null}
 
       {!isLoading && videos.length === 0 ? (
-        <p className="muted-text">Chưa có video nào trong lịch sử.</p>
+        <p className="muted-text">No ingested videos yet.</p>
       ) : null}
 
       {videos.length > 0 ? (
@@ -33,8 +35,11 @@ export function VideoHistory({
                 >
                   <span className="history-title">{video.title}</span>
                   <span className="history-meta">
-                    {video.chunk_count} chunks
-                    {video.transcript_language ? ` - ${video.transcript_language}` : ''}
+                    {video.channel_title || 'Unknown channel'}
+                    {' | '}
+                    {video.chunk_count || 0} chunks
+                    {' | '}
+                    {formatDuration(video.duration_seconds)}
                   </span>
                 </button>
                 <button
@@ -42,7 +47,7 @@ export function VideoHistory({
                   type="button"
                   onClick={() => onDelete(video.video_id)}
                 >
-                  Xóa
+                  Delete
                 </button>
               </article>
             )

@@ -158,23 +158,23 @@ export function QuizPanel({
 
   if (!video) {
     return (
-      <section className="quiz-panel" aria-label="Khu vực quiz">
+      <section className="quiz-panel" aria-label="Quiz">
         <h2>Quiz</h2>
-        <p className="muted-text">Ingest một video trước khi tạo quiz.</p>
+        <p className="muted-text">Select an ingested video before generating a quiz.</p>
       </section>
     )
   }
 
   return (
-    <section className="quiz-panel" aria-label="Khu vực quiz">
+    <section className="quiz-panel" aria-label="Quiz">
       <div className="panel-heading">
         <h2>Quiz</h2>
-        <p className="muted-text">Tạo câu hỏi ôn tập từ transcript, có đáp án và timestamp nguồn.</p>
+        <p className="muted-text">Create grounded questions with explanations and timestamped sources.</p>
       </div>
 
       <form className="quiz-form" onSubmit={handleSubmit}>
         <label className="quiz-field" htmlFor="question-count">
-          Số câu
+          Questions
           <input
             id="question-count"
             name="question-count"
@@ -187,26 +187,26 @@ export function QuizPanel({
         </label>
 
         <label className="quiz-field" htmlFor="difficulty">
-          Độ khó
+          Difficulty
           <select id="difficulty" name="difficulty" defaultValue="medium" disabled={isLoading}>
-            <option value="easy">Dễ</option>
-            <option value="medium">Vừa</option>
-            <option value="hard">Khó</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
           </select>
         </label>
 
         <label className="quiz-field" htmlFor="question-type">
-          Loại câu
+          Type
           <select id="question-type" name="question-type" defaultValue="mixed" disabled={isLoading}>
             <option value="mixed">Mixed</option>
             <option value="multiple_choice">Multiple choice</option>
-            <option value="true_false">True/False</option>
+            <option value="true_false">True/false</option>
             <option value="short_answer">Short answer</option>
           </select>
         </label>
 
         <label className="quiz-field" htmlFor="quiz-mode">
-          Chế độ
+          Mode
           <select id="quiz-mode" name="quiz-mode" defaultValue="practice" disabled={isLoading}>
             <option value="practice">Practice</option>
             <option value="exam">Exam</option>
@@ -215,10 +215,10 @@ export function QuizPanel({
         </label>
 
         <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Đang tạo...' : 'Tạo quiz'}
+          {isLoading ? 'Generating...' : 'Generate'}
         </button>
         <button type="button" onClick={handleRegenerate} disabled={isLoading}>
-          Tạo lại
+          Regenerate
         </button>
       </form>
 
@@ -227,27 +227,33 @@ export function QuizPanel({
       {quiz ? (
         <div className="quiz-result">
           <div className="answer-heading">
-            <p className="question-text">
-              {quiz.question_type} · {quiz.difficulty} · {quiz.mode || 'practice'}
-            </p>
-            <span>{quiz.cached ? 'cached' : 'new'}</span>
+            <div>
+              <p className="eyebrow">Quiz setup</p>
+              <p className="question-text">
+                {formatQuestionType(quiz.question_type)}
+                {' | '}
+                {quiz.difficulty}
+                {' | '}
+                {quiz.mode || 'practice'}
+              </p>
+            </div>
+            <div className="status-tags">
+              <span>{quiz.cached ? 'cached' : 'new'}</span>
+              {quiz.generation ? <span>{quiz.generation.generation_mode}:{quiz.generation.provider}</span> : null}
+            </div>
           </div>
-          {quiz.generation ? (
-            <p className="muted-text">Generation: {quiz.generation.generation_mode}:{quiz.generation.provider}</p>
-          ) : null}
-          {quiz.attempt_id ? (
-            <p className="muted-text">Attempt: {quiz.attempt_id}</p>
-          ) : null}
+
+          {quiz.attempt_id ? <p className="muted-text">Attempt ID: {quiz.attempt_id}</p> : null}
 
           <div className="quiz-list">
             {displayedQuestions.length === 0 ? (
-              <p className="success-message">Không còn câu sai trong phần trắc nghiệm.</p>
+              <p className="success-message">No missed multiple-choice or true/false questions remain.</p>
             ) : null}
 
             {displayedQuestions.map((question, index) => (
               <article className="quiz-question" key={question.question_id}>
                 <div className="quiz-question-heading">
-                  <h3>Câu {index + 1}</h3>
+                  <h3>Question {index + 1}</h3>
                   <span>{formatQuestionType(question.question_type)}</span>
                 </div>
 
@@ -274,7 +280,7 @@ export function QuizPanel({
                     rows="3"
                     value={answers[question.question_id] || ''}
                     onChange={(event) => updateAnswer(question.question_id, event.target.value)}
-                    placeholder="Nhập câu trả lời ngắn để tự đối chiếu với đáp án mẫu."
+                    placeholder="Write a short answer, then compare it with the sample answer."
                   />
                 )}
 
@@ -282,69 +288,71 @@ export function QuizPanel({
                   <div className="quiz-feedback">
                     {question.options.length > 0 ? (
                       <p className={isCorrect(question, answers) ? 'feedback-correct' : 'feedback-wrong'}>
-                        {isCorrect(question, answers) ? 'Đúng.' : 'Chưa đúng.'}
+                        {isCorrect(question, answers) ? 'Correct.' : 'Not yet.'}
                       </p>
                     ) : (
-                      <p className="muted-text">Đối chiếu câu trả lời của bạn với đáp án mẫu.</p>
+                      <p className="muted-text">Compare your answer with the sample answer.</p>
                     )}
                     <p>
-                      <strong>Đáp án:</strong> {question.correct_answer}
+                      <strong>Answer:</strong> {question.correct_answer}
                     </p>
                     <p>{question.explanation}</p>
                   </div>
                 ) : null}
 
-                <a
-                  className="source-item"
-                  href={buildYouTubeTimestampUrl(video.video_id, question.source.start_seconds)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <span>{formatTimestamp(question.source.start_seconds)}</span>
-                  <span>{question.source.text}</span>
-                </a>
-                <button
-                  className="quiz-source-action"
-                  type="button"
-                  onClick={() => handleGenerateFromSource(question.source.chunk_id)}
-                >
-                  Tạo quiz từ nguồn này
-                </button>
+                <div className="quiz-source-row">
+                  <a
+                    className="source-item"
+                    href={buildYouTubeTimestampUrl(video.video_id, question.source.start_seconds)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span>{formatTimestamp(question.source.start_seconds)}</span>
+                    <span>{question.source.text}</span>
+                  </a>
+                  <button
+                    className="quiz-source-action"
+                    type="button"
+                    onClick={() => handleGenerateFromSource(question.source.chunk_id)}
+                  >
+                    Generate from source
+                  </button>
+                </div>
               </article>
             ))}
           </div>
 
           <div className="quiz-actions">
             <button type="button" onClick={handleCheckAnswers}>
-              Chấm điểm
+              Check answers
             </button>
             <button type="button" onClick={handleResetAnswers}>
-              Làm lại tất cả
+              Reset
             </button>
             {score ? (
               <>
                 <button type="button" onClick={() => setReviewFilter('missed')}>
-                  Xem câu sai
+                  Show missed
                 </button>
                 <button type="button" onClick={() => setReviewFilter('all')}>
-                  Xem tất cả
+                  Show all
                 </button>
                 <button type="button" onClick={handleRetryMissed} disabled={score.missedIds.length === 0}>
-                  Làm lại câu sai
+                  Retry missed
                 </button>
                 <button type="button" onClick={handleGenerateFromMissed} disabled={score.missedIds.length === 0}>
-                  Tạo quiz từ câu sai
+                  Quiz from missed
                 </button>
                 <p className="quiz-score">
-                  Điểm tự động: {score.correctCount}/{score.totalCount} câu trắc nghiệm
-                  {score.unansweredCount > 0 ? ` · Chưa trả lời: ${score.unansweredCount}` : ''}
+                  Score: {score.correctCount}/{score.totalCount}
+                  {score.unansweredCount > 0 ? ` | Unanswered: ${score.unansweredCount}` : ''}
                 </p>
               </>
             ) : null}
           </div>
         </div>
       ) : (
-        <p className="muted-text">Chưa có quiz cho video này.</p>
+        <p className="muted-text">No quiz yet for this video.</p>
       )}
     </section>
   )
@@ -360,7 +368,11 @@ function formatQuestionType(questionType) {
   }
 
   if (questionType === 'true_false') {
-    return 'True/False'
+    return 'True/false'
+  }
+
+  if (questionType === 'mixed') {
+    return 'Mixed'
   }
 
   return 'Short answer'

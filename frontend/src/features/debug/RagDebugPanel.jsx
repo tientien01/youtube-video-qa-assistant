@@ -29,30 +29,30 @@ export function RagDebugPanel({
 
   if (!video) {
     return (
-      <section className="debug-panel" aria-label="Khu vực RAG debug">
+      <section className="debug-panel" aria-label="RAG debug">
         <h2>RAG Debug</h2>
-        <p className="muted-text">Ingest một video trước khi debug retrieval.</p>
+        <p className="muted-text">Select an ingested video before inspecting retrieval.</p>
       </section>
     )
   }
 
   return (
-    <section className="debug-panel" aria-label="Khu vực RAG debug">
+    <section className="debug-panel" aria-label="RAG debug">
       <div className="panel-heading">
         <h2>RAG Debug</h2>
-        <p className="muted-text">Xem retrieval mode trả về chunks nào, score bao nhiêu và mất bao lâu.</p>
+        <p className="muted-text">Inspect retrieved chunks, scores and latency for a question.</p>
       </div>
 
       <form className="debug-form" onSubmit={handleSubmit}>
         <label className="debug-question-field" htmlFor="debug-question">
-          Câu hỏi debug
+          Debug question
           <textarea
             id="debug-question"
             name="debug-question"
             rows="3"
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Video này giải thích khái niệm nào?"
+            placeholder="What concept does this video explain?"
             disabled={isLoading}
             required
           />
@@ -88,7 +88,7 @@ export function RagDebugPanel({
           </label>
 
           <button type="submit" disabled={isLoading}>
-            {isLoading ? 'Đang chạy...' : 'Chạy debug'}
+            {isLoading ? 'Running...' : 'Run debug'}
           </button>
         </div>
       </form>
@@ -98,7 +98,10 @@ export function RagDebugPanel({
       {debugResult ? (
         <article className="debug-result">
           <div className="answer-heading">
-            <p className="question-text">{debugResult.question}</p>
+            <div>
+              <p className="eyebrow">Debug query</p>
+              <p className="question-text">{debugResult.question}</p>
+            </div>
             <span>{debugResult.retrieval_mode}</span>
           </div>
 
@@ -119,13 +122,13 @@ export function RagDebugPanel({
 
           <div className="debug-actions">
             <button type="button" onClick={onAskInChat}>
-              Gửi câu này sang Chat
+              Ask in Chat with these chunks
             </button>
           </div>
 
           <div className="debug-chunk-list">
             {debugResult.chunks.length === 0 ? (
-              <p className="muted-text">Không có chunk nào được retrieve.</p>
+              <p className="muted-text">No chunks retrieved.</p>
             ) : (
               debugResult.chunks.map((chunk) => (
                 <a
@@ -144,7 +147,7 @@ export function RagDebugPanel({
           </div>
         </article>
       ) : (
-        <p className="muted-text">Chưa có kết quả debug cho video này.</p>
+        <p className="muted-text">No debug result yet for this video.</p>
       )}
     </section>
   )

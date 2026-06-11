@@ -56,6 +56,7 @@ Result: pass
 - Improved Gemini error details so HTTP status, timeout or request-level failures are easier to diagnose without exposing API keys.
 - Added Gemini quota cooldown guard: after HTTP 429/resource-exhausted responses, later LLM calls fallback immediately until the retry window passes instead of spending more requests.
 - Disabled Chroma anonymized telemetry at app/vector-store startup to reduce noisy PostHog telemetry errors in local logs.
+- Redesigned the frontend workspace into a cleaner video sidebar plus learning dashboard, refreshed Chat/Summary/Notes/Quiz/Export/Debug panels, and removed mojibake UI text from the frontend.
 
 ## Current Limitations
 

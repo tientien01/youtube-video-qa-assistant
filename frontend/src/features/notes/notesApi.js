@@ -23,7 +23,7 @@ export async function generateStudyNotes({
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể tạo study notes.')
+    throw new Error(data.detail || 'Could not generate study notes.')
   }
 
   return data

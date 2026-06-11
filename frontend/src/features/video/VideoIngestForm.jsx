@@ -1,5 +1,12 @@
 import { useState } from 'react'
 
+const INGEST_STEPS = [
+  'Metadata',
+  'Transcript',
+  'Chunking',
+  'Indexing',
+]
+
 export function VideoIngestForm({ onSubmit, isLoading, ingestStage }) {
   const [url, setUrl] = useState('')
 
@@ -16,7 +23,13 @@ export function VideoIngestForm({ onSubmit, isLoading, ingestStage }) {
 
   return (
     <form className="ingest-form" onSubmit={handleSubmit}>
-      <label htmlFor="youtube-url">URL YouTube</label>
+      <div className="panel-heading compact-heading">
+        <p className="eyebrow">Video</p>
+        <h2>Ingest a YouTube video</h2>
+        <p className="muted-text">Paste a video URL to build transcript chunks and a local retrieval index.</p>
+      </div>
+
+      <label htmlFor="youtube-url">YouTube URL</label>
       <div className="form-row">
         <input
           id="youtube-url"
@@ -29,11 +42,19 @@ export function VideoIngestForm({ onSubmit, isLoading, ingestStage }) {
           required
         />
         <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Đang xử lý...' : 'Ingest video'}
+          {isLoading ? 'Processing...' : 'Ingest'}
         </button>
       </div>
+
       {isLoading && ingestStage ? (
-        <p className="ingest-stage">{ingestStage}</p>
+        <div className="ingest-progress" aria-live="polite">
+          <p className="ingest-stage">{ingestStage}</p>
+          <ol>
+            {INGEST_STEPS.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </div>
       ) : null}
     </form>
   )

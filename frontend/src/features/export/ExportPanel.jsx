@@ -19,9 +19,9 @@ export function ExportPanel({ video, summary, notes, quiz, selectedMessages = []
 
   if (!video) {
     return (
-      <section className="export-panel" aria-label="Khu vực export Markdown">
+      <section className="export-panel" aria-label="Export Markdown">
         <h2>Export Markdown</h2>
-        <p className="muted-text">Ingest một video trước khi export tài liệu học tập.</p>
+        <p className="muted-text">Select an ingested video before exporting a study pack.</p>
       </section>
     )
   }
@@ -32,9 +32,9 @@ export function ExportPanel({ video, summary, notes, quiz, selectedMessages = []
 
     try {
       await navigator.clipboard.writeText(markdown)
-      setStatus('Đã copy Markdown vào clipboard.')
+      setStatus('Markdown copied to clipboard.')
     } catch {
-      setError('Không thể copy Markdown trong trình duyệt hiện tại.')
+      setError('This browser could not copy Markdown to the clipboard.')
     }
   }
 
@@ -49,7 +49,7 @@ export function ExportPanel({ video, summary, notes, quiz, selectedMessages = []
     link.download = buildMarkdownFilename(video)
     link.click()
     URL.revokeObjectURL(url)
-    setStatus('Đã tạo file Markdown để tải xuống.')
+    setStatus('Markdown download started.')
   }
 
   function updateExportOption(optionName) {
@@ -62,23 +62,21 @@ export function ExportPanel({ video, summary, notes, quiz, selectedMessages = []
   }
 
   return (
-    <section className="export-panel" aria-label="Khu vực export Markdown">
+    <section className="export-panel" aria-label="Export Markdown">
       <div className="panel-heading">
         <h2>Export Markdown</h2>
-        <p className="muted-text">
-          Xuất metadata video, nội dung học tập và các Q&A đã chọn ra Markdown.
-        </p>
+        <p className="muted-text">Build a portable study pack from generated content and selected Q&A.</p>
       </div>
 
       <fieldset className="export-options">
-        <legend>Nội dung export</legend>
+        <legend>Included content</legend>
         <label>
           <input
             type="checkbox"
             checked={exportOptions.summary}
             onChange={() => updateExportOption('summary')}
           />
-          <span>Summary</span>
+          <span>Summary {summary ? '' : '(empty)'}</span>
         </label>
         <label>
           <input
@@ -86,7 +84,7 @@ export function ExportPanel({ video, summary, notes, quiz, selectedMessages = []
             checked={exportOptions.notes}
             onChange={() => updateExportOption('notes')}
           />
-          <span>Study Notes</span>
+          <span>Study Notes {notes ? '' : '(empty)'}</span>
         </label>
         <label>
           <input
@@ -94,7 +92,7 @@ export function ExportPanel({ video, summary, notes, quiz, selectedMessages = []
             checked={exportOptions.quiz}
             onChange={() => updateExportOption('quiz')}
           />
-          <span>Quiz</span>
+          <span>Quiz {quiz ? '' : '(empty)'}</span>
         </label>
         <label>
           <input
@@ -115,7 +113,7 @@ export function ExportPanel({ video, summary, notes, quiz, selectedMessages = []
       {error ? <p className="error-message">{error}</p> : null}
 
       <details className="export-preview">
-        <summary>Xem Markdown</summary>
+        <summary>Markdown preview</summary>
         <pre>{markdown}</pre>
       </details>
     </section>

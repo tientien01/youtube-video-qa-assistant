@@ -22,7 +22,7 @@ export async function askVideoQuestion({
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể gửi câu hỏi.')
+    throw new Error(data.detail || 'Could not send this question.')
   }
 
   return data
@@ -33,7 +33,7 @@ export async function getChatHistory(videoId) {
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể tải lịch sử chat.')
+    throw new Error(data.detail || 'Could not load chat history.')
   }
 
   return data
@@ -46,7 +46,7 @@ export async function clearBackendChatHistory(videoId) {
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể xóa lịch sử chat.')
+    throw new Error(data.detail || 'Could not clear chat history.')
   }
 
   return data

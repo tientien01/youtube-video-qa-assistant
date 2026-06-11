@@ -27,7 +27,7 @@ export async function generateVideoQuiz({
   const data = await response.json()
 
   if (!response.ok) {
-    throw new Error(data.detail || 'Không thể tạo quiz.')
+    throw new Error(data.detail || 'Could not generate a quiz.')
   }
 
   return data
