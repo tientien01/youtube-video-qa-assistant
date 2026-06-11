@@ -3,7 +3,9 @@ from youtube_transcript_api import (
     TranscriptsDisabled,
     YouTubeTranscriptApi,
 )
+from youtube_transcript_api.proxies import GenericProxyConfig
 
+from app.core.config import get_settings
 from app.schemas.transcript import TranscriptSegment
 
 
@@ -16,7 +18,7 @@ class TranscriptNotFoundError(Exception):
 
 def fetch_transcript(video_id: str) -> tuple[list[TranscriptSegment], str]:
     try:
-        transcript_api = YouTubeTranscriptApi()
+        transcript_api = _build_transcript_api()
         transcript_list = transcript_api.list(video_id)
         transcript = _select_transcript(transcript_list)
         raw_segments = transcript.fetch()
@@ -34,6 +36,20 @@ def fetch_transcript(video_id: str) -> tuple[list[TranscriptSegment], str]:
         raise TranscriptNotFoundError("Transcript is empty.")
 
     return segments, language_code
+
+
+def _build_transcript_api() -> YouTubeTranscriptApi:
+    settings = get_settings()
+    if not settings.scraper_api_key:
+        return YouTubeTranscriptApi()
+
+    proxy_url = f"http://scraperapi:{settings.scraper_api_key}@proxy-server.scraperapi.com:8001"
+    return YouTubeTranscriptApi(
+        proxy_config=GenericProxyConfig(
+            http_url=proxy_url,
+            https_url=proxy_url,
+        )
+    )
 
 
 def _select_transcript(transcript_list):

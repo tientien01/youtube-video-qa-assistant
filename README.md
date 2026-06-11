@@ -30,6 +30,7 @@ Noi dung toi thieu de chay local:
 ```env
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 LLM_PROVIDER=fallback
+SCRAPER_API_KEY=
 EMBEDDING_PROVIDER=hashing
 VECTOR_STORE_PROVIDER=local_json
 RERANKER_ENABLED=false
@@ -42,6 +43,12 @@ LLM_PROVIDER=gemini
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
 LLM_TIMEOUT_SECONDS=20
+```
+
+Neu backend deploy bi YouTube chan IP khi lay transcript, thu ScraperAPI Proxy Mode:
+
+```env
+SCRAPER_API_KEY=your_scraperapi_key
 ```
 
 Chay backend:
@@ -120,6 +127,7 @@ Khi deploy backend, set:
 
 ```env
 CORS_ORIGINS=https://your-frontend-domain.com
+SCRAPER_API_KEY=your_scraperapi_key
 ```
 
 Backend start command tren Render/Railway:

@@ -118,6 +118,7 @@ Common local defaults:
 
 ```text
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+SCRAPER_API_KEY=
 LLM_PROVIDER=fallback
 EMBEDDING_PROVIDER=hashing
 VECTOR_STORE_PROVIDER=local_json
@@ -140,6 +141,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
 
 For deploy, set `VITE_API_BASE_URL` to the deployed backend URL and set `CORS_ORIGINS` on the backend to the deployed frontend origin.
+If Render is blocked by YouTube while fetching transcripts, set `SCRAPER_API_KEY` to enable ScraperAPI proxy mode for transcript requests.
 
 To use sentence-transformers:
 

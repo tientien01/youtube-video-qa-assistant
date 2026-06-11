@@ -22,6 +22,7 @@ class Settings:
     cors_origins: list[str]
     llm_provider: str
     gemini_api_key: str | None
+    scraper_api_key: str | None
     gemini_model: str
     llm_timeout_seconds: float
     embedding_provider: str
@@ -51,6 +52,7 @@ def get_settings() -> Settings:
         ),
         llm_provider=provider,
         gemini_api_key=gemini_api_key,
+        scraper_api_key=_read_optional_env("SCRAPER_API_KEY"),
         gemini_model=_read_optional_env("GEMINI_MODEL") or DEFAULT_GEMINI_MODEL,
         llm_timeout_seconds=_read_timeout_seconds("LLM_TIMEOUT_SECONDS", default=20.0),
         embedding_provider=(_read_optional_env("EMBEDDING_PROVIDER") or DEFAULT_EMBEDDING_PROVIDER).lower(),

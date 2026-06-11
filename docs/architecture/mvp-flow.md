@@ -71,6 +71,7 @@ VITE_API_BASE_URL=https://your-backend-domain.com/api/v1
 
 Backend:
 CORS_ORIGINS=https://your-frontend-domain.com
+SCRAPER_API_KEY=your-scraperapi-key-if-needed
 ```
 
 Backend start command:
@@ -150,6 +151,8 @@ POST /api/v1/videos/ingest
 -> build vector index if enabled
 -> return VideoIngestResponse
 ```
+
+If `SCRAPER_API_KEY` is set, transcript requests are routed through ScraperAPI proxy mode. This is intended for Render/cloud deployments where YouTube blocks cloud-provider IPs.
 
 Stored video metadata:
 

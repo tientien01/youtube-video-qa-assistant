@@ -111,6 +111,8 @@ Response:
 }
 ```
 
+If backend runs on a cloud host and YouTube blocks transcript requests, set backend env `SCRAPER_API_KEY` to route transcript fetching through ScraperAPI proxy mode.
+
 Allowed `status` values:
 
 ```text
