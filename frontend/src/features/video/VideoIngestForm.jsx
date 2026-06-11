@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export function VideoIngestForm({ onSubmit, isLoading }) {
+export function VideoIngestForm({ onSubmit, isLoading, ingestStage }) {
   const [url, setUrl] = useState('')
 
   function handleSubmit(event) {
@@ -32,6 +32,9 @@ export function VideoIngestForm({ onSubmit, isLoading }) {
           {isLoading ? 'Đang xử lý...' : 'Ingest video'}
         </button>
       </div>
+      {isLoading && ingestStage ? (
+        <p className="ingest-stage">{ingestStage}</p>
+      ) : null}
     </form>
   )
 }

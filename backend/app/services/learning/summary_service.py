@@ -43,8 +43,8 @@ def generate_video_summary(
             cached=True,
             generation=GenerationMetadata(
                 generation_mode="cached",
-                provider="cache",
-                fallback_reason=None,
+                provider=cached_output.provider,
+                fallback_reason=_cached_generation_note(cached_output.generation_mode, cached_output.fallback_reason),
             ),
         )
 
@@ -60,6 +60,9 @@ def generate_video_summary(
         mode=mode,
         content=generated_summary.text,
         source_chunk_ids=[chunk.chunk_id for chunk in source_chunks],
+        generation_mode=generated_summary.generation.generation_mode,
+        provider=generated_summary.generation.provider,
+        fallback_reason=generated_summary.generation.fallback_reason,
     )
 
     return SummaryResponse(
@@ -143,6 +146,13 @@ def _looks_incomplete(text: str) -> bool:
         return True
 
     return last_line[-1] not in {".", "!", "?", ")", "]"}
+
+
+def _cached_generation_note(generation_mode: str, fallback_reason: str | None) -> str:
+    if fallback_reason:
+        return f"Cached output originally used {generation_mode}. {fallback_reason}"
+
+    return f"Cached output originally used {generation_mode}."
 
 
 def _select_source_chunks(chunks: list[TranscriptChunk], mode: SummaryMode) -> list[TranscriptChunk]:

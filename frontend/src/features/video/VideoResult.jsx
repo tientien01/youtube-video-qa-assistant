@@ -1,4 +1,4 @@
-export function VideoResult({ video }) {
+export function VideoResult({ video, onRebuildIndex, isRebuilding }) {
   if (!video) {
     return (
       <div className="empty-state">
@@ -22,6 +22,9 @@ export function VideoResult({ video }) {
       </div>
 
       <h2>Kết quả ingest</h2>
+      {video.thumbnail_url ? (
+        <img className="video-thumbnail" src={video.thumbnail_url} alt={video.title} />
+      ) : null}
       <dl>
         <div>
           <dt>Video ID</dt>
@@ -30,6 +33,10 @@ export function VideoResult({ video }) {
         <div>
           <dt>Title</dt>
           <dd>{video.title}</dd>
+        </div>
+        <div>
+          <dt>Channel</dt>
+          <dd>{video.channel_title || 'Chưa có'}</dd>
         </div>
         <div>
           <dt>Trạng thái</dt>
@@ -52,6 +59,14 @@ export function VideoResult({ video }) {
           </dd>
         </div>
       </dl>
+      <button
+        className="rebuild-index-button"
+        type="button"
+        onClick={() => onRebuildIndex(video.video_id)}
+        disabled={isRebuilding}
+      >
+        {isRebuilding ? 'Đang rebuild index...' : 'Rebuild vector index'}
+      </button>
     </div>
   )
 }

@@ -14,6 +14,8 @@ class VideoMetadata:
     chunk_count: int
     created_at: str
     updated_at: str
+    channel_title: str | None = None
+    thumbnail_url: str | None = None
 
 
 class LocalVideoMetadataStore:
@@ -28,6 +30,8 @@ class LocalVideoMetadataStore:
         video_id: str,
         url: str,
         title: str,
+        channel_title: str | None = None,
+        thumbnail_url: str | None = None,
         duration_seconds: int | None,
         transcript_language: str | None,
         chunk_count: int,
@@ -40,6 +44,8 @@ class LocalVideoMetadataStore:
             video_id=video_id,
             url=url,
             title=title,
+            channel_title=channel_title,
+            thumbnail_url=thumbnail_url,
             duration_seconds=duration_seconds,
             transcript_language=transcript_language,
             chunk_count=chunk_count,
@@ -78,7 +84,7 @@ class LocalVideoMetadataStore:
         if self._storage_path.exists():
             raw_data = json.loads(self._storage_path.read_text(encoding="utf-8"))
             self._metadata = {
-                video_id: VideoMetadata(**metadata)
+                video_id: _metadata_from_data(metadata)
                 for video_id, metadata in raw_data.items()
             }
 
@@ -103,6 +109,21 @@ def _default_storage_path() -> Path:
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _metadata_from_data(metadata: dict) -> VideoMetadata:
+    return VideoMetadata(
+        video_id=metadata["video_id"],
+        url=metadata["url"],
+        title=metadata["title"],
+        channel_title=metadata.get("channel_title"),
+        thumbnail_url=metadata.get("thumbnail_url"),
+        duration_seconds=metadata.get("duration_seconds"),
+        transcript_language=metadata.get("transcript_language"),
+        chunk_count=metadata["chunk_count"],
+        created_at=metadata["created_at"],
+        updated_at=metadata["updated_at"],
+    )
 
 
 metadata_store = LocalVideoMetadataStore()

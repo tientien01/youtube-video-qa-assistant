@@ -13,6 +13,9 @@ class GeneratedOutput:
     source_chunk_ids: list[str]
     created_at: str
     updated_at: str
+    generation_mode: str = "fallback"
+    provider: str = "fallback"
+    fallback_reason: str | None = None
 
 
 class LocalGeneratedOutputStore:
@@ -39,6 +42,9 @@ class LocalGeneratedOutputStore:
         mode: str,
         content: str,
         source_chunk_ids: list[str],
+        generation_mode: str = "fallback",
+        provider: str = "fallback",
+        fallback_reason: str | None = None,
     ) -> GeneratedOutput:
         self._ensure_loaded()
         existing_output = self.get_output(
@@ -55,6 +61,9 @@ class LocalGeneratedOutputStore:
             source_chunk_ids=source_chunk_ids,
             created_at=existing_output.created_at if existing_output else now,
             updated_at=now,
+            generation_mode=generation_mode,
+            provider=provider,
+            fallback_reason=fallback_reason,
         )
 
         self._outputs.setdefault(output_type, {}).setdefault(video_id, {})[mode] = generated_output
@@ -83,7 +92,7 @@ class LocalGeneratedOutputStore:
             self._outputs = {
                 output_type: {
                     video_id: {
-                        mode: GeneratedOutput(**output_data)
+                        mode: _generated_output_from_data(output_data)
                         for mode, output_data in outputs_by_mode.items()
                     }
                     for video_id, outputs_by_mode in outputs_by_video.items()
@@ -118,6 +127,21 @@ def _default_storage_path() -> Path:
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _generated_output_from_data(output_data: dict) -> GeneratedOutput:
+    return GeneratedOutput(
+        video_id=output_data["video_id"],
+        output_type=output_data["output_type"],
+        mode=output_data["mode"],
+        content=output_data["content"],
+        source_chunk_ids=list(output_data.get("source_chunk_ids", [])),
+        created_at=output_data["created_at"],
+        updated_at=output_data["updated_at"],
+        generation_mode=output_data.get("generation_mode", "fallback"),
+        provider=output_data.get("provider", "fallback"),
+        fallback_reason=output_data.get("fallback_reason"),
+    )
 
 
 generated_output_store = LocalGeneratedOutputStore()

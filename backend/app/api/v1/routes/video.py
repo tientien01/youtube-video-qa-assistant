@@ -2,7 +2,13 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.schemas.video import VideoDeleteResponse, VideoIngestRequest, VideoIngestResponse, VideoMetadataResponse
+from app.schemas.video import (
+    VideoDeleteResponse,
+    VideoIngestRequest,
+    VideoIngestResponse,
+    VideoMetadataResponse,
+    VideoRebuildIndexResponse,
+)
 from app.services.extraction.transcript_service import TranscriptNotFoundError
 from app.services.rag.local_store import VideoNotIndexedError
 from app.services.rag.video_index_service import (
@@ -10,6 +16,7 @@ from app.services.rag.video_index_service import (
     get_ingested_video,
     ingest_video_content,
     list_ingested_videos,
+    rebuild_video_index,
 )
 
 
@@ -56,5 +63,13 @@ def get_video(video_id: str) -> VideoMetadataResponse:
 def delete_video(video_id: str) -> VideoDeleteResponse:
     try:
         return delete_ingested_video(video_id)
+    except VideoNotIndexedError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+
+
+@router.post("/{video_id}/rebuild-index", response_model=VideoRebuildIndexResponse)
+def rebuild_index(video_id: str) -> VideoRebuildIndexResponse:
+    try:
+        return rebuild_video_index(video_id)
     except VideoNotIndexedError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error

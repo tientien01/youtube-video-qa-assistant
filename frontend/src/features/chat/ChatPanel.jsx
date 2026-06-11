@@ -5,6 +5,8 @@ export function ChatPanel({
   video,
   messages,
   onAsk,
+  onRegenerate,
+  onAskWithSource,
   onToggleExport,
   onClearHistory,
   isAsking,
@@ -102,7 +104,19 @@ export function ChatPanel({
                   />
                   <span>Đưa câu này vào Markdown export</span>
                 </label>
+                <div className="chat-message-actions">
+                  <button
+                    type="button"
+                    onClick={() => onRegenerate(message)}
+                    disabled={isAsking}
+                  >
+                    Regenerate
+                  </button>
+                </div>
                 <p className="answer-text">{message.answer}</p>
+                {message.groundednessWarning ? (
+                  <p className="muted-text">Groundedness: {message.groundednessWarning}</p>
+                ) : null}
                 {message.generation?.fallback_reason ? (
                   <p className="muted-text">Fallback: {message.generation.fallback_reason}</p>
                 ) : null}
@@ -111,16 +125,23 @@ export function ChatPanel({
                   <div className="source-list">
                     <h3>Nguồn transcript</h3>
                     {message.sources.map((source) => (
-                      <a
-                        className="source-item"
-                        href={buildYouTubeTimestampUrl(video.video_id, source.start_seconds)}
-                        target="_blank"
-                        rel="noreferrer"
-                        key={source.chunk_id}
-                      >
-                        <span>{formatTimestamp(source.start_seconds)}</span>
+                      <div className="source-item source-item-with-action" key={source.chunk_id}>
+                        <a
+                          href={buildYouTubeTimestampUrl(video.video_id, source.start_seconds)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {formatTimestamp(source.start_seconds)}
+                        </a>
                         <span>{source.text}</span>
-                      </a>
+                        <button
+                          type="button"
+                          onClick={() => onAskWithSource(message, source)}
+                          disabled={isAsking}
+                        >
+                          Hỏi lại với nguồn này
+                        </button>
+                      </div>
                     ))}
                   </div>
                 ) : null}

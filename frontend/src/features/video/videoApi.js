@@ -52,3 +52,16 @@ export async function deleteVideo(videoId) {
 
   return data
 }
+
+export async function rebuildVideoIndex(videoId) {
+  const response = await fetch(`${API_BASE_URL}/videos/${videoId}/rebuild-index`, {
+    method: 'POST',
+  })
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.detail || 'Không thể rebuild index.')
+  }
+
+  return data
+}

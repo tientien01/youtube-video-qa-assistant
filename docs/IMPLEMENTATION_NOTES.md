@@ -35,12 +35,20 @@ Gần nhất đã chạy:
 
 ```text
 Backend: .\.venv\Scripts\python.exe -m unittest discover -s tests
-Result: 51 tests pass
+Result: 62 tests pass
 
 Frontend: npm run lint
 Frontend: npm run build
 Result: pass
 ```
+
+## Latest Changes
+
+- Added Phase I config/adapters for sentence-transformers, ChromaDB and lexical reranking while keeping hashing/local JSON as defaults.
+- Improved Gemini output handling: higher output token limit, truncated-response fallback, tighter Summary/Study Notes prompts.
+- Improved Summary UI source display with timestamp ranges and shorter transcript excerpts.
+- Improved Study Notes with mode/learning goal controls, regenerate support, cache generation metadata, whole-video context selection, semantic candidates, output validation and section notes for longer videos.
+- Added real YouTube oEmbed metadata, rebuild-index API, backend chat history sync, chat regenerate/source-constrained ask, simple groundedness guard and Debug-to-Chat chunk preservation.
 
 ## Current Limitations
 

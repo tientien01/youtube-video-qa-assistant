@@ -276,6 +276,19 @@
   overflow-wrap: anywhere;
 }
 
+.ingest-stage {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.video-thumbnail {
+  width: min(320px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
 .question-form {
   display: grid;
   gap: 10px;
@@ -283,6 +296,14 @@
 
 .summary-form {
   display: flex;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.notes-form {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 18px;
@@ -312,6 +333,7 @@
 .question-form label,
 .debug-field,
 .debug-question-field,
+.notes-field,
 .quiz-field,
 .summary-mode-field,
 .retrieval-mode-field {
@@ -339,6 +361,12 @@
   min-width: 180px;
 }
 
+.notes-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
 .quiz-field {
   display: grid;
   gap: 6px;
@@ -353,6 +381,8 @@
 
 .debug-field input,
 .debug-field select,
+.notes-field input,
+.notes-field select,
 .quiz-field input,
 .quiz-field select,
 .summary-mode-field select,
@@ -368,6 +398,8 @@
 
 .quiz-field input:focus,
 .quiz-field select:focus,
+.notes-field input:focus,
+.notes-field select:focus,
 .debug-field input:focus,
 .debug-field select:focus,
 .summary-mode-field select:focus,
@@ -424,6 +456,30 @@
   cursor: pointer;
 }
 
+.rebuild-index-button,
+.chat-message-actions button,
+.source-item-with-action button {
+  min-width: 140px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: #ffffff;
+  background: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rebuild-index-button {
+  margin-top: 14px;
+}
+
+.chat-message-actions {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0;
+}
+
 .summary-form button {
   min-width: 140px;
   border: 1px solid var(--accent);
@@ -436,6 +492,7 @@
   cursor: pointer;
 }
 
+.notes-actions button,
 .quiz-form button,
 .debug-options button,
 .debug-actions button,
@@ -451,17 +508,10 @@
   cursor: pointer;
 }
 
-.notes-action {
-  min-width: 140px;
-  margin-bottom: 18px;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  padding: 12px 16px;
-  color: #ffffff;
-  background: var(--accent);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
+.notes-actions {
+  display: flex;
+  gap: 10px;
+  align-items: end;
 }
 
 .export-actions {
@@ -541,7 +591,10 @@
   opacity: 0.7;
 }
 
-.notes-action:disabled,
+.notes-actions button:disabled,
+.rebuild-index-button:disabled,
+.chat-message-actions button:disabled,
+.source-item-with-action button:disabled,
 .quiz-form button:disabled,
 .debug-options button:disabled,
 .debug-actions button:disabled,
@@ -835,6 +888,17 @@
   font-weight: 700;
 }
 
+.source-item-with-action {
+  grid-template-columns: 68px minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.source-item-with-action a {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
 @media (max-width: 720px) {
   .app-shell {
     padding: 32px 16px;
@@ -861,6 +925,10 @@
     display: grid;
   }
 
+  .notes-form {
+    grid-template-columns: 1fr;
+  }
+
   .quiz-form {
     grid-template-columns: 1fr;
   }
@@ -873,6 +941,7 @@
     width: 100%;
   }
 
+  .notes-actions,
   .debug-options button,
   .debug-actions button,
   .quiz-form button,
@@ -880,7 +949,11 @@
     width: 100%;
   }
 
-  .notes-action {
+  .notes-actions {
+    display: grid;
+  }
+
+  .notes-actions button {
     width: 100%;
   }
 
@@ -919,6 +992,7 @@
   }
 
   .summary-mode-field,
+  .notes-field,
   .retrieval-mode-field {
     min-width: 0;
   }

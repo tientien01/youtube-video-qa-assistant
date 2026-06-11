@@ -10,6 +10,7 @@ os.environ["VECTOR_STORE_PROVIDER"] = "local_json"
 
 from app.core.config import get_settings
 from app.schemas.transcript import TranscriptSegment
+from app.services.extraction.youtube_metadata_service import YouTubeMetadata
 from app.services.llm.base import LlmError
 from app.services.llm.config import load_llm_settings
 from app.services.llm.generation import OptionalLlmResult
@@ -172,6 +173,14 @@ class RagServicesTest(unittest.TestCase):
                     "app.services.rag.video_index_service.fetch_transcript",
                     return_value=(segments, "en"),
                 ),
+                patch(
+                    "app.services.rag.video_index_service.fetch_youtube_metadata",
+                    return_value=YouTubeMetadata(
+                        title="Real video title",
+                        channel_title="Learning channel",
+                        thumbnail_url="https://example.com/thumb.jpg",
+                    ),
+                ),
             ):
                 response = ingest_video_content(
                     "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
@@ -180,7 +189,12 @@ class RagServicesTest(unittest.TestCase):
             metadata = metadata_store.get_video("dQw4w9WgXcQ")
 
         self.assertEqual(response.status, "ready")
+        self.assertEqual(response.title, "Real video title")
+        self.assertEqual(response.channel_title, "Learning channel")
+        self.assertEqual(response.thumbnail_url, "https://example.com/thumb.jpg")
         self.assertIsNotNone(metadata)
+        self.assertEqual(metadata.channel_title, "Learning channel")
+        self.assertEqual(metadata.thumbnail_url, "https://example.com/thumb.jpg")
         self.assertEqual(metadata.duration_seconds, 9)
         self.assertEqual(metadata.transcript_language, "en")
         self.assertGreater(metadata.chunk_count, 0)
@@ -569,6 +583,102 @@ class RagServicesTest(unittest.TestCase):
         self.assertIn("study notes", llm_client.last_prompt)
         self.assertIn("Study notes should use transcript context", llm_client.last_prompt)
 
+    def test_notes_service_keeps_generation_metadata_when_cached(self):
+        chunk = TranscriptChunk(
+            chunk_id="video123456-0001",
+            video_id="video123456",
+            text="Study notes cache should preserve original generation metadata.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("video123456", [chunk])
+
+            with (
+                patch("app.services.learning.notes_service.rag_store", store),
+                patch("app.services.learning.notes_service.generated_output_store", output_store),
+            ):
+                first_response = generate_study_notes(
+                    "video123456",
+                    llm_client=FakeLlmClient(build_valid_notes_text()),
+                )
+                second_response = generate_study_notes("video123456")
+
+        self.assertFalse(first_response.cached)
+        self.assertTrue(second_response.cached)
+        self.assertEqual(second_response.generation.generation_mode, "cached")
+        self.assertEqual(second_response.generation.provider, "injected")
+        self.assertIn("originally used llm", second_response.generation.fallback_reason)
+
+    def test_notes_service_force_regenerates_cached_notes(self):
+        chunk = TranscriptChunk(
+            chunk_id="video123456-0001",
+            video_id="video123456",
+            text="Study notes can be regenerated when cache quality is not good enough.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("video123456", [chunk])
+
+            with (
+                patch("app.services.learning.notes_service.rag_store", store),
+                patch("app.services.learning.notes_service.generated_output_store", output_store),
+            ):
+                first_response = generate_study_notes(
+                    "video123456",
+                    llm_client=FakeLlmClient("First notes."),
+                )
+                second_response = generate_study_notes(
+                    "video123456",
+                    force=True,
+                    llm_client=FakeLlmClient("Second notes."),
+                )
+
+        self.assertEqual(first_response.notes, "First notes.")
+        self.assertEqual(second_response.notes, "Second notes.")
+        self.assertFalse(second_response.cached)
+
+    def test_notes_service_uses_learning_goal_in_cache_key(self):
+        chunk = TranscriptChunk(
+            chunk_id="video123456-0001",
+            video_id="video123456",
+            text="Learning goals should create separate cached study notes.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("video123456", [chunk])
+
+            with (
+                patch("app.services.learning.notes_service.rag_store", store),
+                patch("app.services.learning.notes_service.generated_output_store", output_store),
+            ):
+                first_response = generate_study_notes(
+                    "video123456",
+                    learning_goal="ôn thi",
+                    llm_client=FakeLlmClient("Exam notes."),
+                )
+                second_response = generate_study_notes(
+                    "video123456",
+                    learning_goal="hiểu cơ bản",
+                    llm_client=FakeLlmClient("Beginner notes."),
+                )
+
+        self.assertFalse(first_response.cached)
+        self.assertFalse(second_response.cached)
+        self.assertEqual(first_response.learning_goal, "ôn thi")
+        self.assertEqual(second_response.learning_goal, "hiểu cơ bản")
+
     def test_notes_service_falls_back_when_llm_fails(self):
         chunk = TranscriptChunk(
             chunk_id="video123456-0001",
@@ -591,6 +701,36 @@ class RagServicesTest(unittest.TestCase):
 
         self.assertIn("Mục tiêu bài học", response.notes)
         self.assertIn("Fallback notes", response.notes)
+
+    def test_notes_service_uses_section_notes_for_long_videos(self):
+        chunks = [
+            TranscriptChunk(
+                chunk_id=f"video123456-{index:04d}",
+                video_id="video123456",
+                text=f"Long video section {index} explains an important learning concept.",
+                start_seconds=index * 10,
+                end_seconds=index * 10 + 8,
+            )
+            for index in range(24)
+        ]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
+            store.upsert_video("video123456", chunks)
+
+            with (
+                patch("app.services.learning.notes_service.rag_store", store),
+                patch("app.services.learning.notes_service.generated_output_store", output_store),
+            ):
+                response = generate_study_notes(
+                    "video123456",
+                    mode="detailed",
+                    llm_client=FailingLlmClient(),
+                )
+
+        self.assertIn("Ghi chú theo phần", response.notes)
+        self.assertGreater(response.sources[-1].start_seconds, response.sources[0].start_seconds)
 
     def test_quiz_service_generates_and_caches_quiz(self):
         chunks = [
@@ -768,6 +908,27 @@ class FakeLlmClient:
 class FailingLlmClient:
     def generate_text(self, prompt: str) -> str:
         raise LlmError("Provider failed.")
+
+
+def build_valid_notes_text() -> str:
+    return (
+        "Mục tiêu bài học:\n"
+        "- Hiểu các ý chính trong transcript.\n"
+        "- Biết đoạn nào cần xem lại khi học.\n\n"
+        "Khái niệm chính:\n"
+        "- Retrieval lấy ngữ cảnh liên quan từ transcript.\n"
+        "- Timestamp giúp kiểm chứng nguồn trong video.\n"
+        "- Study notes chuyển transcript thành tài liệu ôn tập.\n"
+        "- Cache giúp tránh tạo lại nội dung giống nhau.\n\n"
+        "Giải thích dễ hiểu:\n"
+        "Nội dung này gom các ý quan trọng thành ghi chú ngắn để người học xem lại nhanh.\n\n"
+        "Ví dụ hoặc chi tiết đáng chú ý trong transcript:\n"
+        "- Transcript có thể được chia thành nhiều đoạn.\n"
+        "- Mỗi đoạn giữ timestamp nguồn.\n"
+        "- Notes có thể được tạo bằng LLM hoặc fallback.\n\n"
+        "Timestamp nên xem lại:\n"
+        "- 00:00-00:05: Xem lại đoạn transcript nguồn."
+    )
 
 
 if __name__ == "__main__":

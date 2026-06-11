@@ -11,6 +11,8 @@ class VideoIngestResponse(BaseModel):
     video_id: str
     title: str
     url: str
+    channel_title: str | None = None
+    thumbnail_url: str | None = None
     duration_seconds: int | None
     transcript_language: str | None
     chunk_count: int
@@ -25,6 +27,8 @@ class VideoMetadataResponse(BaseModel):
     video_id: str
     title: str
     url: str
+    channel_title: str | None = None
+    thumbnail_url: str | None = None
     duration_seconds: int | None
     transcript_language: str | None
     chunk_count: int
@@ -35,3 +39,9 @@ class VideoMetadataResponse(BaseModel):
 class VideoDeleteResponse(BaseModel):
     video_id: str
     deleted: bool
+
+
+class VideoRebuildIndexResponse(BaseModel):
+    video_id: str
+    rebuilt: bool
+    chunk_count: int

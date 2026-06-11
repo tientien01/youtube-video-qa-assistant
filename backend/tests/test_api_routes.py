@@ -11,6 +11,7 @@ os.environ["VECTOR_STORE_PROVIDER"] = "local_json"
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.chat_history_store import LocalChatHistoryStore
 from app.services.extraction.transcript_service import TranscriptNotFoundError
 from app.services.learning.generated_output_store import LocalGeneratedOutputStore
 from app.services.rag.local_store import LocalRagStore
@@ -265,10 +266,19 @@ class ApiRoutesTest(unittest.TestCase):
                 patch("app.services.learning.notes_service.rag_store", store),
                 patch("app.services.learning.notes_service.generated_output_store", output_store),
             ):
-                response = self.client.post("/api/v1/videos/dQw4w9WgXcQ/study-notes")
+                response = self.client.post(
+                    "/api/v1/videos/dQw4w9WgXcQ/study-notes",
+                    json={
+                        "mode": "exam_review",
+                        "learning_goal": "ôn lại ý chính",
+                        "force": True,
+                    },
+                )
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()["cached"])
+        self.assertEqual(response.json()["mode"], "exam_review")
+        self.assertEqual(response.json()["learning_goal"], "ôn lại ý chính")
         self.assertIn("Mục tiêu bài học", response.json()["notes"])
         self.assertEqual(len(response.json()["sources"]), 1)
 
@@ -433,6 +443,68 @@ class ApiRoutesTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["retrieval_mode"], "hybrid")
         self.assertGreaterEqual(len(response.json()["sources"]), 1)
+
+
+    def test_rebuild_index_endpoint_rebuilds_vectors(self):
+        chunk = TranscriptChunk(
+            chunk_id="dQw4w9WgXcQ-0001",
+            video_id="dQw4w9WgXcQ",
+            text="Rebuild index should use existing transcript chunks.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
+            store.upsert_video("dQw4w9WgXcQ", [chunk])
+
+            with (
+                patch("app.services.rag.video_index_service.rag_store", store),
+                patch("app.services.rag.video_index_service.vector_store", vector_store),
+            ):
+                response = self.client.post("/api/v1/videos/dQw4w9WgXcQ/rebuild-index")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["rebuilt"])
+        self.assertEqual(response.json()["chunk_count"], 1)
+        self.assertTrue(vector_store.has_video("dQw4w9WgXcQ"))
+
+    def test_chat_history_endpoint_returns_backend_messages(self):
+        chunk = TranscriptChunk(
+            chunk_id="dQw4w9WgXcQ-0001",
+            video_id="dQw4w9WgXcQ",
+            text="Chat history should sync through the backend.",
+            start_seconds=0,
+            end_seconds=5,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = LocalRagStore(Path(temp_dir) / "index.json")
+            vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
+            chat_store = LocalChatHistoryStore(Path(temp_dir) / "chat.json")
+            store.upsert_video("dQw4w9WgXcQ", [chunk])
+            vector_store.upsert_video("dQw4w9WgXcQ", [chunk])
+
+            with (
+                patch("app.services.rag.video_index_service.rag_store", store),
+                patch("app.services.rag.video_index_service.vector_store", vector_store),
+                patch("app.services.rag.video_index_service.chat_history_store", chat_store),
+            ):
+                ask_response = self.client.post(
+                    "/api/v1/chat/ask",
+                    json={
+                        "video_id": "dQw4w9WgXcQ",
+                        "question": "What does chat history sync?",
+                        "retrieval_mode": "hybrid",
+                    },
+                )
+                history_response = self.client.get("/api/v1/chat/history/dQw4w9WgXcQ")
+
+        self.assertEqual(ask_response.status_code, 200)
+        self.assertIsNotNone(ask_response.json()["message_id"])
+        self.assertEqual(history_response.status_code, 200)
+        self.assertEqual(len(history_response.json()["messages"]), 1)
 
 
 if __name__ == "__main__":

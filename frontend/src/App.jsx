@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { askVideoQuestion } from './features/chat/chatApi'
+import { askVideoQuestion, clearBackendChatHistory, getChatHistory } from './features/chat/chatApi'
 import { ChatPanel } from './features/chat/ChatPanel'
 import { retrieveDebugContext } from './features/debug/debugApi'
 import { RagDebugPanel } from './features/debug/RagDebugPanel'
@@ -11,7 +11,7 @@ import { generateVideoQuiz } from './features/quiz/quizApi'
 import { QuizPanel } from './features/quiz/QuizPanel'
 import { generateVideoSummary } from './features/summary/summaryApi'
 import { SummaryPanel } from './features/summary/SummaryPanel'
-import { deleteVideo, ingestVideo, listVideos } from './features/video/videoApi'
+import { deleteVideo, ingestVideo, listVideos, rebuildVideoIndex } from './features/video/videoApi'
 import { VideoHistory } from './features/video/VideoHistory'
 import { VideoIngestForm } from './features/video/VideoIngestForm'
 import { VideoResult } from './features/video/VideoResult'
@@ -58,6 +58,8 @@ function App() {
   const [isQuizLoading, setIsQuizLoading] = useState(false)
   const [isDebugLoading, setIsDebugLoading] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(false)
+  const [isRebuildingIndex, setIsRebuildingIndex] = useState(false)
+  const [ingestStage, setIngestStage] = useState('')
 
   useEffect(() => {
     let isActive = true
@@ -89,8 +91,15 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (video?.video_id) {
+      loadBackendChatHistory(video.video_id)
+    }
+  }, [video?.video_id])
+
   async function handleIngest(url) {
     setIsLoading(true)
+    const ingestTimers = startIngestStages(setIngestStage)
     setError('')
     setChatError('')
     setSummaryError('')
@@ -108,11 +117,13 @@ function App() {
     } catch (requestError) {
       setError(requestError.message)
     } finally {
+      ingestTimers.forEach((timerId) => clearTimeout(timerId))
+      setIngestStage('')
       setIsLoading(false)
     }
   }
 
-  async function handleAsk(question, retrievalMode) {
+  async function handleAsk(question, retrievalMode, sourceChunkIds = []) {
     if (!video) {
       return
     }
@@ -125,19 +136,15 @@ function App() {
         videoId: video.video_id,
         question,
         retrievalMode,
+        sourceChunkIds,
       })
       setMessages((currentMessages) => {
         const nextMessages = [
-        {
-          id: `${Date.now()}-${currentMessages.length}`,
-          question,
-          answer: response.answer,
-          retrievalMode: response.retrieval_mode,
-          generation: response.generation,
-          sources: response.sources,
-          selectedForExport: true,
-        },
-        ...currentMessages,
+          normalizeChatMessage(response, {
+            question,
+            selectedForExport: true,
+          }),
+          ...currentMessages,
         ]
         saveVideoChatHistory(video.video_id, nextMessages)
         return nextMessages
@@ -147,6 +154,22 @@ function App() {
     } finally {
       setIsAsking(false)
     }
+  }
+
+  function handleRegenerateAnswer(message) {
+    handleAsk(
+      message.question,
+      message.retrievalMode || 'hybrid',
+      message.sources?.map((source) => source.chunk_id) || [],
+    )
+  }
+
+  function handleAskWithSource(message, source) {
+    handleAsk(
+      message.question,
+      message.retrievalMode || 'hybrid',
+      [source.chunk_id],
+    )
   }
 
   async function handleGenerateSummary(mode) {
@@ -170,7 +193,7 @@ function App() {
     }
   }
 
-  async function handleGenerateNotes() {
+  async function handleGenerateNotes({ mode, learningGoal, force }) {
     if (!video) {
       return
     }
@@ -181,6 +204,9 @@ function App() {
     try {
       const response = await generateStudyNotes({
         videoId: video.video_id,
+        mode,
+        learningGoal,
+        force,
       })
       setNotes(response)
     } catch (requestError) {
@@ -251,7 +277,11 @@ function App() {
     }
 
     handleChangeTab('chat')
-    handleAsk(debugResult.question, debugResult.retrieval_mode)
+    handleAsk(
+      debugResult.question,
+      debugResult.retrieval_mode,
+      debugResult.chunks.map((chunk) => chunk.chunk_id),
+    )
   }
 
   function handleToggleMessageExport(messageId) {
@@ -270,13 +300,43 @@ function App() {
     })
   }
 
-  function handleClearChatHistory() {
+  async function handleClearChatHistory() {
     if (!video) {
       return
     }
 
-    saveVideoChatHistory(video.video_id, [])
-    setMessages([])
+    try {
+      await clearBackendChatHistory(video.video_id)
+    } catch {
+      // Local chat history still clears when backend history is unavailable.
+    } finally {
+      saveVideoChatHistory(video.video_id, [])
+      setMessages([])
+    }
+  }
+
+  async function handleRebuildIndex(videoId) {
+    setIsRebuildingIndex(true)
+    setError('')
+
+    try {
+      await rebuildVideoIndex(videoId)
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setIsRebuildingIndex(false)
+    }
+  }
+
+  async function loadBackendChatHistory(videoId) {
+    try {
+      const response = await getChatHistory(videoId)
+      const syncedMessages = response.messages.map((message) => normalizeChatMessage(message))
+      setMessages(syncedMessages)
+      saveVideoChatHistory(videoId, syncedMessages)
+    } catch {
+      setMessages(readVideoChatHistory(videoId))
+    }
   }
 
   async function handleDeleteVideo(videoId) {
@@ -315,6 +375,7 @@ function App() {
     saveCurrentVideo(normalizedVideo)
     setVideoHistory(saveVideoToHistory(normalizedVideo))
     setMessages(readVideoChatHistory(normalizedVideo.video_id))
+    loadBackendChatHistory(normalizedVideo.video_id)
     setSummary(null)
     setNotes(null)
     setQuiz(null)
@@ -338,7 +399,11 @@ function App() {
       </section>
 
       <section className="workspace" aria-label="Video ingest workspace">
-        <VideoIngestForm onSubmit={handleIngest} isLoading={isLoading} />
+        <VideoIngestForm
+          onSubmit={handleIngest}
+          isLoading={isLoading}
+          ingestStage={ingestStage}
+        />
 
         {error ? <p className="error-message">{error}</p> : null}
 
@@ -350,7 +415,11 @@ function App() {
           isLoading={isHistoryLoading}
         />
 
-        <VideoResult video={video} />
+        <VideoResult
+          video={video}
+          onRebuildIndex={handleRebuildIndex}
+          isRebuilding={isRebuildingIndex}
+        />
 
         <section className="workspace-tabs" aria-label="Learning workspace">
           <div className="tab-list" role="tablist" aria-label="Workspace sections">
@@ -374,6 +443,8 @@ function App() {
                 video={video}
                 messages={messages}
                 onAsk={handleAsk}
+                onRegenerate={handleRegenerateAnswer}
+                onAskWithSource={handleAskWithSource}
                 onToggleExport={handleToggleMessageExport}
                 onClearHistory={handleClearChatHistory}
                 isAsking={isAsking}
@@ -443,11 +514,34 @@ function readActiveWorkspaceTab() {
   return WORKSPACE_TABS.some((tab) => tab.id === storedTab) ? storedTab : 'chat'
 }
 
+function startIngestStages(setIngestStage) {
+  setIngestStage('Fetching transcript...')
+  return [
+    setTimeout(() => setIngestStage('Chunking transcript...'), 700),
+    setTimeout(() => setIngestStage('Indexing BM25 and vector store...'), 1400),
+  ]
+}
+
 function normalizeVideo(video) {
   return {
     ...video,
     status: video.status || 'cached',
     updated_at: video.updated_at || new Date().toISOString(),
+  }
+}
+
+function normalizeChatMessage(message, overrides = {}) {
+  return {
+    id: message.message_id || overrides.id || `${Date.now()}`,
+    messageId: message.message_id || overrides.messageId || null,
+    question: overrides.question || message.question,
+    answer: message.answer,
+    retrievalMode: message.retrieval_mode || message.retrievalMode || 'hybrid',
+    generation: message.generation,
+    sources: message.sources || [],
+    groundednessWarning: message.groundedness_warning || message.groundednessWarning || null,
+    selectedForExport: overrides.selectedForExport ?? true,
+    createdAt: message.created_at || new Date().toISOString(),
   }
 }
 
