@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.application.ingest.transcript import TranscriptAcquisitionError, TranscriptFailureCode
 from app.schemas.video import (
     VideoDeleteResponse,
     VideoIngestRequest,
@@ -9,7 +10,6 @@ from app.schemas.video import (
     VideoMetadataResponse,
     VideoRebuildIndexResponse,
 )
-from app.services.extraction.transcript_service import TranscriptFetchError, TranscriptNotFoundError
 from app.services.rag.local_store import VideoNotIndexedError
 from app.services.rag.video_index_service import (
     delete_ingested_video,
@@ -43,16 +43,15 @@ def ingest_video(request: VideoIngestRequest) -> VideoIngestResponse:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error),
         ) from error
-    except TranscriptNotFoundError as error:
-        logger.warning("Transcript unavailable during ingest: %s", error)
+    except TranscriptAcquisitionError as error:
+        logger.warning("Transcript acquisition failed during ingest: code=%s", error.code.value)
+        response_status = (
+            status.HTTP_404_NOT_FOUND
+            if error.code in {TranscriptFailureCode.NOT_FOUND, TranscriptFailureCode.VIDEO_UNAVAILABLE}
+            else status.HTTP_503_SERVICE_UNAVAILABLE
+        )
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
-    except TranscriptFetchError as error:
-        logger.warning("Transcript fetch failed during ingest: %s", error)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status_code=response_status,
             detail=str(error),
         ) from error
 

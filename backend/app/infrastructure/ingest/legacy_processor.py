@@ -1,8 +1,8 @@
 from collections.abc import Callable
 
-from app.application.ingest.ports import IngestFailure, ProcessedVideo, ProcessVideoRequest
+from app.application.ingest.ports import IngestAttemptReport, IngestFailure, ProcessedVideo, ProcessVideoRequest
+from app.application.ingest.transcript import TranscriptAcquisitionError
 from app.domain.entities import IngestStage
-from app.services.extraction.transcript_service import TranscriptFetchError, TranscriptNotFoundError
 from app.services.rag.video_index_service import ingest_video_content
 
 
@@ -21,12 +21,19 @@ class LegacyIngestProcessor:
         if is_cancelled():
             raise IngestFailure("INGEST_CANCELLED", "Ingest was cancelled.", retryable=False)
         report_stage(IngestStage.FETCHING_TRANSCRIPT)
+        attempts: list[IngestAttemptReport] = []
         try:
-            response = ingest_video_content(request.canonical_url)
-        except TranscriptNotFoundError as error:
-            raise IngestFailure("TRANSCRIPT_NOT_FOUND", str(error), retryable=False) from error
-        except TranscriptFetchError as error:
-            raise IngestFailure("TRANSCRIPT_DOWNLOAD_FAILED", str(error), retryable=True) from error
+            response = ingest_video_content(
+                request.canonical_url,
+                transcript_attempt_collector=attempts.extend,
+            )
+        except TranscriptAcquisitionError as error:
+            raise IngestFailure(
+                error.code.value,
+                str(error),
+                retryable=error.retryable,
+                attempts=error.attempts,
+            ) from error
         except ValueError as error:
             raise IngestFailure("INVALID_VIDEO_URL", str(error), retryable=False) from error
 
@@ -37,4 +44,5 @@ class LegacyIngestProcessor:
             channel_title=response.channel_title,
             thumbnail_url=response.thumbnail_url,
             duration_ms=response.duration_seconds * 1000 if response.duration_seconds is not None else None,
+            attempts=tuple(attempts),
         )

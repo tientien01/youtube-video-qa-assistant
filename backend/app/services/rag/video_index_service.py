@@ -1,8 +1,12 @@
 import logging
+from collections.abc import Callable
 
+from app.application.ingest.ports import IngestAttemptReport
+from app.application.ingest.transcript import TranscriptAcquisitionError
 from app.schemas.chat import ChatAskResponse, ChatHistoryDeleteResponse, ChatHistoryResponse, ChatSource
 from app.schemas.video import VideoDeleteResponse, VideoIngestResponse, VideoMetadataResponse, VideoRebuildIndexResponse
-from app.services.extraction.transcript_service import fetch_transcript
+from app.infrastructure.ingest.transcript.runtime import acquire_transcript
+from app.schemas.transcript import TranscriptSegment
 from app.services.extraction.video_url_service import extract_youtube_video_id
 from app.services.extraction.youtube_metadata_service import fetch_youtube_metadata
 from app.services.learning.generated_output_store import generated_output_store
@@ -18,7 +22,39 @@ from app.services.rag.vector_store import vector_store
 logger = logging.getLogger(__name__)
 
 
-def ingest_video_content(url: str) -> VideoIngestResponse:
+def fetch_transcript(
+    video_id: str,
+    *,
+    attempt_collector: Callable[[tuple[IngestAttemptReport, ...]], None] | None = None,
+) -> tuple[list[TranscriptSegment], str]:
+    """Bridge typed acquisition into the legacy chunking input shape."""
+
+    try:
+        acquisition = acquire_transcript(video_id)
+    except TranscriptAcquisitionError as error:
+        if attempt_collector is not None:
+            attempt_collector(error.attempts)
+        raise
+    if attempt_collector is not None:
+        attempt_collector(acquisition.attempts)
+    return (
+        [
+            TranscriptSegment(
+                text=segment.text,
+                start_seconds=segment.start_ms / 1000,
+                end_seconds=segment.end_ms / 1000,
+            )
+            for segment in acquisition.document.segments
+        ],
+        acquisition.document.language_code,
+    )
+
+
+def ingest_video_content(
+    url: str,
+    *,
+    transcript_attempt_collector: Callable[[tuple[IngestAttemptReport, ...]], None] | None = None,
+) -> VideoIngestResponse:
     video_id = extract_youtube_video_id(url)
     logger.info("Starting ingest for video_id=%s", video_id)
 
@@ -55,7 +91,10 @@ def ingest_video_content(url: str) -> VideoIngestResponse:
             status="cached",
         )
 
-    transcript_segments, language_code = fetch_transcript(video_id)
+    transcript_segments, language_code = fetch_transcript(
+        video_id,
+        attempt_collector=transcript_attempt_collector,
+    )
     chunks = chunk_transcript(video_id=video_id, segments=transcript_segments)
     rag_store.upsert_video(video_id, chunks)
     vector_store.upsert_video(video_id, chunks)
@@ -94,10 +133,7 @@ def ingest_video_content(url: str) -> VideoIngestResponse:
 
 
 def list_ingested_videos() -> list[VideoMetadataResponse]:
-    return [
-        _metadata_to_response(metadata)
-        for metadata in metadata_store.list_videos()
-    ]
+    return [_metadata_to_response(metadata) for metadata in metadata_store.list_videos()]
 
 
 def get_ingested_video(video_id: str) -> VideoMetadataResponse:
@@ -114,7 +150,13 @@ def delete_ingested_video(video_id: str) -> VideoDeleteResponse:
     deleted_metadata = metadata_store.delete_video(video_id)
     deleted_outputs = generated_output_store.delete_video(video_id)
     deleted_chat_history = chat_history_store.delete_video(video_id)
-    if not deleted_chunks and not deleted_vectors and not deleted_metadata and not deleted_outputs and not deleted_chat_history:
+    if (
+        not deleted_chunks
+        and not deleted_vectors
+        and not deleted_metadata
+        and not deleted_outputs
+        and not deleted_chat_history
+    ):
         raise VideoNotIndexedError("Video has not been indexed yet.")
 
     logger.info("Deleted video_id=%s from local library", video_id)
@@ -233,22 +275,12 @@ def _retrieve_chat_context(
     source_chunk_ids: list[str],
 ) -> list:
     if source_chunk_ids:
-        chunks_by_id = {
-            chunk.chunk_id: chunk
-            for chunk in rag_store.get_video_chunks(video_id)
-        }
-        selected_chunks = [
-            chunks_by_id[chunk_id]
-            for chunk_id in source_chunk_ids
-            if chunk_id in chunks_by_id
-        ]
+        chunks_by_id = {chunk.chunk_id: chunk for chunk in rag_store.get_video_chunks(video_id)}
+        selected_chunks = [chunks_by_id[chunk_id] for chunk_id in source_chunk_ids if chunk_id in chunks_by_id]
         if selected_chunks:
             from app.services.rag.models import RetrievedChunk
 
-            return [
-                RetrievedChunk(chunk=chunk, score=1.0)
-                for chunk in selected_chunks[:4]
-            ]
+            return [RetrievedChunk(chunk=chunk, score=1.0) for chunk in selected_chunks[:4]]
 
     return retrieve_chunks(
         video_id=video_id,

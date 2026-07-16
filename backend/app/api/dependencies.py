@@ -10,6 +10,7 @@ from app.infrastructure.db.runtime import DatabaseRuntime, start_database_runtim
 from app.infrastructure.db.unit_of_work import SqlAlchemyIngestUnitOfWork
 from app.infrastructure.ingest.in_process_runner import InProcessIngestJobRunner
 from app.infrastructure.ingest.legacy_processor import LegacyIngestProcessor
+from app.infrastructure.ingest.transcript.runtime import transcript_pipeline_fingerprint
 
 
 @dataclass(slots=True)
@@ -38,7 +39,7 @@ def get_ingest_application() -> IngestJobApplication:
             application = IngestJobApplication(
                 uow_factory,
                 LegacyIngestProcessor(),
-                target_fingerprint="legacy-ingest-v1",
+                target_fingerprint=transcript_pipeline_fingerprint(),
             )
             application.recover_interrupted()
             runner = InProcessIngestJobRunner(application.execute)

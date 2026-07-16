@@ -61,6 +61,6 @@ TASK-011 + TASK-013
 
 ## Ready now
 
-`TASK-001` through `TASK-003` are verified. `TASK-004` is ready to replace the
-opaque transcript portion of the compatibility processor. `TASK-009` may proceed
-independently on the LLM branch of the roadmap.
+`TASK-001` through `TASK-004` are verified. `TASK-005` is ready to normalize and
+persist transcript provenance from the typed acquisition result. `TASK-009` may
+proceed independently on the LLM branch of the roadmap.

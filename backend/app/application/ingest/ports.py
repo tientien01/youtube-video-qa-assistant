@@ -3,7 +3,17 @@ from dataclasses import dataclass
 from typing import Protocol, Self
 
 from app.application.ports.repositories import IngestJobRepository, VideoRepository
-from app.domain.entities import IngestStage
+from app.domain.entities import AttemptOutcome, IngestStage
+
+
+@dataclass(frozen=True, slots=True)
+class IngestAttemptReport:
+    provider: str
+    stage: IngestStage
+    outcome: AttemptOutcome
+    elapsed_ms: int | None = None
+    error_code: str | None = None
+    error_message: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,13 +28,22 @@ class ProcessedVideo:
     channel_title: str | None = None
     thumbnail_url: str | None = None
     duration_ms: int | None = None
+    attempts: tuple[IngestAttemptReport, ...] = ()
 
 
 class IngestFailure(RuntimeError):
-    def __init__(self, code: str, message: str, *, retryable: bool) -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        *,
+        retryable: bool,
+        attempts: tuple[IngestAttemptReport, ...] = (),
+    ) -> None:
         super().__init__(message)
         self.code = code
         self.retryable = retryable
+        self.attempts = attempts
 
 
 class IngestProcessor(Protocol):

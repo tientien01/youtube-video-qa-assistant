@@ -13,6 +13,12 @@ DEFAULT_EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 DEFAULT_VECTOR_STORE_PROVIDER = "local_json"
 DEFAULT_CHROMA_PERSIST_DIR = BACKEND_ROOT / "data" / "vector_store" / "chroma"
 DEFAULT_DATABASE_PATH = BACKEND_ROOT / "data" / "app.db"
+DEFAULT_TRANSCRIPT_PROVIDER_ORDER = (
+    "youtube_transcript_api",
+    "yt_dlp_manual",
+    "yt_dlp_automatic",
+)
+DEFAULT_TRANSCRIPT_LANGUAGES = ("vi", "en")
 
 
 load_dotenv(LOCAL_ENV_FILE)
@@ -32,6 +38,11 @@ class Settings:
     reranker_enabled: bool
     rerank_top_k: int
     database_url: str
+    transcript_provider_order: tuple[str, ...]
+    transcript_preferred_languages: tuple[str, ...]
+    transcript_connect_timeout_seconds: float
+    transcript_read_timeout_seconds: float
+    transcript_max_attempts_per_provider: int
 
 
 def get_settings() -> Settings:
@@ -62,6 +73,15 @@ def get_settings() -> Settings:
         reranker_enabled=_read_bool("RERANKER_ENABLED", default=False),
         rerank_top_k=_read_positive_int("RERANK_TOP_K", default=8),
         database_url=_read_optional_env("DATABASE_URL") or f"sqlite:///{DEFAULT_DATABASE_PATH.resolve().as_posix()}",
+        transcript_provider_order=tuple(
+            _read_list_env("TRANSCRIPT_PROVIDER_ORDER", default=list(DEFAULT_TRANSCRIPT_PROVIDER_ORDER))
+        ),
+        transcript_preferred_languages=tuple(
+            _read_list_env("TRANSCRIPT_PREFERRED_LANGUAGES", default=list(DEFAULT_TRANSCRIPT_LANGUAGES))
+        ),
+        transcript_connect_timeout_seconds=_read_timeout_seconds("TRANSCRIPT_CONNECT_TIMEOUT_SECONDS", default=5.0),
+        transcript_read_timeout_seconds=_read_timeout_seconds("TRANSCRIPT_READ_TIMEOUT_SECONDS", default=20.0),
+        transcript_max_attempts_per_provider=_read_positive_int("TRANSCRIPT_MAX_ATTEMPTS", default=2),
     )
 
 

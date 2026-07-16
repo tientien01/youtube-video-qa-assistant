@@ -65,7 +65,10 @@ python -m uv run --project backend alembic -c backend/alembic.ini upgrade head
 python -m uv run --project backend alembic -c backend/alembic.ini current
 ```
 
-The default local database path is `backend/data/app.db`. The current API continues to use its JSON stores until TASK-003 adopts the database runtime. Downgrade is intended for migration development and tests, not routine deletion of user data:
+The default local database path is `backend/data/app.db`. Persistent ingest jobs
+use this database; legacy transcript/chunk/vector content is migrated
+incrementally by TASK-004 through TASK-007. Downgrade is intended for migration
+development and tests, not routine deletion of user data:
 
 ```powershell
 python -m uv run --project backend alembic -c backend/alembic.ini downgrade base
@@ -101,6 +104,20 @@ No YouTube, model download, Ollama, or paid provider. Uses fixtures, temporary S
 - Tests override settings without reading developer credentials.
 - Model downloads occur in an explicit setup command.
 - Ollama unavailability disables generation, not ingest or retrieval.
+
+Optional transcript configuration uses comma-separated provider/language order:
+
+```text
+TRANSCRIPT_PROVIDER_ORDER=youtube_transcript_api,yt_dlp_manual,yt_dlp_automatic
+TRANSCRIPT_PREFERRED_LANGUAGES=vi,en
+TRANSCRIPT_CONNECT_TIMEOUT_SECONDS=5
+TRANSCRIPT_READ_TIMEOUT_SECONDS=20
+TRANSCRIPT_MAX_ATTEMPTS=2
+```
+
+The default order is deliberate. Unknown or duplicate providers fail
+configuration instead of silently changing acquisition behavior. Live provider
+calls are excluded from deterministic tests.
 
 ## Observability
 

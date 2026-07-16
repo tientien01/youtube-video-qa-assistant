@@ -14,15 +14,15 @@ This file reports current implementation status. Target behavior lives in specif
 | FastAPI `/api/v1` application | Implemented routes for health, video, chat, summary, notes, quiz, debug | `implemented` | TASK-010 |
 | React learning workspace | React JavaScript/Vite UI exists; approved evidence-first mock is specified but not implemented | `implemented` | TASK-010, TASK-013 |
 | Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
-| Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, 86 backend tests, frontend lint/build | `verified` | Expand incrementally |
-| Canonical database foundation | SQLite ORM schema, unit of work, and repository adapters implemented beside legacy JSON stores | `implemented` | Expand in TASK-004–007 |
+| Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, 107 backend tests, frontend lint/build | `verified` | Expand incrementally |
+| Canonical database foundation | SQLite ORM schema, unit of work, and repository adapters implemented beside legacy JSON stores | `implemented` | Expand in TASK-005–007 |
 | Schema migrations | Alembic migrations, upgrade/downgrade/drift/schema-start checks | `verified` | Complete |
 | Persistent ingest jobs | SQLite state machine, create/status/retry/cancel API, restart recovery, and in-process runner | `verified` | TASK-010 UX |
 | YouTube URL validation | Implemented baseline | `implemented` | TASK-004 |
-| Transcript extraction | yt-dlp then limited API fallback | `implemented` | TASK-004 |
-| Format-specific caption parsing | VTT parser used for every advertised format | `planned` | TASK-004 |
+| Transcript extraction | Configurable typed youtube-transcript-api, yt-dlp manual, and yt-dlp automatic provider chain | `verified` | Complete |
+| Format-specific caption parsing | Separate bounded VTT, TTML, and SRV3 parsers with malformed-input rejection | `verified` | Complete |
 | Transcript provenance/quality | Language only; no provider/type/quality record | `planned` | TASK-005 |
-| Atomic/idempotent ingest | Job/video publication is atomic and idempotent; legacy content writes remain behind a compatibility adapter | `implemented` | TASK-004–007 |
+| Atomic/idempotent ingest | Job/video publication is atomic and idempotent; legacy content writes remain behind a compatibility adapter | `implemented` | TASK-005–007 |
 | Fixed word chunking | 140 words, 30-word overlap | `implemented` | TASK-006 |
 | Hierarchical sentence chunking | Not implemented | `planned` | TASK-006 |
 | BM25 retrieval | Local JSON BM25 baseline | `implemented` | TASK-008 |
@@ -35,16 +35,14 @@ This file reports current implementation status. Target behavior lives in specif
 | Gemini adapter | Optional adapter exists | `implemented` | TASK-009 |
 | Ollama adapter | Not implemented | `planned` | TASK-009 |
 | Structured answer/citation validation | Sources returned separately; no strict model schema validation | `planned` | TASK-009 |
-| Vietnamese/English language policy | Preferred captions include `en`, `vi`; no end-to-end policy/eval | `planned` | TASK-012 |
+| Vietnamese/English language policy | Transcript selection defaults to ordered `vi`, `en`; no end-to-end retrieval/generation evaluation yet | `implemented` | TASK-012 |
 | Production deployment | Intentionally deferred | `planned` | Future production phase |
 
 ## Known current risks
 
 - Docs previously described configuration and flow that did not match code; the old manual docs were removed.
-- Subtitle provider fallback does not cover all retryable/blocking failures.
-- SRV3 and TTML selections are currently parsed as VTT.
 - The legacy processor can leave orphan JSON/vector data when it fails; canonical
-  SQLite readiness remains safe, and TASK-004–007 replace those writes incrementally.
+  SQLite readiness remains safe, and TASK-005–007 replace those writes incrementally.
 - Current duration is inferred from the last transcript segment.
 - Current hashing embedding is not a production semantic model.
 - Existing working tree contains user-owned notebook, environment-example, and local data changes; tasks MUST preserve them.

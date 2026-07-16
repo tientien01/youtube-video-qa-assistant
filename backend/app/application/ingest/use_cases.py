@@ -6,6 +6,7 @@ from threading import RLock
 from time import monotonic
 
 from app.application.ingest.ports import (
+    IngestAttemptReport,
     IngestFailure,
     IngestJobRunner,
     IngestProcessor,
@@ -13,6 +14,7 @@ from app.application.ingest.ports import (
     ProcessedVideo,
     ProcessVideoRequest,
 )
+from app.application.ports.repositories import IngestJobRepository
 from app.domain.entities import (
     AttemptOutcome,
     IngestAttempt,
@@ -165,6 +167,7 @@ class IngestJobApplication:
                 message=str(error),
                 retryable=error.retryable,
                 elapsed_ms=_elapsed_ms(started),
+                attempts=error.attempts,
             )
         except Exception:
             self._record_failure(
@@ -223,12 +226,13 @@ class IngestJobApplication:
             )
             ready_job = job.succeed(now=now)
             uow.jobs.save(ready_job)
+            next_attempt = _persist_attempt_reports(uow.jobs, job.id, publication.attempts)
             uow.jobs.add_attempt(
-                IngestAttempt(
-                    ingest_job_id=job.id,
+                _domain_attempt(
+                    job.id,
+                    next_attempt,
                     provider=self._processor.name,
                     stage=IngestStage.COMMITTING,
-                    attempt_number=len(uow.jobs.list_attempts(job.id)) + 1,
                     outcome=AttemptOutcome.SUCCEEDED,
                     elapsed_ms=elapsed_ms,
                 )
@@ -243,6 +247,7 @@ class IngestJobApplication:
         message: str,
         retryable: bool,
         elapsed_ms: int,
+        attempts: tuple[IngestAttemptReport, ...] = (),
     ) -> None:
         with self._uow_factory() as uow:
             job = _require_job(uow.jobs.get(job_id), job_id)
@@ -257,18 +262,21 @@ class IngestJobApplication:
             video = uow.videos.get(job.video_id)
             if video is not None and video.status is not VideoStatus.READY:
                 uow.videos.save(replace(video, status=VideoStatus.FAILED, updated_at=utc_now()))
-            uow.jobs.add_attempt(
-                IngestAttempt(
-                    ingest_job_id=job.id,
-                    provider=self._processor.name,
-                    stage=job.current_stage,
-                    attempt_number=len(uow.jobs.list_attempts(job.id)) + 1,
-                    outcome=AttemptOutcome.FAILED,
-                    elapsed_ms=elapsed_ms,
-                    error_code=code,
-                    error_message=_safe_message(message),
+            if attempts:
+                _persist_attempt_reports(uow.jobs, job.id, attempts)
+            else:
+                uow.jobs.add_attempt(
+                    _domain_attempt(
+                        job.id,
+                        len(uow.jobs.list_attempts(job.id)) + 1,
+                        provider=self._processor.name,
+                        stage=job.current_stage,
+                        outcome=AttemptOutcome.FAILED,
+                        elapsed_ms=elapsed_ms,
+                        error_code=code,
+                        error_message=_safe_message(message),
+                    )
                 )
-            )
             uow.commit()
 
 
@@ -289,3 +297,49 @@ def _elapsed_ms(started: float) -> int:
 
 def _safe_message(message: str) -> str:
     return " ".join(message.split())[:500]
+
+
+def _persist_attempt_reports(
+    repository: IngestJobRepository,
+    job_id: str,
+    reports: tuple[IngestAttemptReport, ...],
+) -> int:
+    attempt_number = len(repository.list_attempts(job_id)) + 1
+    for report in reports:
+        repository.add_attempt(
+            _domain_attempt(
+                job_id,
+                attempt_number,
+                provider=report.provider,
+                stage=report.stage,
+                outcome=report.outcome,
+                elapsed_ms=report.elapsed_ms,
+                error_code=report.error_code,
+                error_message=report.error_message,
+            )
+        )
+        attempt_number += 1
+    return attempt_number
+
+
+def _domain_attempt(
+    job_id: str,
+    attempt_number: int,
+    *,
+    provider: str,
+    stage: IngestStage,
+    outcome: AttemptOutcome,
+    elapsed_ms: int | None,
+    error_code: str | None = None,
+    error_message: str | None = None,
+) -> IngestAttempt:
+    return IngestAttempt(
+        ingest_job_id=job_id,
+        provider=provider,
+        stage=stage,
+        attempt_number=attempt_number,
+        outcome=outcome,
+        elapsed_ms=elapsed_ms,
+        error_code=error_code,
+        error_message=error_message,
+    )
