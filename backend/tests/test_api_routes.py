@@ -457,7 +457,6 @@ class ApiRoutesTest(unittest.TestCase):
         self.assertEqual(response.json()["retrieval_mode"], "hybrid")
         self.assertGreaterEqual(len(response.json()["sources"]), 1)
 
-
     def test_rebuild_index_endpoint_rebuilds_vectors(self):
         chunk = TranscriptChunk(
             chunk_id="dQw4w9WgXcQ-0001",
@@ -503,6 +502,8 @@ class ApiRoutesTest(unittest.TestCase):
                 patch("app.services.rag.video_index_service.rag_store", store),
                 patch("app.services.rag.video_index_service.vector_store", vector_store),
                 patch("app.services.rag.video_index_service.chat_history_store", chat_store),
+                patch("app.services.rag.retrieval_service.rag_store", store),
+                patch("app.services.rag.retrieval_service.vector_store", vector_store),
             ):
                 ask_response = self.client.post(
                     "/api/v1/chat/ask",

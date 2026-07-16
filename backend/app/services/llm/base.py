@@ -8,3 +8,4 @@ class LlmError(Exception):
 class LlmClient(Protocol):
     def generate_text(self, prompt: str) -> str:
         """Generate text from a prompt."""
+        ...

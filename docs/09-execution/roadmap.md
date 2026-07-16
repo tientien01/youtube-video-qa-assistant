@@ -56,4 +56,4 @@ TASK-006 + TASK-008 + TASK-009
 
 ## Ready now
 
-`TASK-001` is ready and has no implementation dependency. It establishes the toolchain and quality command required by every later task.
+`TASK-001` is verified. `TASK-002` is now ready and introduces the canonical SQLite/SQLAlchemy/Alembic persistence foundation without deleting the current JSON stores.

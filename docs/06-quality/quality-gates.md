@@ -1,7 +1,7 @@
 ---
 id: QUALITY-001
 document_status: approved
-implementation_status: planned
+implementation_status: implemented
 normative: true
 last_verified: 2026-07-16
 ---
@@ -29,6 +29,8 @@ Frontend lint, test, and production build
 OpenAPI generation consistency
 Documentation links and capability status checks
 ```
+
+TASK-001 establishes an incremental Pyright baseline over modules that are currently type-clean. Existing type debt outside that baseline is expanded into the gate by the task that owns each affected module; it MUST NOT be hidden with global diagnostic suppression. Ruff formatting is enforced on changed and newly added Python files so the existing codebase can converge without a behavior-obscuring mass-format commit.
 
 Until that script exists, each task lists the currently available equivalent commands.
 

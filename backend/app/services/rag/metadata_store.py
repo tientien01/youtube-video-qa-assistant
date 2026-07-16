@@ -1,6 +1,7 @@
 import json
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 
@@ -37,7 +38,7 @@ class LocalVideoMetadataStore:
         chunk_count: int,
     ) -> VideoMetadata:
         self._ensure_loaded()
-        now = _utc_now()
+        now = _next_updated_at(self._metadata.values())
         existing = self._metadata.get(video_id)
 
         metadata = VideoMetadata(
@@ -83,19 +84,13 @@ class LocalVideoMetadataStore:
 
         if self._storage_path.exists():
             raw_data = json.loads(self._storage_path.read_text(encoding="utf-8"))
-            self._metadata = {
-                video_id: _metadata_from_data(metadata)
-                for video_id, metadata in raw_data.items()
-            }
+            self._metadata = {video_id: _metadata_from_data(metadata) for video_id, metadata in raw_data.items()}
 
         self._loaded = True
 
     def _save(self) -> None:
         self._storage_path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            video_id: asdict(metadata)
-            for video_id, metadata in self._metadata.items()
-        }
+        payload = {video_id: asdict(metadata) for video_id, metadata in self._metadata.items()}
         self._storage_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -107,8 +102,15 @@ def _default_storage_path() -> Path:
     return backend_root / "data" / "vector_store" / "local_video_metadata.json"
 
 
-def _utc_now() -> str:
-    return datetime.now(UTC).isoformat()
+def _next_updated_at(existing_metadata: Iterable[VideoMetadata]) -> str:
+    now = datetime.now(UTC)
+    latest_timestamp = max(
+        (datetime.fromisoformat(metadata.updated_at) for metadata in existing_metadata),
+        default=None,
+    )
+    if latest_timestamp is not None and now <= latest_timestamp:
+        now = latest_timestamp + timedelta(microseconds=1)
+    return now.isoformat()
 
 
 def _metadata_from_data(metadata: dict) -> VideoMetadata:

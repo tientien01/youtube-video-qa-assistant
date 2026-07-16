@@ -1,6 +1,6 @@
 # TASK-001: Establish the Reproducible Local Toolchain
 
-Status: ready
+Status: verified
 
 Depends on: none
 
@@ -33,12 +33,16 @@ Make backend setup and verification reproducible on Windows 11 and Linux without
 
 ## Acceptance criteria
 
-- [ ] A clean Python 3.12 environment can run `uv sync` from documented instructions.
-- [ ] `uv lock --project backend --check` passes and the lockfile is committed.
-- [ ] Existing backend tests run through `uv run --project backend pytest` with failures either fixed in scope or accurately reported before commit.
-- [ ] Frontend lint and build run through the root verification command.
-- [ ] Verification does not read developer secrets or require Ollama/network.
-- [ ] Existing user-owned dirty files are not overwritten.
+- [x] A clean Python 3.12 environment can run `uv sync` from documented instructions.
+- [x] `uv lock --project backend --check` passes and the lockfile is committed.
+- [x] Existing backend tests run through `uv run --project backend pytest` with failures either fixed in scope or accurately reported before commit.
+- [x] Frontend lint and build run through the root verification command.
+- [x] Verification does not read developer secrets or require Ollama/network.
+- [x] Existing user-owned dirty files are not overwritten.
+
+## Verification result
+
+Verified on Windows with uv-managed CPython 3.12.13: lock check, Ruff lint, changed-file format check, incremental Pyright baseline, 65 backend tests, frontend lint, and frontend production build passed.
 
 ## Verification
 

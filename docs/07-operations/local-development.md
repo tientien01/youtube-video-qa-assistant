@@ -1,7 +1,7 @@
 ---
 id: OPS-LOCAL-001
 document_status: approved
-implementation_status: planned
+implementation_status: verified
 normative: true
 last_verified: 2026-07-16
 ---
@@ -22,7 +22,43 @@ last_verified: 2026-07-16
 - npm with committed `package-lock.json`
 - Ollama current supported local release
 
-The current repository still uses `backend/requirements.txt`; migration is TASK-001.
+`backend/pyproject.toml` and `backend/uv.lock` are authoritative. `backend/requirements.txt` is a deprecated compatibility snapshot and MUST NOT receive new dependencies.
+
+## Clean setup
+
+From the repository root:
+
+```powershell
+# Install uv once, then let uv install the pinned Python toolchain if needed.
+python -m pip install --user uv
+python -m uv python install 3.12
+
+# Create/synchronize backend/.venv from the committed lockfile.
+python -m uv sync --project backend --locked
+
+# Install the frontend from package-lock.json.
+npm.cmd --prefix frontend ci
+
+# Run the complete deterministic local gate.
+./scripts/verify.ps1
+```
+
+On Linux/macOS, use `uv` and `npm` directly and run:
+
+```bash
+uv sync --project backend --locked
+npm --prefix frontend ci
+python3 scripts/verify.py
+```
+
+Application startup commands:
+
+```powershell
+python -m uv run --project backend uvicorn app.main:app --app-dir backend --reload
+npm.cmd --prefix frontend run dev
+```
+
+Model downloads and live YouTube/Ollama smoke tests are explicit operations and are not part of `scripts/verify.py`.
 
 ## Runtime profiles
 

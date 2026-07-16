@@ -13,8 +13,8 @@ This file reports current implementation status. Target behavior lives in specif
 |---|---|---:|---|
 | FastAPI `/api/v1` application | Implemented routes for health, video, chat, summary, notes, quiz, debug | `implemented` | TASK-010 |
 | React learning workspace | React JavaScript/Vite UI exists | `implemented` | TASK-010 |
-| Reproducible Python environment | Pinned `requirements.txt`; no pyproject/uv lock | `planned` | TASK-001 |
-| Local quality command | Separate manual commands; no root gate | `planned` | TASK-001 |
+| Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
+| Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, 65 backend tests, frontend lint/build | `verified` | Expand incrementally |
 | Canonical database | Local JSON/file stores | `planned` | TASK-002 |
 | Schema migrations | None | `planned` | TASK-002 |
 | Persistent ingest jobs | Synchronous request only | `planned` | TASK-003 |

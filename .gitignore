@@ -23,6 +23,8 @@ htmlcov/
 backend/.venv/
 backend/venv/
 backend/env/
+backend/.uv-cache/
+backend/.cache/
 
 # Backend runtime data
 backend/data/

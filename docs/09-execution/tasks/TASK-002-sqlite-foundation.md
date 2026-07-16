@@ -1,6 +1,6 @@
 # TASK-002: Introduce Canonical SQLite Persistence
 
-Status: planned
+Status: ready
 
 Depends on: TASK-001
 
