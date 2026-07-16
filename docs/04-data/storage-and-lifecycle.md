@@ -1,7 +1,7 @@
 ---
 id: DATA-001
 document_status: approved
-implementation_status: planned
+implementation_status: implemented
 normative: true
 last_verified: 2026-07-16
 related_adrs: [ADR-003]
@@ -13,7 +13,7 @@ related_adrs: [ADR-003]
 
 SQLite is the canonical Local V1 database. Qdrant local and FTS indexes are derived and rebuildable.
 
-Canonical SQLite tables initially include:
+TASK-002 establishes these canonical foundation tables:
 
 ```text
 videos
@@ -24,6 +24,11 @@ transcript_segments
 chunks
 chunk_segments
 index_versions
+```
+
+Later persistence tasks add product-owned data after their lifecycle is specified:
+
+```text
 chat_sessions
 chat_messages
 generated_artifacts
@@ -40,6 +45,8 @@ evaluation_runs
 - UTC timestamps for application events
 
 Application startup MUST NOT silently recreate or mutate an incompatible schema. Migrations are explicit and testable.
+
+The current JSON-backed API remains active during migration. `start_database_runtime()` is the fail-fast boundary for database-backed use cases: it verifies the Alembic revision and never calls `create_all`. TASK-003 is the first application flow that adopts this foundation.
 
 ## Derived data
 

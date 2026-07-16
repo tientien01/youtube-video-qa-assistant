@@ -1,6 +1,6 @@
 # TASK-003: Add Persistent Atomic Ingest Lifecycle
 
-Status: planned
+Status: ready
 
 Depends on: TASK-002
 

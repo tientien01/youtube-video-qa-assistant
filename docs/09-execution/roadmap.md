@@ -56,4 +56,4 @@ TASK-006 + TASK-008 + TASK-009
 
 ## Ready now
 
-`TASK-001` is verified. `TASK-002` is now ready and introduces the canonical SQLite/SQLAlchemy/Alembic persistence foundation without deleting the current JSON stores.
+`TASK-001` and `TASK-002` are verified. `TASK-003` is now ready and adopts the SQLite foundation for a persistent, atomic ingest job lifecycle while keeping compatibility with the current ingest endpoint.

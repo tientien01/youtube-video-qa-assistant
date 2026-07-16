@@ -58,6 +58,19 @@ python -m uv run --project backend uvicorn app.main:app --app-dir backend --relo
 npm.cmd --prefix frontend run dev
 ```
 
+Canonical database migration commands, run explicitly from the repository root:
+
+```powershell
+python -m uv run --project backend alembic -c backend/alembic.ini upgrade head
+python -m uv run --project backend alembic -c backend/alembic.ini current
+```
+
+The default local database path is `backend/data/app.db`. The current API continues to use its JSON stores until TASK-003 adopts the database runtime. Downgrade is intended for migration development and tests, not routine deletion of user data:
+
+```powershell
+python -m uv run --project backend alembic -c backend/alembic.ini downgrade base
+```
+
 Model downloads and live YouTube/Ollama smoke tests are explicit operations and are not part of `scripts/verify.py`.
 
 ## Runtime profiles

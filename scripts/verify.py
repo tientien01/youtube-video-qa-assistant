@@ -84,6 +84,7 @@ def main() -> int:
                 "ruff",
                 "check",
                 "backend/app",
+                "backend/alembic",
                 "backend/evaluation",
                 "backend/tests",
                 "scripts",

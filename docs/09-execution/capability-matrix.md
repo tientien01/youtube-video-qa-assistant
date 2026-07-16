@@ -15,8 +15,8 @@ This file reports current implementation status. Target behavior lives in specif
 | React learning workspace | React JavaScript/Vite UI exists | `implemented` | TASK-010 |
 | Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
 | Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, 65 backend tests, frontend lint/build | `verified` | Expand incrementally |
-| Canonical database | Local JSON/file stores | `planned` | TASK-002 |
-| Schema migrations | None | `planned` | TASK-002 |
+| Canonical database foundation | SQLite ORM schema/repository adapters implemented beside active JSON stores | `implemented` | Adopt in TASK-003 |
+| Schema migrations | Alembic initial migration, upgrade/downgrade/drift/schema-start checks | `verified` | Complete |
 | Persistent ingest jobs | Synchronous request only | `planned` | TASK-003 |
 | YouTube URL validation | Implemented baseline | `implemented` | TASK-004 |
 | Transcript extraction | yt-dlp then limited API fallback | `implemented` | TASK-004 |

@@ -1,6 +1,6 @@
 # TASK-002: Introduce Canonical SQLite Persistence
 
-Status: ready
+Status: verified
 
 Depends on: TASK-001
 
@@ -30,11 +30,15 @@ Create the canonical SQLAlchemy/Alembic persistence foundation without yet repla
 
 ## Acceptance criteria
 
-- [ ] Upgrade from empty DB and downgrade are tested.
-- [ ] Foreign-key violations fail.
-- [ ] Repository tests never use developer data.
-- [ ] Domain/application modules do not import SQLAlchemy.
-- [ ] Startup reports incompatible schema instead of silently recreating it.
+- [x] Upgrade from empty DB and downgrade are tested.
+- [x] Foreign-key violations fail.
+- [x] Repository tests never use developer data.
+- [x] Domain/application modules do not import SQLAlchemy.
+- [x] Startup reports incompatible schema instead of silently recreating it.
+
+## Verification result
+
+Verified on temporary SQLite databases: eight canonical tables, WAL/foreign-key pragmas, Alembic upgrade/downgrade and model-drift check, repository round trips, ordered chunk-segment provenance, cascade policy, transaction rollback, and fail-fast schema startup. The complete repository gate passes 75 tests.
 
 ## Verification
 
