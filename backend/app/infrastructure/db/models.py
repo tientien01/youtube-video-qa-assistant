@@ -150,7 +150,14 @@ class IngestAttemptModel(Base):
 class TranscriptModel(Base):
     __tablename__ = "transcripts"
     __table_args__ = (
-        UniqueConstraint("video_id", "provider", "content_hash", name="uq_transcripts_video_provider_hash"),
+        UniqueConstraint(
+            "video_id",
+            "provider",
+            "content_hash",
+            "parser_version",
+            "normalizer_version",
+            name="uq_transcripts_video_provider_hash_version",
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -163,6 +170,11 @@ class TranscriptModel(Base):
     parser_version: Mapped[str] = mapped_column(String(64))
     normalizer_version: Mapped[str] = mapped_column(String(64))
     is_active: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0", index=True)
+    quality_diagnostics: Mapped[dict[str, int]] = mapped_column(
+        JSON,
+        default=dict,
+        server_default=text("'{}'"),
+    )
     fetched_at: Mapped[datetime] = mapped_column(UTCDateTime())
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), server_default=func.current_timestamp())
 

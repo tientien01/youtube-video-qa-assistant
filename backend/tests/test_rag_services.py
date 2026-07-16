@@ -143,9 +143,7 @@ class RagServicesTest(unittest.TestCase):
                 patch("app.services.rag.video_index_service.vector_store", vector_store),
                 patch("app.services.rag.video_index_service.fetch_transcript") as fetch_transcript_mock,
             ):
-                response = ingest_video_content(
-                    "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                )
+                response = ingest_video_content("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 
             fetch_transcript_mock.assert_not_called()
             self.assertEqual(response.status, "cached")
@@ -179,12 +177,11 @@ class RagServicesTest(unittest.TestCase):
                         title="Real video title",
                         channel_title="Learning channel",
                         thumbnail_url="https://example.com/thumb.jpg",
+                        duration_seconds=120,
                     ),
                 ),
             ):
-                response = ingest_video_content(
-                    "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                )
+                response = ingest_video_content("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 
             metadata = metadata_store.get_video("dQw4w9WgXcQ")
 
@@ -195,7 +192,7 @@ class RagServicesTest(unittest.TestCase):
         self.assertIsNotNone(metadata)
         self.assertEqual(metadata.channel_title, "Learning channel")
         self.assertEqual(metadata.thumbnail_url, "https://example.com/thumb.jpg")
-        self.assertEqual(metadata.duration_seconds, 9)
+        self.assertEqual(metadata.duration_seconds, 120)
         self.assertEqual(metadata.transcript_language, "en")
         self.assertGreater(metadata.chunk_count, 0)
         self.assertTrue(vector_store.has_video("dQw4w9WgXcQ"))
@@ -894,6 +891,7 @@ class RagServicesTest(unittest.TestCase):
 
         self.assertTrue(str(settings.chroma_persist_dir).endswith("backend\\data\\vector_store\\chroma-test"))
         self.assertNotIn("backend\\backend", str(settings.chroma_persist_dir))
+
 
 class FakeLlmClient:
     def __init__(self, response: str) -> None:

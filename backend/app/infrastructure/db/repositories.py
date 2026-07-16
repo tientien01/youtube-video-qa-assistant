@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.domain.entities import (
@@ -187,6 +187,7 @@ class SqlAlchemyTranscriptRepository:
                 parser_version=transcript.parser_version,
                 normalizer_version=transcript.normalizer_version,
                 is_active=transcript.is_active,
+                quality_diagnostics=transcript.quality_diagnostics,
                 fetched_at=transcript.fetched_at,
                 created_at=transcript.created_at,
             )
@@ -196,6 +197,34 @@ class SqlAlchemyTranscriptRepository:
 
     def get(self, transcript_id: str) -> Transcript | None:
         model = self._session.get(TranscriptModel, transcript_id)
+        return _transcript_from_model(model) if model is not None else None
+
+    def get_version(
+        self,
+        video_id: str,
+        provider: str,
+        content_hash: str,
+        parser_version: str,
+        normalizer_version: str,
+    ) -> Transcript | None:
+        model = self._session.scalar(
+            select(TranscriptModel).where(
+                TranscriptModel.video_id == video_id,
+                TranscriptModel.provider == provider,
+                TranscriptModel.content_hash == content_hash,
+                TranscriptModel.parser_version == parser_version,
+                TranscriptModel.normalizer_version == normalizer_version,
+            )
+        )
+        return _transcript_from_model(model) if model is not None else None
+
+    def get_active(self, video_id: str) -> Transcript | None:
+        model = self._session.scalar(
+            select(TranscriptModel).where(
+                TranscriptModel.video_id == video_id,
+                TranscriptModel.is_active.is_(True),
+            )
+        )
         return _transcript_from_model(model) if model is not None else None
 
     def add_segments(self, segments: list[TranscriptSegment]) -> list[TranscriptSegment]:
@@ -223,6 +252,16 @@ class SqlAlchemyTranscriptRepository:
             .order_by(TranscriptSegmentModel.sequence_number)
         ).all()
         return [_segment_from_model(model) for model in models]
+
+    def activate(self, video_id: str, transcript_id: str) -> None:
+        target = self._session.get(TranscriptModel, transcript_id)
+        if target is None or target.video_id != video_id:
+            raise LookupError(f"Transcript {transcript_id} does not belong to video {video_id}.")
+        self._session.execute(
+            update(TranscriptModel).where(TranscriptModel.video_id == video_id).values(is_active=False)
+        )
+        target.is_active = True
+        self._session.flush()
 
 
 class SqlAlchemyIndexRepository:
@@ -350,6 +389,7 @@ def _transcript_from_model(model: TranscriptModel) -> Transcript:
         parser_version=model.parser_version,
         normalizer_version=model.normalizer_version,
         is_active=model.is_active,
+        quality_diagnostics=model.quality_diagnostics,
         fetched_at=model.fetched_at,
         created_at=model.created_at,
     )

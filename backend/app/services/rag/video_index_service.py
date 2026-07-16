@@ -2,11 +2,11 @@ import logging
 from collections.abc import Callable
 
 from app.application.ingest.ports import IngestAttemptReport
-from app.application.ingest.transcript import TranscriptAcquisitionError
-from app.schemas.chat import ChatAskResponse, ChatHistoryDeleteResponse, ChatHistoryResponse, ChatSource
-from app.schemas.video import VideoDeleteResponse, VideoIngestResponse, VideoMetadataResponse, VideoRebuildIndexResponse
+from app.application.ingest.transcript import TranscriptAcquisition, TranscriptAcquisitionError
 from app.infrastructure.ingest.transcript.runtime import acquire_transcript
+from app.schemas.chat import ChatAskResponse, ChatHistoryDeleteResponse, ChatHistoryResponse, ChatSource
 from app.schemas.transcript import TranscriptSegment
+from app.schemas.video import VideoDeleteResponse, VideoIngestResponse, VideoMetadataResponse, VideoRebuildIndexResponse
 from app.services.extraction.video_url_service import extract_youtube_video_id
 from app.services.extraction.youtube_metadata_service import fetch_youtube_metadata
 from app.services.learning.generated_output_store import generated_output_store
@@ -25,16 +25,18 @@ logger = logging.getLogger(__name__)
 def fetch_transcript(
     video_id: str,
     *,
+    acquisition: TranscriptAcquisition | None = None,
     attempt_collector: Callable[[tuple[IngestAttemptReport, ...]], None] | None = None,
 ) -> tuple[list[TranscriptSegment], str]:
     """Bridge typed acquisition into the legacy chunking input shape."""
 
-    try:
-        acquisition = acquire_transcript(video_id)
-    except TranscriptAcquisitionError as error:
-        if attempt_collector is not None:
-            attempt_collector(error.attempts)
-        raise
+    if acquisition is None:
+        try:
+            acquisition = acquire_transcript(video_id)
+        except TranscriptAcquisitionError as error:
+            if attempt_collector is not None:
+                attempt_collector(error.attempts)
+            raise
     if attempt_collector is not None:
         attempt_collector(acquisition.attempts)
     return (
@@ -53,6 +55,7 @@ def fetch_transcript(
 def ingest_video_content(
     url: str,
     *,
+    transcript_acquisition: TranscriptAcquisition | None = None,
     transcript_attempt_collector: Callable[[tuple[IngestAttemptReport, ...]], None] | None = None,
 ) -> VideoIngestResponse:
     video_id = extract_youtube_video_id(url)
@@ -93,6 +96,7 @@ def ingest_video_content(
 
     transcript_segments, language_code = fetch_transcript(
         video_id,
+        acquisition=transcript_acquisition,
         attempt_collector=transcript_attempt_collector,
     )
     chunks = chunk_transcript(video_id=video_id, segments=transcript_segments)
@@ -101,7 +105,9 @@ def ingest_video_content(
 
     video_url = f"https://www.youtube.com/watch?v={video_id}"
     youtube_metadata = fetch_youtube_metadata(video_url)
-    duration_seconds = int(max(segment.end_seconds for segment in transcript_segments))
+    duration_seconds = youtube_metadata.duration_seconds
+    if duration_seconds is None:
+        duration_seconds = int(max(segment.end_seconds for segment in transcript_segments))
     metadata = metadata_store.upsert_video(
         video_id=video_id,
         title=youtube_metadata.title or f"YouTube video {video_id}",

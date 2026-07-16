@@ -11,6 +11,7 @@ class YouTubeMetadata:
     title: str | None
     channel_title: str | None
     thumbnail_url: str | None
+    duration_seconds: int | None = None
 
 
 def fetch_youtube_metadata(url: str) -> YouTubeMetadata:

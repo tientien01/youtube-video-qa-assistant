@@ -1,6 +1,6 @@
 # TASK-005: Normalize and Version Transcript Provenance
 
-Status: planned
+Status: verified
 
 Depends on: TASK-004
 
@@ -23,15 +23,22 @@ Produce validated canonical segments and a reproducible transcript fingerprint.
 
 ## Acceptance criteria
 
-- [ ] Normalization is deterministic.
-- [ ] Legitimate repeated speech is retained by fixtures.
-- [ ] Invalid ordering/ranges fail before chunking.
-- [ ] Re-fetching equivalent content produces the same content hash.
-- [ ] Metadata duration is not inferred solely from the last caption when provider metadata exists.
+- [x] Normalization is deterministic.
+- [x] Legitimate repeated speech is retained by fixtures.
+- [x] Invalid ordering/ranges fail before chunking.
+- [x] Re-fetching equivalent content produces the same content hash.
+- [x] Metadata duration is not inferred solely from the last caption when provider metadata exists.
 
 ## Verification
 
 `uv run --project backend pytest backend/tests/unit/transcripts backend/tests/integration/transcript_persistence`
+
+Verified with 7 deterministic normalization/publication tests and the full local
+quality gate. Canonical text uses Unicode NFKC, HTML entity decoding, whitespace
+normalization, time-bounded rolling-caption deduplication, SHA-256 content hashes,
+and UUIDv5 transcript/segment identities. Parser and normalizer provenance are
+versioned independently. SQLite activation is transactional and reuses an
+equivalent canonical version without duplicating segments.
 
 ## Commit
 

@@ -216,6 +216,7 @@ class Transcript:
     id: str = field(default_factory=new_id)
     provider_version: str | None = None
     is_active: bool = False
+    quality_diagnostics: dict[str, int] = field(default_factory=dict)
     fetched_at: datetime = field(default_factory=utc_now)
     created_at: datetime = field(default_factory=utc_now)
 

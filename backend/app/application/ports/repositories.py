@@ -47,9 +47,22 @@ class TranscriptRepository(Protocol):
 
     def get(self, transcript_id: str) -> Transcript | None: ...
 
+    def get_version(
+        self,
+        video_id: str,
+        provider: str,
+        content_hash: str,
+        parser_version: str,
+        normalizer_version: str,
+    ) -> Transcript | None: ...
+
+    def get_active(self, video_id: str) -> Transcript | None: ...
+
     def add_segments(self, segments: list[TranscriptSegment]) -> list[TranscriptSegment]: ...
 
     def list_segments(self, transcript_id: str) -> list[TranscriptSegment]: ...
+
+    def activate(self, video_id: str, transcript_id: str) -> None: ...
 
 
 class IndexRepository(Protocol):

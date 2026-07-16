@@ -2,8 +2,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol, Self
 
-from app.application.ports.repositories import IngestJobRepository, VideoRepository
-from app.domain.entities import AttemptOutcome, IngestStage
+from app.application.ports.repositories import IngestJobRepository, TranscriptRepository, VideoRepository
+from app.domain.entities import AttemptOutcome, IngestStage, TranscriptType
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,11 +23,44 @@ class ProcessVideoRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class CanonicalTranscriptSegment:
+    sequence_number: int
+    original_text: str
+    normalized_text: str
+    start_ms: int
+    end_ms: int
+
+
+@dataclass(frozen=True, slots=True)
+class TranscriptQualityDiagnostics:
+    source_segment_count: int
+    canonical_segment_count: int
+    removed_duplicate_count: int
+    caption_span_ms: int
+    covered_ms: int
+    largest_gap_ms: int
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalTranscriptPublication:
+    provider: str
+    provider_version: str | None
+    language_code: str
+    transcript_type: TranscriptType
+    content_hash: str
+    parser_version: str
+    normalizer_version: str
+    segments: tuple[CanonicalTranscriptSegment, ...]
+    diagnostics: TranscriptQualityDiagnostics
+
+
+@dataclass(frozen=True, slots=True)
 class ProcessedVideo:
     title: str
     channel_title: str | None = None
     thumbnail_url: str | None = None
     duration_ms: int | None = None
+    transcript: CanonicalTranscriptPublication | None = None
     attempts: tuple[IngestAttemptReport, ...] = ()
 
 
@@ -61,6 +94,7 @@ class IngestProcessor(Protocol):
 class IngestUnitOfWork(Protocol):
     videos: VideoRepository
     jobs: IngestJobRepository
+    transcripts: TranscriptRepository
 
     def __enter__(self) -> Self: ...
 

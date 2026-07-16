@@ -4,8 +4,10 @@ from dataclasses import replace
 from hashlib import sha256
 from threading import RLock
 from time import monotonic
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 from app.application.ingest.ports import (
+    CanonicalTranscriptPublication,
     IngestAttemptReport,
     IngestFailure,
     IngestJobRunner,
@@ -21,6 +23,8 @@ from app.domain.entities import (
     IngestJob,
     IngestJobStatus,
     IngestStage,
+    Transcript,
+    TranscriptSegment,
     Video,
     VideoStatus,
     utc_now,
@@ -213,6 +217,8 @@ class IngestJobApplication:
                 raise RuntimeError(f"Ingest job {job.id} references a missing video.")
 
             now = utc_now()
+            if publication.transcript is not None:
+                _publish_transcript(uow.transcripts, video.id, publication.transcript)
             uow.videos.save(
                 replace(
                     video,
@@ -284,6 +290,79 @@ def _require_job(job: IngestJob | None, job_id: str) -> IngestJob:
     if job is None:
         raise IngestJobNotFound(f"Ingest job {job_id} was not found.")
     return job
+
+
+def _publish_transcript(repository, video_id: str, publication: CanonicalTranscriptPublication) -> Transcript:
+    existing = repository.get_version(
+        video_id,
+        publication.provider,
+        publication.content_hash,
+        publication.parser_version,
+        publication.normalizer_version,
+    )
+    if existing is not None:
+        repository.activate(video_id, existing.id)
+        return existing
+
+    transcript_id = str(
+        uuid5(
+            NAMESPACE_URL,
+            "\n".join(
+                (
+                    "video-knowledge-assistant/transcript/v1",
+                    video_id,
+                    publication.provider,
+                    publication.content_hash,
+                    publication.parser_version,
+                    publication.normalizer_version,
+                )
+            ),
+        )
+    )
+    transcript = repository.add(
+        Transcript(
+            id=transcript_id,
+            video_id=video_id,
+            provider=publication.provider,
+            provider_version=publication.provider_version,
+            language_code=publication.language_code,
+            transcript_type=publication.transcript_type,
+            content_hash=publication.content_hash,
+            parser_version=publication.parser_version,
+            normalizer_version=publication.normalizer_version,
+            is_active=False,
+            quality_diagnostics={
+                "source_segment_count": publication.diagnostics.source_segment_count,
+                "canonical_segment_count": publication.diagnostics.canonical_segment_count,
+                "removed_duplicate_count": publication.diagnostics.removed_duplicate_count,
+                "caption_span_ms": publication.diagnostics.caption_span_ms,
+                "covered_ms": publication.diagnostics.covered_ms,
+                "largest_gap_ms": publication.diagnostics.largest_gap_ms,
+            },
+        )
+    )
+    transcript_namespace = UUID(transcript_id)
+    repository.add_segments(
+        [
+            TranscriptSegment(
+                id=str(
+                    uuid5(
+                        transcript_namespace,
+                        f"{segment.sequence_number}\n{segment.start_ms}\n{segment.end_ms}\n{segment.normalized_text}",
+                    )
+                ),
+                transcript_id=transcript.id,
+                sequence_number=segment.sequence_number,
+                original_text=segment.original_text,
+                normalized_text=segment.normalized_text,
+                start_ms=segment.start_ms,
+                end_ms=segment.end_ms,
+            )
+            for segment in publication.segments
+        ]
+    )
+    repository.activate(video_id, transcript.id)
+    return transcript
 
 
 def _idempotency_key(video_id: str, fingerprint: str, client_key: str | None) -> str:
