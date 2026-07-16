@@ -14,15 +14,15 @@ This file reports current implementation status. Target behavior lives in specif
 | FastAPI `/api/v1` application | Implemented routes for health, video, chat, summary, notes, quiz, debug | `implemented` | TASK-010 |
 | React learning workspace | React JavaScript/Vite UI exists | `implemented` | TASK-010 |
 | Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
-| Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, 65 backend tests, frontend lint/build | `verified` | Expand incrementally |
-| Canonical database foundation | SQLite ORM schema/repository adapters implemented beside active JSON stores | `implemented` | Adopt in TASK-003 |
-| Schema migrations | Alembic initial migration, upgrade/downgrade/drift/schema-start checks | `verified` | Complete |
-| Persistent ingest jobs | Synchronous request only | `planned` | TASK-003 |
+| Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, 86 backend tests, frontend lint/build | `verified` | Expand incrementally |
+| Canonical database foundation | SQLite ORM schema, unit of work, and repository adapters implemented beside legacy JSON stores | `implemented` | Expand in TASK-004–007 |
+| Schema migrations | Alembic migrations, upgrade/downgrade/drift/schema-start checks | `verified` | Complete |
+| Persistent ingest jobs | SQLite state machine, create/status/retry/cancel API, restart recovery, and in-process runner | `verified` | TASK-010 UX |
 | YouTube URL validation | Implemented baseline | `implemented` | TASK-004 |
 | Transcript extraction | yt-dlp then limited API fallback | `implemented` | TASK-004 |
 | Format-specific caption parsing | VTT parser used for every advertised format | `planned` | TASK-004 |
 | Transcript provenance/quality | Language only; no provider/type/quality record | `planned` | TASK-005 |
-| Atomic/idempotent ingest | Independent JSON/vector/metadata writes | `planned` | TASK-003 |
+| Atomic/idempotent ingest | Job/video publication is atomic and idempotent; legacy content writes remain behind a compatibility adapter | `implemented` | TASK-004–007 |
 | Fixed word chunking | 140 words, 30-word overlap | `implemented` | TASK-006 |
 | Hierarchical sentence chunking | Not implemented | `planned` | TASK-006 |
 | BM25 retrieval | Local JSON BM25 baseline | `implemented` | TASK-008 |
@@ -43,7 +43,8 @@ This file reports current implementation status. Target behavior lives in specif
 - Docs previously described configuration and flow that did not match code; the old manual docs were removed.
 - Subtitle provider fallback does not cover all retryable/blocking failures.
 - SRV3 and TTML selections are currently parsed as VTT.
-- Ingest writes are not atomic and cache identity is incomplete.
+- The legacy processor can leave orphan JSON/vector data when it fails; canonical
+  SQLite readiness remains safe, and TASK-004–007 replace those writes incrementally.
 - Current duration is inferred from the last transcript segment.
 - Current hashing embedding is not a production semantic model.
 - Existing working tree contains user-owned notebook, environment-example, and local data changes; tasks MUST preserve them.

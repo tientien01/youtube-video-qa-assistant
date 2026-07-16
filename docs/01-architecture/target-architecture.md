@@ -37,7 +37,7 @@ The target backend layout is directional; tasks MAY migrate it incrementally.
 
 ```text
 backend/app/
-  api/                 HTTP transport and schemas
+  api/                 HTTP transport and request/response contracts
   core/                configuration, errors, logging
   domain/              provider-independent entities and invariants
   application/         use cases and ports
@@ -56,6 +56,21 @@ backend/app/
 ```
 
 The migration MUST favor small moves over a repository-wide rewrite.
+
+`app/services/` is a legacy migration source, not a target architecture layer. New
+orchestration MUST be implemented as application use cases. Technology-specific
+code MUST move to infrastructure modules as the corresponding task replaces it.
+TASK-010 removes the legacy folder after all production imports have migrated.
+
+Naming rules:
+
+- Prefer `use_case.py` for application orchestration.
+- Use `repository` for canonical persistence and `client` or `provider` for an
+  external capability. Do not stack suffixes such as `ProviderAdapterService`.
+- API Pydantic models are contracts, not database schema. The target location is
+  `app/api/contracts/`.
+- Alembic migrations define database schema history. Runtime revision checking is
+  named `migration_guard.py`, not the ambiguous `schema.py`.
 
 ## Required ports
 
@@ -89,6 +104,7 @@ Ingest and retrieval MUST remain usable when the LLM is unavailable. Generation 
 - Application use cases own orchestration and transaction boundaries.
 - Domain objects own invariants and contain no infrastructure imports.
 - Infrastructure adapters implement application ports.
+- A top-level `services` layer MUST NOT exist in the Local V1 target.
 - The vector index is rebuildable and is never the canonical transcript store.
 - Framework-specific RAG chains MUST NOT become the business-logic boundary.
 

@@ -4,7 +4,7 @@ from app.infrastructure.db.engine import (
     sqlite_database_url,
     transactional_session,
 )
-from app.infrastructure.db.schema import DatabaseSchemaError, assert_schema_current
+from app.infrastructure.db.migration_guard import DatabaseSchemaError, assert_schema_current
 from app.infrastructure.db.runtime import DatabaseRuntime, start_database_runtime
 
 __all__ = [

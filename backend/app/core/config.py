@@ -12,6 +12,7 @@ DEFAULT_EMBEDDING_PROVIDER = "hashing"
 DEFAULT_EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 DEFAULT_VECTOR_STORE_PROVIDER = "local_json"
 DEFAULT_CHROMA_PERSIST_DIR = BACKEND_ROOT / "data" / "vector_store" / "chroma"
+DEFAULT_DATABASE_PATH = BACKEND_ROOT / "data" / "app.db"
 
 
 load_dotenv(LOCAL_ENV_FILE)
@@ -30,6 +31,7 @@ class Settings:
     chroma_persist_dir: Path
     reranker_enabled: bool
     rerank_top_k: int
+    database_url: str
 
 
 def get_settings() -> Settings:
@@ -59,6 +61,7 @@ def get_settings() -> Settings:
         chroma_persist_dir=_read_backend_path("CHROMA_PERSIST_DIR", default=DEFAULT_CHROMA_PERSIST_DIR),
         reranker_enabled=_read_bool("RERANKER_ENABLED", default=False),
         rerank_top_k=_read_positive_int("RERANK_TOP_K", default=8),
+        database_url=_read_optional_env("DATABASE_URL") or f"sqlite:///{DEFAULT_DATABASE_PATH.resolve().as_posix()}",
     )
 
 
@@ -76,11 +79,7 @@ def _read_list_env(name: str, *, default: list[str]) -> list[str]:
     if raw_value is None:
         return default
 
-    values = [
-        item.strip()
-        for item in raw_value.split(",")
-        if item.strip()
-    ]
+    values = [item.strip() for item in raw_value.split(",") if item.strip()]
     return values or default
 
 

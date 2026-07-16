@@ -17,6 +17,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.engine import Dialect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -108,6 +109,7 @@ class IngestJobModel(Base):
     video_id: Mapped[str] = mapped_column(ForeignKey("videos.id", ondelete="CASCADE"), index=True)
     status: Mapped[IngestJobStatus] = mapped_column(_enum_type(IngestJobStatus, "ingest_job_status"), index=True)
     current_stage: Mapped[IngestStage] = mapped_column(_enum_type(IngestStage, "ingest_stage"))
+    idempotency_key: Mapped[str | None] = mapped_column(String(64))
     target_fingerprint: Mapped[str | None] = mapped_column(String(128))
     retryable: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     error_code: Mapped[str | None] = mapped_column(String(64))
@@ -276,3 +278,12 @@ class ChunkSegmentModel(Base):
 
 Index("ix_transcripts_video_active", TranscriptModel.video_id, TranscriptModel.is_active)
 Index("ix_index_versions_video_status", IndexVersionModel.video_id, IndexVersionModel.status)
+Index("uq_ingest_jobs_idempotency_key", IngestJobModel.idempotency_key, unique=True)
+Index(
+    "uq_ingest_jobs_active_target",
+    IngestJobModel.video_id,
+    IngestJobModel.target_fingerprint,
+    unique=True,
+    sqlite_where=text("status IN ('pending', 'running', 'retry_wait')"),
+    postgresql_where=text("status IN ('pending', 'running', 'retry_wait')"),
+)

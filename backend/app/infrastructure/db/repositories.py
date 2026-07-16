@@ -7,6 +7,7 @@ from app.domain.entities import (
     IndexVersion,
     IngestAttempt,
     IngestJob,
+    IngestJobStatus,
     Transcript,
     TranscriptSegment,
     Video,
@@ -53,6 +54,20 @@ class SqlAlchemyVideoRepository:
         model = self._session.scalar(select(VideoModel).where(VideoModel.youtube_video_id == youtube_video_id))
         return _video_from_model(model) if model is not None else None
 
+    def save(self, video: Video) -> Video:
+        model = self._session.get(VideoModel, video.id)
+        if model is None:
+            raise LookupError(f"Video {video.id} does not exist.")
+        model.canonical_url = video.canonical_url
+        model.title = video.title
+        model.channel_title = video.channel_title
+        model.thumbnail_url = video.thumbnail_url
+        model.duration_ms = video.duration_ms
+        model.status = video.status
+        model.updated_at = video.updated_at
+        self._session.flush()
+        return video
+
     def list_recent(self, limit: int = 50) -> list[Video]:
         if limit <= 0:
             return []
@@ -71,6 +86,7 @@ class SqlAlchemyIngestJobRepository:
                 video_id=job.video_id,
                 status=job.status,
                 current_stage=job.current_stage,
+                idempotency_key=job.idempotency_key,
                 target_fingerprint=job.target_fingerprint,
                 retryable=job.retryable,
                 error_code=job.error_code,
@@ -86,6 +102,46 @@ class SqlAlchemyIngestJobRepository:
     def get(self, job_id: str) -> IngestJob | None:
         model = self._session.get(IngestJobModel, job_id)
         return _job_from_model(model) if model is not None else None
+
+    def get_by_idempotency_key(self, idempotency_key: str) -> IngestJob | None:
+        model = self._session.scalar(select(IngestJobModel).where(IngestJobModel.idempotency_key == idempotency_key))
+        return _job_from_model(model) if model is not None else None
+
+    def find_active(self, video_id: str, target_fingerprint: str) -> IngestJob | None:
+        model = self._session.scalar(
+            select(IngestJobModel)
+            .where(
+                IngestJobModel.video_id == video_id,
+                IngestJobModel.target_fingerprint == target_fingerprint,
+                IngestJobModel.status.in_(
+                    (IngestJobStatus.PENDING, IngestJobStatus.RUNNING, IngestJobStatus.RETRY_WAIT)
+                ),
+            )
+            .order_by(IngestJobModel.created_at.desc())
+        )
+        return _job_from_model(model) if model is not None else None
+
+    def list_running(self) -> list[IngestJob]:
+        models = self._session.scalars(
+            select(IngestJobModel).where(IngestJobModel.status == IngestJobStatus.RUNNING)
+        ).all()
+        return [_job_from_model(model) for model in models]
+
+    def save(self, job: IngestJob) -> IngestJob:
+        model = self._session.get(IngestJobModel, job.id)
+        if model is None:
+            raise LookupError(f"Ingest job {job.id} does not exist.")
+        model.status = job.status
+        model.current_stage = job.current_stage
+        model.idempotency_key = job.idempotency_key
+        model.target_fingerprint = job.target_fingerprint
+        model.retryable = job.retryable
+        model.error_code = job.error_code
+        model.error_message = job.error_message
+        model.started_at = job.started_at
+        model.finished_at = job.finished_at
+        self._session.flush()
+        return job
 
     def add_attempt(self, attempt: IngestAttempt) -> IngestAttempt:
         self._session.add(
@@ -104,6 +160,14 @@ class SqlAlchemyIngestJobRepository:
         )
         self._session.flush()
         return attempt
+
+    def list_attempts(self, job_id: str) -> list[IngestAttempt]:
+        models = self._session.scalars(
+            select(IngestAttemptModel)
+            .where(IngestAttemptModel.ingest_job_id == job_id)
+            .order_by(IngestAttemptModel.attempt_number)
+        ).all()
+        return [_attempt_from_model(model) for model in models]
 
 
 class SqlAlchemyTranscriptRepository:
@@ -248,6 +312,7 @@ def _job_from_model(model: IngestJobModel) -> IngestJob:
         video_id=model.video_id,
         status=model.status,
         current_stage=model.current_stage,
+        idempotency_key=model.idempotency_key,
         target_fingerprint=model.target_fingerprint,
         retryable=model.retryable,
         error_code=model.error_code,
@@ -255,6 +320,21 @@ def _job_from_model(model: IngestJobModel) -> IngestJob:
         created_at=model.created_at,
         started_at=model.started_at,
         finished_at=model.finished_at,
+    )
+
+
+def _attempt_from_model(model: IngestAttemptModel) -> IngestAttempt:
+    return IngestAttempt(
+        id=model.id,
+        ingest_job_id=model.ingest_job_id,
+        provider=model.provider,
+        stage=model.stage,
+        attempt_number=model.attempt_number,
+        outcome=model.outcome,
+        elapsed_ms=model.elapsed_ms,
+        error_code=model.error_code,
+        error_message=model.error_message,
+        created_at=model.created_at,
     )
 
 

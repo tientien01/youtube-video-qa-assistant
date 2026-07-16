@@ -7,7 +7,7 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.infrastructure.db.engine import create_database_engine, create_session_factory, sqlite_database_url
-from app.infrastructure.db.schema import assert_schema_current, build_alembic_config
+from app.infrastructure.db.migration_guard import assert_schema_current, build_alembic_config
 
 
 @pytest.fixture

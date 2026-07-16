@@ -56,4 +56,6 @@ TASK-006 + TASK-008 + TASK-009
 
 ## Ready now
 
-`TASK-001` and `TASK-002` are verified. `TASK-003` is now ready and adopts the SQLite foundation for a persistent, atomic ingest job lifecycle while keeping compatibility with the current ingest endpoint.
+`TASK-001` through `TASK-003` are verified. `TASK-004` is ready to replace the
+opaque transcript portion of the compatibility processor. `TASK-009` may proceed
+independently on the LLM branch of the roadmap.

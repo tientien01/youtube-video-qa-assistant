@@ -20,6 +20,8 @@ Make transcript acquisition fallback complete, typed, observable, and format-cor
 - Explicit provider ordering and language/manual-auto ranking.
 - Format-specific VTT, TTML, and SRV3 parsing or explicit rejection.
 - Fixture-based timeout, block, not-found, malformed, and fallback tests.
+- Migrate transcript acquisition out of `app/services/` into `infrastructure/ingest/`;
+  production code MUST NOT add new imports from the legacy transcript service.
 
 ## Non-goals
 

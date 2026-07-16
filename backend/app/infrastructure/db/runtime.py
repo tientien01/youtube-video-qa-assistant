@@ -4,7 +4,7 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.infrastructure.db.engine import create_database_engine, create_session_factory
-from app.infrastructure.db.schema import assert_schema_current
+from app.infrastructure.db.migration_guard import assert_schema_current
 
 
 @dataclass(frozen=True, slots=True)

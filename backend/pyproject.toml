@@ -50,6 +50,7 @@ include = [
     "app/core",
     "app/domain",
     "app/infrastructure/db",
+    "app/infrastructure/ingest/in_process_runner.py",
     "app/schemas",
     "app/services/extraction/video_url_service.py",
     "app/services/extraction/youtube_metadata_service.py",

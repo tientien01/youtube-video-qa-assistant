@@ -20,6 +20,8 @@ Expose real ingest status/retry behavior and begin incremental TypeScript migrat
 - Migrate video ingest/history API modules and components to TypeScript.
 - Replace fake progress with polled real job state.
 - Present retryable stage/error information without leaking internals.
+- Move Pydantic transport models from `app/schemas/` to `app/api/contracts/`.
+- Remove the legacy `app/services/` folder after all production imports migrate.
 
 ## Non-goals
 
@@ -34,6 +36,10 @@ Expose real ingest status/retry behavior and begin incremental TypeScript migrat
 - [ ] API schema drift check passes.
 - [ ] Migrated files contain no handwritten duplicate backend response interfaces.
 - [ ] Existing chat/learning features remain usable.
+- [ ] `app/services/` and `app/schemas/` no longer exist.
+- [ ] Production code has no imports from `app.services` or `app.schemas`.
+- [ ] API routes call application use cases; application/domain do not import infrastructure.
+- [ ] Compatibility facades scheduled for removal are gone.
 
 ## Verification
 

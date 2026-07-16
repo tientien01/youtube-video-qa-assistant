@@ -20,6 +20,8 @@ Create a rebuildable dense index with provider-independent embedding and vector 
 - Qdrant local adapter keyed by index version.
 - Batch embedding, dimension discovery, health checks, rebuild, and cleanup.
 - Index fingerprint persistence.
+- Migrate embedding and vector implementations out of `app/services/` into the
+  corresponding infrastructure modules.
 
 ## Non-goals
 

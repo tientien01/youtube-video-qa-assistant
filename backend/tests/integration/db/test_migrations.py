@@ -6,7 +6,7 @@ from sqlalchemy import inspect
 
 from app.infrastructure.db.engine import create_database_engine, sqlite_database_url
 from app.infrastructure.db.runtime import start_database_runtime
-from app.infrastructure.db.schema import DatabaseSchemaError, assert_schema_current, build_alembic_config
+from app.infrastructure.db.migration_guard import DatabaseSchemaError, assert_schema_current, build_alembic_config
 
 
 CANONICAL_TABLES = {

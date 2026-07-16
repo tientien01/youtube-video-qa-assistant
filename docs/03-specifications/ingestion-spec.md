@@ -1,7 +1,7 @@
 ---
 id: SPEC-INGEST-001
 document_status: approved
-implementation_status: planned
+implementation_status: partial
 normative: true
 last_verified: 2026-07-16
 related_adrs: [ADR-001, ADR-003]

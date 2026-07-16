@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from enum import StrEnum
 from uuid import uuid4
@@ -92,6 +92,7 @@ class IngestJob:
     id: str = field(default_factory=new_id)
     status: IngestJobStatus = IngestJobStatus.PENDING
     current_stage: IngestStage = IngestStage.PENDING
+    idempotency_key: str | None = None
     target_fingerprint: str | None = None
     retryable: bool = False
     error_code: str | None = None
@@ -99,6 +100,94 @@ class IngestJob:
     created_at: datetime = field(default_factory=utc_now)
     started_at: datetime | None = None
     finished_at: datetime | None = None
+
+    def start(self, *, now: datetime | None = None) -> IngestJob:
+        if self.status is not IngestJobStatus.PENDING:
+            raise ValueError(f"Cannot start ingest job from status {self.status.value}.")
+        return replace(
+            self,
+            status=IngestJobStatus.RUNNING,
+            current_stage=IngestStage.FETCHING_METADATA,
+            started_at=now or utc_now(),
+            finished_at=None,
+            retryable=False,
+            error_code=None,
+            error_message=None,
+        )
+
+    def advance(self, stage: IngestStage) -> IngestJob:
+        if self.status is not IngestJobStatus.RUNNING:
+            raise ValueError(f"Cannot advance ingest job from status {self.status.value}.")
+        if stage in {IngestStage.PENDING, IngestStage.COMPLETE}:
+            raise ValueError(f"Cannot advance directly to stage {stage.value}.")
+        if _stage_position(stage) <= _stage_position(self.current_stage):
+            raise ValueError(f"Invalid ingest stage transition: {self.current_stage.value} -> {stage.value}.")
+        return replace(self, current_stage=stage)
+
+    def succeed(self, *, now: datetime | None = None) -> IngestJob:
+        if self.status is not IngestJobStatus.RUNNING or self.current_stage is not IngestStage.COMMITTING:
+            raise ValueError("An ingest job can become ready only after committing.")
+        return replace(
+            self,
+            status=IngestJobStatus.READY,
+            current_stage=IngestStage.COMPLETE,
+            retryable=False,
+            error_code=None,
+            error_message=None,
+            finished_at=now or utc_now(),
+        )
+
+    def fail(
+        self,
+        *,
+        error_code: str,
+        error_message: str,
+        retryable: bool,
+        now: datetime | None = None,
+    ) -> IngestJob:
+        if self.status not in {IngestJobStatus.PENDING, IngestJobStatus.RUNNING, IngestJobStatus.RETRY_WAIT}:
+            raise ValueError(f"Cannot fail ingest job from status {self.status.value}.")
+        return replace(
+            self,
+            status=IngestJobStatus.FAILED,
+            retryable=retryable,
+            error_code=error_code,
+            error_message=error_message,
+            finished_at=now or utc_now(),
+        )
+
+    def cancel(self, *, now: datetime | None = None) -> IngestJob:
+        if self.status not in {IngestJobStatus.PENDING, IngestJobStatus.RUNNING, IngestJobStatus.RETRY_WAIT}:
+            raise ValueError(f"Cannot cancel ingest job from status {self.status.value}.")
+        return replace(
+            self,
+            status=IngestJobStatus.CANCELLED,
+            retryable=False,
+            error_code="INGEST_CANCELLED",
+            error_message="Ingest was cancelled.",
+            finished_at=now or utc_now(),
+        )
+
+    def retry(self) -> IngestJob:
+        if self.status is not IngestJobStatus.FAILED or not self.retryable:
+            raise ValueError("Only a retryable failed ingest job can be retried.")
+        return replace(
+            self,
+            status=IngestJobStatus.PENDING,
+            current_stage=IngestStage.PENDING,
+            retryable=False,
+            error_code=None,
+            error_message=None,
+            started_at=None,
+            finished_at=None,
+        )
+
+
+_INGEST_STAGE_ORDER = tuple(IngestStage)
+
+
+def _stage_position(stage: IngestStage) -> int:
+    return _INGEST_STAGE_ORDER.index(stage)
 
 
 @dataclass(frozen=True, slots=True)

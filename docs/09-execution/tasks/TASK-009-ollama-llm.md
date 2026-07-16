@@ -22,6 +22,8 @@ Upgrade the minimal LLM protocol and make Ollama the free local generation path 
 - Adapt Gemini behind the same contract.
 - Structured grounded answer schema and citation validation.
 - Explicit provider selection; no silent paid fallback.
+- Put generation orchestration in `application/` and provider implementations in
+  `infrastructure/llm/`; do not extend the legacy service layer.
 
 ## Non-goals
 

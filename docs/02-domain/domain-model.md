@@ -1,7 +1,7 @@
 ---
 id: DOMAIN-001
 document_status: approved
-implementation_status: planned
+implementation_status: partial
 normative: true
 last_verified: 2026-07-16
 ---
