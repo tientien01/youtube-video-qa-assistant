@@ -12,10 +12,11 @@ This directory defines both the target product and the safe path from the curren
 ## Read this first
 
 1. [Product vision](00-product/product-vision.md)
-2. [Target architecture](01-architecture/target-architecture.md)
-3. [Current capability matrix](09-execution/capability-matrix.md)
-4. [Roadmap and task order](09-execution/roadmap.md)
-5. The assigned task under `09-execution/tasks/`
+2. [Interface specification](00-product/interface-specification.md)
+3. [Target architecture](01-architecture/target-architecture.md)
+4. [Current capability matrix](09-execution/capability-matrix.md)
+5. [Roadmap and task order](09-execution/roadmap.md)
+6. The assigned task under `09-execution/tasks/`
 
 ## Document authority
 

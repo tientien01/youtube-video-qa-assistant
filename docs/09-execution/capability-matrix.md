@@ -12,7 +12,7 @@ This file reports current implementation status. Target behavior lives in specif
 | Capability | Current implementation | Target status | Next task |
 |---|---|---:|---|
 | FastAPI `/api/v1` application | Implemented routes for health, video, chat, summary, notes, quiz, debug | `implemented` | TASK-010 |
-| React learning workspace | React JavaScript/Vite UI exists | `implemented` | TASK-010 |
+| React learning workspace | React JavaScript/Vite UI exists; approved evidence-first mock is specified but not implemented | `implemented` | TASK-010, TASK-013 |
 | Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
 | Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, 86 backend tests, frontend lint/build | `verified` | Expand incrementally |
 | Canonical database foundation | SQLite ORM schema, unit of work, and repository adapters implemented beside legacy JSON stores | `implemented` | Expand in TASK-004–007 |

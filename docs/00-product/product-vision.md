@@ -46,6 +46,7 @@ For a supported video, the product MUST:
 - Lexical and multilingual dense retrieval with fusion and reranking
 - Ollama generation with structured citations
 - Transcript viewer, ingest retry, chat, summary, notes, and quiz
+- Evidence-first video workspace conforming to `interface-specification.md`
 - Reproducible local setup and evaluation dataset
 
 ### Product V2

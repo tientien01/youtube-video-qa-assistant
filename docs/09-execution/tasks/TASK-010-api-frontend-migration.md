@@ -29,6 +29,10 @@ Expose real ingest status/retry behavior and begin incremental TypeScript migrat
 - SSE
 - UI design overhaul
 
+The approved visual overhaul is intentionally isolated in TASK-013. TASK-010
+MUST leave typed feature boundaries that TASK-013 can compose without rewriting
+API access again.
+
 ## Acceptance criteria
 
 - [ ] Frontend renders each job terminal/active state.

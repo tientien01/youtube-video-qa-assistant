@@ -38,9 +38,14 @@ TASK-003 Persistent ingest lifecycle
                |
                v
           TASK-010 API/frontend migration
+               |
+               v
+          TASK-013 Approved workspace UI
 
 TASK-006 + TASK-008 + TASK-009
     -> TASK-011 Evaluation release gate
+
+TASK-011 + TASK-013
     -> TASK-012 Bilingual product verification
 ```
 
@@ -51,7 +56,7 @@ TASK-006 + TASK-008 + TASK-009
 | Foundation | TASK-001 and TASK-002 verified |
 | Reliable ingest | TASK-003 through TASK-006 verified |
 | Serious retrieval | TASK-007, TASK-008, TASK-011 verified |
-| Local bilingual product | TASK-009, TASK-010, TASK-012 verified |
+| Local bilingual product | TASK-009, TASK-010, TASK-012, TASK-013 verified |
 | Production readiness | Separate future roadmap after Local V1 evidence |
 
 ## Ready now

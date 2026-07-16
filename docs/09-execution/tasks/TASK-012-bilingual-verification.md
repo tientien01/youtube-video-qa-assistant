@@ -2,7 +2,7 @@
 
 Status: planned
 
-Depends on: TASK-008, TASK-009, TASK-010, TASK-011
+Depends on: TASK-008, TASK-009, TASK-010, TASK-011, TASK-013
 
 ## Objective
 
@@ -20,6 +20,7 @@ Make Vietnamese and English first-class, tested product behavior rather than pro
 - Cross-language retrieval verification.
 - Original-language quotations and citations.
 - Backend and frontend language metadata.
+- Approved workspace layout under Vietnamese and English content expansion.
 - End-to-end bilingual acceptance suite.
 
 ## Non-goals
@@ -33,6 +34,7 @@ Make Vietnamese and English first-class, tested product behavior rather than pro
 - [ ] Answers follow explicit selection or latest-question language.
 - [ ] Source text and timestamp identity remain unchanged by answer translation.
 - [ ] Language-detection uncertainty follows documented fallback.
+- [ ] Navigation, transcript, answer, and evidence layouts remain usable in both languages.
 
 ## Verification
 

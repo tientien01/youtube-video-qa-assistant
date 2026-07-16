@@ -12,6 +12,11 @@ Before changing code, read:
 4. Every specification and ADR listed by that task
 5. The current code and tests in the task's declared scope
 
+Before changing frontend layout, navigation, styling, transcript interaction,
+chat presentation, or evidence presentation, also read
+`docs/00-product/interface-specification.md`. Current frontend styling is not the
+target visual authority.
+
 ## Sources of truth
 
 When sources disagree, use this precedence:
@@ -32,6 +37,8 @@ Target specifications do not prove that a capability is implemented. Only the ca
 - Keep provider-specific SDK objects inside adapters.
 - Never make a video `ready` when required ingest/index stages are incomplete.
 - Do not silently fall back to a paid provider.
+- Do not present decorative controls, fabricated progress, health, storage, or
+  navigation states as working UI.
 - Update tests, affected docs, and the capability matrix in the same commit.
 - Run the task verification commands before committing directly to `main`.
 - Keep commits small, atomic, and reversible. Do not modify unrelated user changes.
