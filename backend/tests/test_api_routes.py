@@ -2,6 +2,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 os.environ["LLM_PROVIDER"] = "fallback"
@@ -11,6 +12,8 @@ os.environ["VECTOR_STORE_PROVIDER"] = "local_json"
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.api.dependencies import get_database_runtime, get_video_transcript_application
+from app.application.video import VideoTranscript
 from app.application.legacy.chat_history_store import LocalChatHistoryStore
 from app.application.legacy.extraction.transcript_service import TranscriptFetchError, TranscriptNotFoundError
 from app.application.legacy.learning.generated_output_store import LocalGeneratedOutputStore
@@ -25,10 +28,75 @@ class ApiRoutesTest(unittest.TestCase):
         self.client = TestClient(app)
 
     def test_health_endpoint_returns_ok(self):
-        response = self.client.get("/api/v1/health")
+        class ConnectionStub:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return None
+
+            def execute(self, statement):
+                return statement
+
+        database = SimpleNamespace(
+            engine=SimpleNamespace(
+                connect=ConnectionStub,
+                url=SimpleNamespace(database=None),
+            )
+        )
+        app.dependency_overrides[get_database_runtime] = lambda: database
+        try:
+            response = self.client.get("/api/v1/health")
+        finally:
+            app.dependency_overrides.pop(get_database_runtime, None)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "ok"})
+        payload = response.json()
+        self.assertIn(payload["status"], {"operational", "degraded"})
+        self.assertEqual(payload["api"]["status"], "available")
+        self.assertEqual(payload["api"]["label"], "API")
+        self.assertEqual(payload["sqlite"]["status"], "available")
+        self.assertEqual(payload["vector_index"]["provider"], "local_json")
+        self.assertEqual(payload["llm"]["status"], "unavailable")
+
+    def test_transcript_endpoint_preserves_segment_identity_and_timestamps(self):
+        class TranscriptApplicationStub:
+            def get(self, video_id):
+                return VideoTranscript(
+                    video_id=video_id,
+                    language_code="vi",
+                    segments=(
+                        SimpleNamespace(
+                            id="segment-1",
+                            original_text="Đoạn hội thoại gốc.",
+                            start_ms=1_250,
+                            end_ms=3_500,
+                        ),
+                    ),
+                )
+
+        app.dependency_overrides[get_video_transcript_application] = TranscriptApplicationStub
+        try:
+            response = self.client.get("/api/v1/videos/dQw4w9WgXcQ/transcript")
+        finally:
+            app.dependency_overrides.pop(get_video_transcript_application, None)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "video_id": "dQw4w9WgXcQ",
+                "language_code": "vi",
+                "segments": [
+                    {
+                        "segment_id": "segment-1",
+                        "original_text": "Đoạn hội thoại gốc.",
+                        "start_seconds": 1.25,
+                        "end_seconds": 3.5,
+                    }
+                ],
+            },
+        )
 
     def test_cors_allows_vite_fallback_port(self):
         response = self.client.options(

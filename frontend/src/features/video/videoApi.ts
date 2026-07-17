@@ -5,6 +5,7 @@ import type { components } from '../../shared/api/schema'
 export type IngestJob = components['schemas']['IngestJobResponse']
 export type VideoMetadata = components['schemas']['VideoMetadataResponse']
 export type VideoIngest = components['schemas']['VideoIngestResponse']
+export type VideoTranscript = components['schemas']['VideoTranscriptResponse']
 
 export async function createIngestJob(url: string): Promise<IngestJob> {
   return requestJson(`${API_BASE_URL}/ingest-jobs`, {
@@ -34,6 +35,10 @@ export async function listVideos(): Promise<VideoMetadata[]> {
 
 export async function getVideo(videoId: string): Promise<VideoMetadata> {
   return requestJson(`${API_BASE_URL}/videos/${videoId}`, {}, 'Could not load this video.') as Promise<VideoMetadata>
+}
+
+export async function getVideoTranscript(videoId: string): Promise<VideoTranscript> {
+  return requestJson(`${API_BASE_URL}/videos/${videoId}/transcript`, {}, 'Could not load the transcript.') as Promise<VideoTranscript>
 }
 
 export async function deleteVideo(videoId: string) {

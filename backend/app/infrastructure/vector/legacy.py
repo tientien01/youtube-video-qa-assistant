@@ -35,6 +35,13 @@ class LocalVectorStore:
         ]
         self._save()
 
+    def health_check(self) -> bool:
+        try:
+            self._ensure_loaded()
+        except (OSError, TypeError, ValueError):
+            return False
+        return True
+
     def has_video(self, video_id: str) -> bool:
         self._ensure_loaded()
         return bool(self._index.get(video_id))
@@ -126,6 +133,13 @@ class ChromaVectorStore:
                 for chunk in chunks
             ],
         )
+
+    def health_check(self) -> bool:
+        try:
+            self._collection.count()
+        except Exception:
+            return False
+        return True
 
     def has_video(self, video_id: str) -> bool:
         result = self._collection.get(where={"video_id": video_id}, limit=1, include=["metadatas"])

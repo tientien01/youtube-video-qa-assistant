@@ -127,6 +127,21 @@ export interface components {
       "latency_ms": number;
       "chunks": Array<components["schemas"]["RetrievalDebugChunk"]>;
     };
+    "RuntimeComponentResponse": {
+      "status": "available" | "unavailable";
+      "label": string;
+      "provider"?: string | null;
+      "model"?: string | null;
+      "detail"?: string | null;
+    };
+    "RuntimeHealthResponse": {
+      "status": "operational" | "degraded";
+      "api": components["schemas"]["RuntimeComponentResponse"];
+      "sqlite": components["schemas"]["RuntimeComponentResponse"];
+      "vector_index": components["schemas"]["RuntimeComponentResponse"];
+      "llm": components["schemas"]["RuntimeComponentResponse"];
+      "database_size_bytes"?: number | null;
+    };
     "StudyNotesRequest": {
       "mode"?: "concise" | "detailed" | "timeline" | "exam_review" | "beginner" | "flashcards" | "concept_map";
       "length"?: "short" | "medium" | "long";
@@ -164,6 +179,12 @@ export interface components {
     "SummarySource": {
       "chunk_id": string;
       "text": string;
+      "start_seconds": number;
+      "end_seconds": number;
+    };
+    "TranscriptSegmentResponse": {
+      "segment_id": string;
+      "original_text": string;
       "start_seconds": number;
       "end_seconds": number;
     };
@@ -208,6 +229,11 @@ export interface components {
       "video_id": string;
       "rebuilt": boolean;
       "chunk_count": number;
+    };
+    "VideoTranscriptResponse": {
+      "video_id": string;
+      "language_code": string;
+      "segments": Array<components["schemas"]["TranscriptSegmentResponse"]>;
     };
   }
 }

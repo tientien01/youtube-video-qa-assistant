@@ -780,6 +780,105 @@
         "title": "RetrievalDebugResponse",
         "type": "object"
       },
+      "RuntimeComponentResponse": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "label"
+        ],
+        "title": "RuntimeComponentResponse",
+        "type": "object"
+      },
+      "RuntimeHealthResponse": {
+        "properties": {
+          "api": {
+            "$ref": "#/components/schemas/RuntimeComponentResponse"
+          },
+          "database_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Database Size Bytes"
+          },
+          "llm": {
+            "$ref": "#/components/schemas/RuntimeComponentResponse"
+          },
+          "sqlite": {
+            "$ref": "#/components/schemas/RuntimeComponentResponse"
+          },
+          "status": {
+            "enum": [
+              "operational",
+              "degraded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "vector_index": {
+            "$ref": "#/components/schemas/RuntimeComponentResponse"
+          }
+        },
+        "required": [
+          "status",
+          "api",
+          "sqlite",
+          "vector_index",
+          "llm"
+        ],
+        "title": "RuntimeHealthResponse",
+        "type": "object"
+      },
       "StudyNotesRequest": {
         "properties": {
           "force": {
@@ -1016,6 +1115,34 @@
           "end_seconds"
         ],
         "title": "SummarySource",
+        "type": "object"
+      },
+      "TranscriptSegmentResponse": {
+        "properties": {
+          "end_seconds": {
+            "title": "End Seconds",
+            "type": "number"
+          },
+          "original_text": {
+            "title": "Original Text",
+            "type": "string"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "start_seconds": {
+            "title": "Start Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "segment_id",
+          "original_text",
+          "start_seconds",
+          "end_seconds"
+        ],
+        "title": "TranscriptSegmentResponse",
         "type": "object"
       },
       "ValidationError": {
@@ -1280,6 +1407,32 @@
         ],
         "title": "VideoRebuildIndexResponse",
         "type": "object"
+      },
+      "VideoTranscriptResponse": {
+        "properties": {
+          "language_code": {
+            "title": "Language Code",
+            "type": "string"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/TranscriptSegmentResponse"
+            },
+            "title": "Segments",
+            "type": "array"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "language_code",
+          "segments"
+        ],
+        "title": "VideoTranscriptResponse",
+        "type": "object"
       }
     }
   },
@@ -1460,7 +1613,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/RuntimeHealthResponse"
+                }
               }
             },
             "description": "Successful Response"
@@ -1989,6 +2144,48 @@
         "summary": "Summarize Video",
         "tags": [
           "summary"
+        ]
+      }
+    },
+    "/api/v1/videos/{video_id}/transcript": {
+      "get": {
+        "operationId": "get_video_transcript_api_v1_videos__video_id__transcript_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoTranscriptResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Video Transcript",
+        "tags": [
+          "video"
         ]
       }
     }

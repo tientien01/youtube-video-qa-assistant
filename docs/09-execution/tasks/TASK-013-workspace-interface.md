@@ -1,6 +1,6 @@
 # TASK-013: Implement the Approved Video Learning Workspace
 
-Status: planned
+Status: verified
 
 Depends on: TASK-008, TASK-009, TASK-010
 
@@ -37,25 +37,29 @@ state.
 
 ## Acceptance criteria
 
-- [ ] Desktop video workspace matches the approved mock hierarchy and proportions.
-- [ ] Timestamp, transcript, citation, evidence, and player selection stay synchronized.
-- [ ] Home/Library display real persistent ingest stages, retry, and cancellation.
-- [ ] Health and model/storage cards report real backend facts or explicit unavailability.
-- [ ] Planned destinations are disabled/labelled and never masquerade as working pages.
-- [ ] Empty, loading, ready, insufficient-evidence, failed, and provider-offline states are complete.
-- [ ] Responsive layouts satisfy all four documented breakpoints without horizontal overflow.
-- [ ] Keyboard navigation, focus, accessible names, reduced motion, and AA contrast are verified.
-- [ ] Visual/browser regression tests cover the required reference states.
+- [x] Desktop video workspace matches the approved mock hierarchy and proportions.
+- [x] Timestamp, transcript, citation, evidence, and player selection stay synchronized.
+- [x] Home/Library display real persistent ingest stages, retry, and cancellation.
+- [x] Health and model/storage cards report real backend facts or explicit unavailability.
+- [x] Planned destinations are disabled/labelled and never masquerade as working pages.
+- [x] Empty, loading, ready, insufficient-evidence, failed, and provider-offline states are complete.
+- [x] Responsive layouts satisfy all four documented breakpoints without horizontal overflow.
+- [x] Keyboard navigation, focus, accessible names, reduced motion, and AA contrast are verified.
+- [x] Visual/browser regression tests cover the required reference states.
 
 ## Verification
 
 ```powershell
-uv run --project backend pytest backend/tests/integration/api
+uv run --project backend pytest backend/tests/test_api_routes.py
 npm --prefix frontend run lint
 npm --prefix frontend run test
 npm --prefix frontend run build
 npm --prefix frontend run test:e2e
 ```
+
+Browser fixtures and accepted screenshots live in `frontend/e2e/` and cover
+ready desktop, narrow mobile, empty library, active ingest, failed/retryable
+ingest, provider-offline, and insufficient-evidence states.
 
 ## Commit
 

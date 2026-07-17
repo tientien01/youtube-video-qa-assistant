@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from threading import Lock
 
 from app.application.ingest.use_cases import IngestJobApplication
+from app.application.video import VideoTranscriptApplication
 from app.core.config import get_settings
 from app.infrastructure.db.migration_guard import DatabaseSchemaError
 from app.infrastructure.db.runtime import DatabaseRuntime, start_database_runtime
@@ -48,6 +49,17 @@ def get_ingest_application() -> IngestJobApplication:
     return _container.application
 
 
+def get_database_runtime() -> DatabaseRuntime:
+    get_ingest_application()
+    assert _container is not None
+    return _container.database
+
+
+def get_video_transcript_application() -> VideoTranscriptApplication:
+    database = get_database_runtime()
+    return VideoTranscriptApplication(lambda: SqlAlchemyIngestUnitOfWork(database.session_factory))
+
+
 def close_ingest_runtime() -> None:
     global _container
     with _container_lock:
@@ -57,4 +69,10 @@ def close_ingest_runtime() -> None:
             _container = None
 
 
-__all__ = ["DatabaseSchemaError", "close_ingest_runtime", "get_ingest_application"]
+__all__ = [
+    "DatabaseSchemaError",
+    "close_ingest_runtime",
+    "get_database_runtime",
+    "get_ingest_application",
+    "get_video_transcript_application",
+]

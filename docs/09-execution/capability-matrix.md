@@ -11,8 +11,8 @@ This file reports current implementation status. Target behavior lives in specif
 
 | Capability | Current implementation | Target status | Next task |
 |---|---|---:|---|
-| FastAPI `/api/v1` application | Typed routes include persistent ingest create/status/retry/cancel contracts and application-owned orchestration | `verified` | TASK-013 composition |
-| React learning workspace | Typed ingest/history boundaries poll real persisted job state; approved evidence-first visual workspace is not implemented | `implemented` | TASK-013 |
+| FastAPI `/api/v1` application | Typed routes include persistent ingest jobs, canonical transcript delivery, and live runtime health contracts | `verified` | Complete |
+| React learning workspace | Evidence-first responsive shell synchronizes player, transcript, grounded chat, citations, and evidence; browser fixtures cover runtime and ingest states | `verified` | TASK-012 bilingual verification |
 | Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
 | Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, backend tests, OpenAPI drift, frontend lint/test/build | `verified` | Expand incrementally |
 | Canonical database foundation | SQLite ORM schema, index lifecycle/unit of work, complete embedding identity, and canonical transcript/chunk repositories | `verified` | Complete |
