@@ -7,7 +7,7 @@ from typing import Any
 
 from app.core.config import get_settings
 from app.infrastructure.embeddings.legacy import EmbeddingService, cosine_similarity, embedding_service
-from app.services.rag.models import RetrievedChunk, TranscriptChunk
+from app.application.legacy.rag.models import RetrievedChunk, TranscriptChunk
 
 
 @dataclass(frozen=True)

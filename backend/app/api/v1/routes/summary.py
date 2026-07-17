@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
 
-from app.schemas.summary import SummaryRequest, SummaryResponse
-from app.services.learning.summary_service import generate_video_summary
-from app.services.rag.local_store import VideoNotIndexedError
+from app.api.contracts.summary import SummaryRequest, SummaryResponse
+from app.application.legacy.learning.summary_service import generate_video_summary
+from app.application.legacy.rag.local_store import VideoNotIndexedError
 
 
 router = APIRouter(prefix="/videos", tags=["summary"])

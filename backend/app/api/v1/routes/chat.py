@@ -2,9 +2,9 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.schemas.chat import ChatAskRequest, ChatAskResponse, ChatHistoryDeleteResponse, ChatHistoryResponse
-from app.services.rag.local_store import VideoNotIndexedError
-from app.services.rag.video_index_service import (
+from app.api.contracts.chat import ChatAskRequest, ChatAskResponse, ChatHistoryDeleteResponse, ChatHistoryResponse
+from app.application.legacy.rag.local_store import VideoNotIndexedError
+from app.application.legacy.rag.video_index_service import (
     ask_video_question,
     delete_video_chat_history,
     list_video_chat_history,

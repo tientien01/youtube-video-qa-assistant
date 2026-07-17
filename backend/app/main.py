@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.api.runtime import configure_runtime
 from app.core.config import get_settings
 from app.core.errors import ApiError
 
@@ -21,6 +22,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 app = FastAPI(title="YouTube Video Q&A Assistant")
 settings = get_settings()
+configure_runtime()
 
 
 app.add_middleware(

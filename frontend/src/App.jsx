@@ -11,10 +11,20 @@ import { generateVideoQuiz } from './features/quiz/quizApi'
 import { QuizPanel } from './features/quiz/QuizPanel'
 import { generateVideoSummary } from './features/summary/summaryApi'
 import { SummaryPanel } from './features/summary/SummaryPanel'
-import { deleteVideo, ingestVideo, listVideos, rebuildVideoIndex } from './features/video/videoApi'
+import {
+  cancelIngestJob,
+  createIngestJob,
+  deleteVideo,
+  getIngestJob,
+  getVideo,
+  listVideos,
+  rebuildVideoIndex,
+  retryIngestJob,
+} from './features/video/videoApi'
 import { VideoHistory } from './features/video/VideoHistory'
 import { VideoIngestForm } from './features/video/VideoIngestForm'
 import { VideoResult } from './features/video/VideoResult'
+import { ACTIVE_INGEST_STATUSES } from './features/video/ingestJobState'
 import {
   mergeVideoHistory,
   readCurrentVideo,
@@ -35,6 +45,7 @@ const WORKSPACE_TABS = [
   { id: 'debug', label: 'Debug', description: 'Inspect retrieval' },
 ]
 const ACTIVE_TAB_KEY = 'youtube-qa-active-workspace-tab'
+const ACTIVE_INGEST_JOB_KEY = 'youtube-qa-active-ingest-job'
 
 function App() {
   const [video, setVideo] = useState(() => readCurrentVideo())
@@ -51,7 +62,7 @@ function App() {
   const [quiz, setQuiz] = useState(null)
   const [debugResult, setDebugResult] = useState(null)
   const [activeTab, setActiveTab] = useState(() => readActiveWorkspaceTab())
-  const [isLoading, setIsLoading] = useState(false)
+  const [ingestJob, setIngestJob] = useState(null)
   const [isAsking, setIsAsking] = useState(false)
   const [isSummaryLoading, setIsSummaryLoading] = useState(false)
   const [isNotesLoading, setIsNotesLoading] = useState(false)
@@ -59,7 +70,6 @@ function App() {
   const [isDebugLoading, setIsDebugLoading] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(false)
   const [isRebuildingIndex, setIsRebuildingIndex] = useState(false)
-  const [ingestStage, setIngestStage] = useState('')
 
   useEffect(() => {
     let isActive = true
@@ -92,14 +102,26 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const jobId = localStorage.getItem(ACTIVE_INGEST_JOB_KEY)
+    if (!jobId) {
+      return
+    }
+    let active = true
+    resumeIngestJob(jobId, () => active)
+    return () => {
+      active = false
+    }
+    // The persisted identifier is the only input; handlers intentionally stay local to this component.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     if (video?.video_id) {
       loadBackendChatHistory(video.video_id)
     }
   }, [video?.video_id])
 
   async function handleIngest(url) {
-    setIsLoading(true)
-    const ingestTimers = startIngestStages(setIngestStage)
     setError('')
     setChatError('')
     setSummaryError('')
@@ -112,14 +134,49 @@ function App() {
     setDebugResult(null)
 
     try {
-      const response = await ingestVideo(url)
-      applySelectedVideo(response)
+      const job = await createIngestJob(url)
+      setIngestJob(job)
+      localStorage.setItem(ACTIVE_INGEST_JOB_KEY, job.job_id)
+      await resumeIngestJob(job.job_id)
     } catch (requestError) {
       setError(requestError.message)
-    } finally {
-      ingestTimers.forEach((timerId) => clearTimeout(timerId))
-      setIngestStage('')
-      setIsLoading(false)
+    }
+  }
+
+  async function resumeIngestJob(jobId, isActive = () => true) {
+    let job = await getIngestJob(jobId)
+    while (isActive()) {
+      setIngestJob(job)
+      if (!ACTIVE_INGEST_STATUSES.has(job.status)) {
+        if (job.status === 'ready') {
+          applySelectedVideo(await getVideo(job.video_id))
+        }
+        return
+      }
+      await wait(750)
+      job = await getIngestJob(jobId)
+    }
+  }
+
+  async function handleRetryIngest() {
+    if (!ingestJob) return
+    setError('')
+    try {
+      const retried = await retryIngestJob(ingestJob.job_id)
+      setIngestJob(retried)
+      await resumeIngestJob(retried.job_id)
+    } catch (requestError) {
+      setError(requestError.message)
+    }
+  }
+
+  async function handleCancelIngest() {
+    if (!ingestJob) return
+    setError('')
+    try {
+      setIngestJob(await cancelIngestJob(ingestJob.job_id))
+    } catch (requestError) {
+      setError(requestError.message)
     }
   }
 
@@ -414,8 +471,9 @@ function App() {
         <aside className="workspace-sidebar" aria-label="Video controls">
           <VideoIngestForm
             onSubmit={handleIngest}
-            isLoading={isLoading}
-            ingestStage={ingestStage}
+            onRetry={handleRetryIngest}
+            onCancel={handleCancelIngest}
+            ingestJob={ingestJob}
           />
 
           {error ? <p className="error-message">{error}</p> : null}
@@ -538,12 +596,8 @@ function readActiveWorkspaceTab() {
   return WORKSPACE_TABS.some((tab) => tab.id === storedTab) ? storedTab : 'chat'
 }
 
-function startIngestStages(setIngestStage) {
-  setIngestStage('Fetching metadata and transcript...')
-  return [
-    setTimeout(() => setIngestStage('Chunking transcript...'), 700),
-    setTimeout(() => setIngestStage('Building retrieval index...'), 1400),
-  ]
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
 
 function normalizeVideo(video) {

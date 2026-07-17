@@ -109,6 +109,13 @@ class IngestJobApplication:
                 raise IngestJobNotFound(f"Ingest job {job_id} was not found.")
             return job
 
+    def get_video(self, video_id: str) -> Video:
+        with self._uow_factory() as uow:
+            video = uow.videos.get(video_id)
+            if video is None:
+                raise LookupError(f"Video {video_id} was not found.")
+            return video
+
     def cancel(self, job_id: str) -> IngestJob:
         with self._uow_factory() as uow:
             job = _require_job(uow.jobs.get(job_id), job_id)

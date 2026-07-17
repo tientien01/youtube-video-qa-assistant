@@ -2,9 +2,9 @@ from time import perf_counter
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.schemas.debug import RetrievalDebugChunk, RetrievalDebugRequest, RetrievalDebugResponse
-from app.services.rag.local_store import VideoNotIndexedError
-from app.services.rag.retrieval_service import retrieve_chunks
+from app.api.contracts.debug import RetrievalDebugChunk, RetrievalDebugRequest, RetrievalDebugResponse
+from app.application.legacy.rag.local_store import VideoNotIndexedError
+from app.application.legacy.rag.retrieval_service import retrieve_chunks
 
 
 router = APIRouter(prefix="/debug", tags=["debug"])

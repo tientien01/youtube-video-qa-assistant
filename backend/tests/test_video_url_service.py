@@ -1,6 +1,6 @@
 import unittest
 
-from app.services.extraction.video_url_service import extract_youtube_video_id
+from app.application.legacy.extraction.video_url_service import extract_youtube_video_id
 
 
 class VideoUrlServiceTest(unittest.TestCase):

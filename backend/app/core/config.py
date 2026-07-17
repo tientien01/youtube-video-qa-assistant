@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 LOCAL_ENV_FILE = BACKEND_ROOT / ".env"
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+DEFAULT_OLLAMA_LLM_MODEL = "qwen3:4b"
+DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
+DEFAULT_OLLAMA_EMBEDDING_MODEL = "embeddinggemma"
 DEFAULT_EMBEDDING_PROVIDER = "hashing"
 DEFAULT_EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 DEFAULT_VECTOR_STORE_PROVIDER = "local_json"
@@ -28,6 +31,8 @@ load_dotenv(LOCAL_ENV_FILE)
 class Settings:
     cors_origins: list[str]
     llm_provider: str
+    llm_model: str
+    ollama_base_url: str
     gemini_api_key: str | None
     gemini_model: str
     llm_timeout_seconds: float
@@ -63,11 +68,25 @@ def get_settings() -> Settings:
             ],
         ),
         llm_provider=provider,
+        llm_model=(
+            _read_optional_env("LLM_MODEL")
+            or (_read_optional_env("GEMINI_MODEL") if provider == "gemini" else None)
+            or (DEFAULT_GEMINI_MODEL if provider == "gemini" else DEFAULT_OLLAMA_LLM_MODEL)
+        ),
+        ollama_base_url=_read_optional_env("OLLAMA_BASE_URL") or DEFAULT_OLLAMA_BASE_URL,
         gemini_api_key=gemini_api_key,
         gemini_model=_read_optional_env("GEMINI_MODEL") or DEFAULT_GEMINI_MODEL,
         llm_timeout_seconds=_read_timeout_seconds("LLM_TIMEOUT_SECONDS", default=20.0),
         embedding_provider=(_read_optional_env("EMBEDDING_PROVIDER") or DEFAULT_EMBEDDING_PROVIDER).lower(),
-        embedding_model_name=_read_optional_env("EMBEDDING_MODEL_NAME") or DEFAULT_EMBEDDING_MODEL_NAME,
+        embedding_model_name=(
+            _read_optional_env("EMBEDDING_MODEL")
+            or _read_optional_env("EMBEDDING_MODEL_NAME")
+            or (
+                DEFAULT_OLLAMA_EMBEDDING_MODEL
+                if (_read_optional_env("EMBEDDING_PROVIDER") or DEFAULT_EMBEDDING_PROVIDER).lower() == "ollama"
+                else DEFAULT_EMBEDDING_MODEL_NAME
+            )
+        ),
         vector_store_provider=(_read_optional_env("VECTOR_STORE_PROVIDER") or DEFAULT_VECTOR_STORE_PROVIDER).lower(),
         chroma_persist_dir=_read_backend_path("CHROMA_PERSIST_DIR", default=DEFAULT_CHROMA_PERSIST_DIR),
         reranker_enabled=_read_bool("RERANKER_ENABLED", default=False),

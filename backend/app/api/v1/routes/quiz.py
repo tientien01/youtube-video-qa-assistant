@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
 
-from app.schemas.quiz import QuizRequest, QuizResponse
-from app.services.learning.quiz_service import generate_quiz
-from app.services.rag.local_store import VideoNotIndexedError
+from app.api.contracts.quiz import QuizRequest, QuizResponse
+from app.application.legacy.learning.quiz_service import generate_quiz
+from app.application.legacy.rag.local_store import VideoNotIndexedError
 
 
 router = APIRouter(prefix="/videos", tags=["quiz"])

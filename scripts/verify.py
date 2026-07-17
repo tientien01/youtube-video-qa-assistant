@@ -117,7 +117,12 @@ def main() -> int:
             "Backend tests",
             [*uv, "run", "--project", "backend", "pytest", "backend/tests"],
         ),
+        (
+            "OpenAPI contract drift",
+            [*uv, "run", "--project", "backend", "python", "scripts/generate_openapi.py", "--check"],
+        ),
         ("Frontend lint", [npm, "--prefix", "frontend", "run", "lint"]),
+        ("Frontend tests", [npm, "--prefix", "frontend", "run", "test"]),
         ("Frontend build", [npm, "--prefix", "frontend", "run", "build"]),
     ]
 

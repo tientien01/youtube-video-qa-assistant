@@ -3,15 +3,15 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 
 from app.application.ingest.transcript import TranscriptAcquisitionError, TranscriptFailureCode
-from app.schemas.video import (
+from app.api.contracts.video import (
     VideoDeleteResponse,
     VideoIngestRequest,
     VideoIngestResponse,
     VideoMetadataResponse,
     VideoRebuildIndexResponse,
 )
-from app.services.rag.local_store import VideoNotIndexedError
-from app.services.rag.video_index_service import (
+from app.application.legacy.rag.local_store import VideoNotIndexedError
+from app.application.legacy.rag.video_index_service import (
     delete_ingested_video,
     get_ingested_video,
     ingest_video_content,

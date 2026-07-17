@@ -9,7 +9,7 @@ export async function requestJson(url, options = {}, fallbackMessage = 'Request 
   const data = await readResponseBody(response)
 
   if (!response.ok) {
-    throw new Error(formatErrorDetail(data?.detail) || fallbackMessage)
+    throw new Error(data?.error?.message || formatErrorDetail(data?.detail) || fallbackMessage)
   }
 
   return data

@@ -9,7 +9,7 @@ from app.infrastructure.db.migration_guard import DatabaseSchemaError
 from app.infrastructure.db.runtime import DatabaseRuntime, start_database_runtime
 from app.infrastructure.db.unit_of_work import SqlAlchemyIngestUnitOfWork
 from app.infrastructure.ingest.in_process_runner import InProcessIngestJobRunner
-from app.infrastructure.ingest.legacy_processor import LegacyIngestProcessor
+from app.infrastructure.ingest.local_processor import LocalIngestProcessor
 from app.infrastructure.ingest.transcript.runtime import transcript_pipeline_fingerprint
 
 
@@ -38,7 +38,7 @@ def get_ingest_application() -> IngestJobApplication:
 
             application = IngestJobApplication(
                 uow_factory,
-                LegacyIngestProcessor(),
+                LocalIngestProcessor(),
                 target_fingerprint=transcript_pipeline_fingerprint(),
             )
             application.recover_interrupted()

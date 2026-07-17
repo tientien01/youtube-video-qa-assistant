@@ -9,25 +9,25 @@ os.environ["EMBEDDING_PROVIDER"] = "hashing"
 os.environ["VECTOR_STORE_PROVIDER"] = "local_json"
 
 from app.core.config import get_settings
-from app.schemas.transcript import TranscriptSegment
-from app.services.extraction.youtube_metadata_service import YouTubeMetadata
-from app.services.llm.base import LlmError
-from app.services.llm.config import load_llm_settings
-from app.services.llm.generation import OptionalLlmResult
-from app.services.learning.generated_output_store import LocalGeneratedOutputStore
-from app.services.learning.notes_service import generate_study_notes
-from app.services.learning.quiz_service import generate_quiz
-from app.services.learning.summary_service import generate_video_summary
-from app.services.rag.generation_service import generate_answer
-from app.services.rag.embedding_service import HashingEmbeddingService
-from app.services.rag.local_store import LocalRagStore
-from app.services.rag.metadata_store import LocalVideoMetadataStore
-from app.services.rag.models import RetrievedChunk, TranscriptChunk
-from app.services.rag.reranker import LexicalReranker
-from app.services.rag.retrieval_service import retrieve_chunks
-from app.services.rag.text_processing import chunk_transcript, tokenize
-from app.services.rag.vector_store import LocalVectorStore
-from app.services.rag.video_index_service import ingest_video_content
+from app.api.contracts.transcript import TranscriptSegment
+from app.application.legacy.extraction.youtube_metadata_service import YouTubeMetadata
+from app.application.legacy.llm.base import LlmError
+from app.application.legacy.llm.config import load_llm_settings
+from app.application.legacy.llm.generation import OptionalLlmResult
+from app.application.legacy.learning.generated_output_store import LocalGeneratedOutputStore
+from app.application.legacy.learning.notes_service import generate_study_notes
+from app.application.legacy.learning.quiz_service import generate_quiz
+from app.application.legacy.learning.summary_service import generate_video_summary
+from app.application.legacy.rag.generation_service import generate_answer
+from app.infrastructure.embeddings.legacy import HashingEmbeddingService
+from app.application.legacy.rag.local_store import LocalRagStore
+from app.application.legacy.rag.metadata_store import LocalVideoMetadataStore
+from app.application.legacy.rag.models import RetrievedChunk, TranscriptChunk
+from app.application.legacy.rag.reranker import LexicalReranker
+from app.application.legacy.rag.retrieval_service import retrieve_chunks
+from app.application.legacy.rag.text_processing import chunk_transcript, tokenize
+from app.infrastructure.vector.legacy import LocalVectorStore
+from app.application.legacy.rag.video_index_service import ingest_video_content
 
 
 class RagServicesTest(unittest.TestCase):
@@ -138,10 +138,10 @@ class RagServicesTest(unittest.TestCase):
             )
 
             with (
-                patch("app.services.rag.video_index_service.rag_store", store),
-                patch("app.services.rag.video_index_service.metadata_store", metadata_store),
-                patch("app.services.rag.video_index_service.vector_store", vector_store),
-                patch("app.services.rag.video_index_service.fetch_transcript") as fetch_transcript_mock,
+                patch("app.application.legacy.rag.video_index_service.rag_store", store),
+                patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store),
+                patch("app.application.legacy.rag.video_index_service.vector_store", vector_store),
+                patch("app.application.legacy.rag.video_index_service.fetch_transcript") as fetch_transcript_mock,
             ):
                 response = ingest_video_content("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 
@@ -164,15 +164,15 @@ class RagServicesTest(unittest.TestCase):
             vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
 
             with (
-                patch("app.services.rag.video_index_service.rag_store", store),
-                patch("app.services.rag.video_index_service.metadata_store", metadata_store),
-                patch("app.services.rag.video_index_service.vector_store", vector_store),
+                patch("app.application.legacy.rag.video_index_service.rag_store", store),
+                patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store),
+                patch("app.application.legacy.rag.video_index_service.vector_store", vector_store),
                 patch(
-                    "app.services.rag.video_index_service.fetch_transcript",
+                    "app.application.legacy.rag.video_index_service.fetch_transcript",
                     return_value=(segments, "en"),
                 ),
                 patch(
-                    "app.services.rag.video_index_service.fetch_youtube_metadata",
+                    "app.application.legacy.rag.video_index_service.fetch_youtube_metadata",
                     return_value=YouTubeMetadata(
                         title="Real video title",
                         channel_title="Learning channel",
@@ -271,8 +271,8 @@ class RagServicesTest(unittest.TestCase):
             vector_test_store.upsert_video("video123456", chunks)
 
             with (
-                patch("app.services.rag.retrieval_service.rag_store", rag_test_store),
-                patch("app.services.rag.retrieval_service.vector_store", vector_test_store),
+                patch("app.application.legacy.rag.retrieval_service.rag_store", rag_test_store),
+                patch("app.application.legacy.rag.retrieval_service.vector_store", vector_test_store),
             ):
                 results = retrieve_chunks(
                     video_id="video123456",
@@ -365,8 +365,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", chunks)
 
             with (
-                patch("app.services.learning.summary_service.rag_store", store),
-                patch("app.services.learning.summary_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.summary_service.rag_store", store),
+                patch("app.application.legacy.learning.summary_service.generated_output_store", output_store),
             ):
                 first_response = generate_video_summary("video123456", mode="short")
                 second_response = generate_video_summary("video123456", mode="short")
@@ -392,8 +392,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", [chunk])
 
             with (
-                patch("app.services.learning.summary_service.rag_store", store),
-                patch("app.services.learning.summary_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.summary_service.rag_store", store),
+                patch("app.application.legacy.learning.summary_service.generated_output_store", output_store),
             ):
                 response = generate_video_summary("video123456", mode="timeline")
 
@@ -416,8 +416,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", [chunk])
 
             with (
-                patch("app.services.learning.summary_service.rag_store", store),
-                patch("app.services.learning.summary_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.summary_service.rag_store", store),
+                patch("app.application.legacy.learning.summary_service.generated_output_store", output_store),
             ):
                 response = generate_video_summary("video123456", mode="short", llm_client=llm_client)
 
@@ -441,8 +441,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", [chunk])
 
             with (
-                patch("app.services.learning.summary_service.rag_store", store),
-                patch("app.services.learning.summary_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.summary_service.rag_store", store),
+                patch("app.application.legacy.learning.summary_service.generated_output_store", output_store),
             ):
                 response = generate_video_summary(
                     "video123456",
@@ -468,10 +468,10 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", [chunk])
 
             with (
-                patch("app.services.learning.summary_service.rag_store", store),
-                patch("app.services.learning.summary_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.summary_service.rag_store", store),
+                patch("app.application.legacy.learning.summary_service.generated_output_store", output_store),
                 patch(
-                    "app.services.learning.summary_service.generate_optional_llm_result",
+                    "app.application.legacy.learning.summary_service.generate_optional_llm_result",
                     return_value=OptionalLlmResult(
                         text="* Đọc không phải là một khả năng b",
                         generation_mode="llm",
@@ -508,8 +508,8 @@ class RagServicesTest(unittest.TestCase):
             )
 
             with (
-                patch("app.services.learning.summary_service.rag_store", store),
-                patch("app.services.learning.summary_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.summary_service.rag_store", store),
+                patch("app.application.legacy.learning.summary_service.generated_output_store", output_store),
             ):
                 response = generate_video_summary("video123456", mode="short")
 
@@ -540,8 +540,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", chunks)
 
             with (
-                patch("app.services.learning.notes_service.rag_store", store),
-                patch("app.services.learning.notes_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.notes_service.rag_store", store),
+                patch("app.application.legacy.learning.notes_service.generated_output_store", output_store),
             ):
                 first_response = generate_study_notes("video123456")
                 second_response = generate_study_notes("video123456")
@@ -570,8 +570,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", [chunk])
 
             with (
-                patch("app.services.learning.notes_service.rag_store", store),
-                patch("app.services.learning.notes_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.notes_service.rag_store", store),
+                patch("app.application.legacy.learning.notes_service.generated_output_store", output_store),
             ):
                 response = generate_study_notes("video123456", llm_client=llm_client)
 
@@ -595,8 +595,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", [chunk])
 
             with (
-                patch("app.services.learning.notes_service.rag_store", store),
-                patch("app.services.learning.notes_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.notes_service.rag_store", store),
+                patch("app.application.legacy.learning.notes_service.generated_output_store", output_store),
             ):
                 first_response = generate_study_notes(
                     "video123456",
@@ -625,8 +625,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", [chunk])
 
             with (
-                patch("app.services.learning.notes_service.rag_store", store),
-                patch("app.services.learning.notes_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.notes_service.rag_store", store),
+                patch("app.application.legacy.learning.notes_service.generated_output_store", output_store),
             ):
                 first_response = generate_study_notes(
                     "video123456",
@@ -657,8 +657,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", [chunk])
 
             with (
-                patch("app.services.learning.notes_service.rag_store", store),
-                patch("app.services.learning.notes_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.notes_service.rag_store", store),
+                patch("app.application.legacy.learning.notes_service.generated_output_store", output_store),
             ):
                 first_response = generate_study_notes(
                     "video123456",
@@ -691,8 +691,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", [chunk])
 
             with (
-                patch("app.services.learning.notes_service.rag_store", store),
-                patch("app.services.learning.notes_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.notes_service.rag_store", store),
+                patch("app.application.legacy.learning.notes_service.generated_output_store", output_store),
             ):
                 response = generate_study_notes("video123456", llm_client=FailingLlmClient())
 
@@ -717,8 +717,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", chunks)
 
             with (
-                patch("app.services.learning.notes_service.rag_store", store),
-                patch("app.services.learning.notes_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.notes_service.rag_store", store),
+                patch("app.application.legacy.learning.notes_service.generated_output_store", output_store),
             ):
                 response = generate_study_notes(
                     "video123456",
@@ -753,8 +753,8 @@ class RagServicesTest(unittest.TestCase):
             store.upsert_video("video123456", chunks)
 
             with (
-                patch("app.services.learning.quiz_service.rag_store", store),
-                patch("app.services.learning.quiz_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.quiz_service.rag_store", store),
+                patch("app.application.legacy.learning.quiz_service.generated_output_store", output_store),
             ):
                 first_response = generate_quiz(
                     video_id="video123456",
@@ -880,6 +880,26 @@ class RagServicesTest(unittest.TestCase):
         self.assertEqual(settings.vector_store_provider, "chroma")
         self.assertTrue(settings.reranker_enabled)
         self.assertEqual(settings.rerank_top_k, 12)
+
+    def test_core_settings_read_local_ollama_models(self):
+        with patch.dict(
+            "os.environ",
+            {
+                "LLM_PROVIDER": "ollama",
+                "LLM_MODEL": "qwen2.5-coder:7b",
+                "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "EMBEDDING_PROVIDER": "ollama",
+                "EMBEDDING_MODEL": "embeddinggemma",
+            },
+            clear=True,
+        ):
+            settings = get_settings()
+
+        self.assertEqual(settings.llm_provider, "ollama")
+        self.assertEqual(settings.llm_model, "qwen2.5-coder:7b")
+        self.assertEqual(settings.ollama_base_url, "http://127.0.0.1:11434")
+        self.assertEqual(settings.embedding_provider, "ollama")
+        self.assertEqual(settings.embedding_model_name, "embeddinggemma")
 
     def test_core_settings_resolve_chroma_path_under_backend_root(self):
         with patch.dict(

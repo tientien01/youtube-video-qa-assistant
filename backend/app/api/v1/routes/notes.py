@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
 
-from app.schemas.notes import StudyNotesRequest, StudyNotesResponse
-from app.services.learning.notes_service import generate_study_notes
-from app.services.rag.local_store import VideoNotIndexedError
+from app.api.contracts.notes import StudyNotesRequest, StudyNotesResponse
+from app.application.legacy.learning.notes_service import generate_study_notes
+from app.application.legacy.rag.local_store import VideoNotIndexedError
 
 
 router = APIRouter(prefix="/videos", tags=["notes"])

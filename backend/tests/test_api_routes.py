@@ -11,13 +11,13 @@ os.environ["VECTOR_STORE_PROVIDER"] = "local_json"
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services.chat_history_store import LocalChatHistoryStore
-from app.services.extraction.transcript_service import TranscriptFetchError, TranscriptNotFoundError
-from app.services.learning.generated_output_store import LocalGeneratedOutputStore
-from app.services.rag.local_store import LocalRagStore
-from app.services.rag.metadata_store import LocalVideoMetadataStore
-from app.services.rag.models import TranscriptChunk
-from app.services.rag.vector_store import LocalVectorStore
+from app.application.legacy.chat_history_store import LocalChatHistoryStore
+from app.application.legacy.extraction.transcript_service import TranscriptFetchError, TranscriptNotFoundError
+from app.application.legacy.learning.generated_output_store import LocalGeneratedOutputStore
+from app.application.legacy.rag.local_store import LocalRagStore
+from app.application.legacy.rag.metadata_store import LocalVideoMetadataStore
+from app.application.legacy.rag.models import TranscriptChunk
+from app.infrastructure.vector.legacy import LocalVectorStore
 
 
 class ApiRoutesTest(unittest.TestCase):
@@ -102,10 +102,10 @@ class ApiRoutesTest(unittest.TestCase):
             )
 
             with (
-                patch("app.services.rag.video_index_service.rag_store", store),
-                patch("app.services.rag.video_index_service.metadata_store", metadata_store),
-                patch("app.services.rag.video_index_service.vector_store", vector_store),
-                patch("app.services.rag.video_index_service.fetch_transcript") as fetch_transcript_mock,
+                patch("app.application.legacy.rag.video_index_service.rag_store", store),
+                patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store),
+                patch("app.application.legacy.rag.video_index_service.vector_store", vector_store),
+                patch("app.application.legacy.rag.video_index_service.fetch_transcript") as fetch_transcript_mock,
             ):
                 response = self.client.post(
                     "/api/v1/videos/ingest",
@@ -130,7 +130,7 @@ class ApiRoutesTest(unittest.TestCase):
                 chunk_count=1,
             )
 
-            with patch("app.services.rag.video_index_service.metadata_store", metadata_store):
+            with patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store):
                 response = self.client.get("/api/v1/videos")
 
         self.assertEqual(response.status_code, 200)
@@ -149,7 +149,7 @@ class ApiRoutesTest(unittest.TestCase):
                 chunk_count=1,
             )
 
-            with patch("app.services.rag.video_index_service.metadata_store", metadata_store):
+            with patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store):
                 response = self.client.get("/api/v1/videos/dQw4w9WgXcQ")
 
         self.assertEqual(response.status_code, 200)
@@ -159,7 +159,7 @@ class ApiRoutesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
 
-            with patch("app.services.rag.video_index_service.metadata_store", metadata_store):
+            with patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store):
                 response = self.client.get("/api/v1/videos/missing0000")
 
         self.assertEqual(response.status_code, 404)
@@ -196,10 +196,10 @@ class ApiRoutesTest(unittest.TestCase):
             )
 
             with (
-                patch("app.services.rag.video_index_service.rag_store", store),
-                patch("app.services.rag.video_index_service.vector_store", vector_store),
-                patch("app.services.rag.video_index_service.metadata_store", metadata_store),
-                patch("app.services.rag.video_index_service.generated_output_store", output_store),
+                patch("app.application.legacy.rag.video_index_service.rag_store", store),
+                patch("app.application.legacy.rag.video_index_service.vector_store", vector_store),
+                patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store),
+                patch("app.application.legacy.rag.video_index_service.generated_output_store", output_store),
             ):
                 response = self.client.delete("/api/v1/videos/dQw4w9WgXcQ")
 
@@ -231,8 +231,8 @@ class ApiRoutesTest(unittest.TestCase):
             store.upsert_video("dQw4w9WgXcQ", [chunk])
 
             with (
-                patch("app.services.learning.summary_service.rag_store", store),
-                patch("app.services.learning.summary_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.summary_service.rag_store", store),
+                patch("app.application.legacy.learning.summary_service.generated_output_store", output_store),
             ):
                 response = self.client.post(
                     "/api/v1/videos/dQw4w9WgXcQ/summary",
@@ -251,8 +251,8 @@ class ApiRoutesTest(unittest.TestCase):
             output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
 
             with (
-                patch("app.services.learning.summary_service.rag_store", store),
-                patch("app.services.learning.summary_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.summary_service.rag_store", store),
+                patch("app.application.legacy.learning.summary_service.generated_output_store", output_store),
             ):
                 response = self.client.post(
                     "/api/v1/videos/missing0000/summary",
@@ -276,8 +276,8 @@ class ApiRoutesTest(unittest.TestCase):
             store.upsert_video("dQw4w9WgXcQ", [chunk])
 
             with (
-                patch("app.services.learning.notes_service.rag_store", store),
-                patch("app.services.learning.notes_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.notes_service.rag_store", store),
+                patch("app.application.legacy.learning.notes_service.generated_output_store", output_store),
             ):
                 response = self.client.post(
                     "/api/v1/videos/dQw4w9WgXcQ/study-notes",
@@ -301,8 +301,8 @@ class ApiRoutesTest(unittest.TestCase):
             output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
 
             with (
-                patch("app.services.learning.notes_service.rag_store", store),
-                patch("app.services.learning.notes_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.notes_service.rag_store", store),
+                patch("app.application.legacy.learning.notes_service.generated_output_store", output_store),
             ):
                 response = self.client.post("/api/v1/videos/missing0000/study-notes")
 
@@ -323,8 +323,8 @@ class ApiRoutesTest(unittest.TestCase):
             store.upsert_video("dQw4w9WgXcQ", [chunk])
 
             with (
-                patch("app.services.learning.quiz_service.rag_store", store),
-                patch("app.services.learning.quiz_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.quiz_service.rag_store", store),
+                patch("app.application.legacy.learning.quiz_service.generated_output_store", output_store),
             ):
                 response = self.client.post(
                     "/api/v1/videos/dQw4w9WgXcQ/quiz",
@@ -347,8 +347,8 @@ class ApiRoutesTest(unittest.TestCase):
             output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
 
             with (
-                patch("app.services.learning.quiz_service.rag_store", store),
-                patch("app.services.learning.quiz_service.generated_output_store", output_store),
+                patch("app.application.legacy.learning.quiz_service.rag_store", store),
+                patch("app.application.legacy.learning.quiz_service.generated_output_store", output_store),
             ):
                 response = self.client.post(
                     "/api/v1/videos/missing0000/quiz",
@@ -370,7 +370,7 @@ class ApiRoutesTest(unittest.TestCase):
             store = LocalRagStore(Path(temp_dir) / "index.json")
             store.upsert_video("dQw4w9WgXcQ", [chunk])
 
-            with patch("app.services.rag.retrieval_service.rag_store", store):
+            with patch("app.application.legacy.rag.retrieval_service.rag_store", store):
                 response = self.client.post(
                     "/api/v1/debug/retrieve",
                     json={
@@ -391,7 +391,7 @@ class ApiRoutesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             store = LocalRagStore(Path(temp_dir) / "index.json")
 
-            with patch("app.services.rag.retrieval_service.rag_store", store):
+            with patch("app.application.legacy.rag.retrieval_service.rag_store", store):
                 response = self.client.post(
                     "/api/v1/debug/retrieve",
                     json={
@@ -437,10 +437,10 @@ class ApiRoutesTest(unittest.TestCase):
             vector_store.upsert_video("dQw4w9WgXcQ", [chunk])
 
             with (
-                patch("app.services.rag.retrieval_service.rag_store", store),
-                patch("app.services.rag.retrieval_service.vector_store", vector_store),
+                patch("app.application.legacy.rag.retrieval_service.rag_store", store),
+                patch("app.application.legacy.rag.retrieval_service.vector_store", vector_store),
                 patch(
-                    "app.services.llm.generation.build_configured_llm_client",
+                    "app.application.legacy.llm.generation.build_configured_llm_client",
                     return_value=None,
                 ),
             ):
@@ -472,8 +472,8 @@ class ApiRoutesTest(unittest.TestCase):
             store.upsert_video("dQw4w9WgXcQ", [chunk])
 
             with (
-                patch("app.services.rag.video_index_service.rag_store", store),
-                patch("app.services.rag.video_index_service.vector_store", vector_store),
+                patch("app.application.legacy.rag.video_index_service.rag_store", store),
+                patch("app.application.legacy.rag.video_index_service.vector_store", vector_store),
             ):
                 response = self.client.post("/api/v1/videos/dQw4w9WgXcQ/rebuild-index")
 
@@ -499,11 +499,11 @@ class ApiRoutesTest(unittest.TestCase):
             vector_store.upsert_video("dQw4w9WgXcQ", [chunk])
 
             with (
-                patch("app.services.rag.video_index_service.rag_store", store),
-                patch("app.services.rag.video_index_service.vector_store", vector_store),
-                patch("app.services.rag.video_index_service.chat_history_store", chat_store),
-                patch("app.services.rag.retrieval_service.rag_store", store),
-                patch("app.services.rag.retrieval_service.vector_store", vector_store),
+                patch("app.application.legacy.rag.video_index_service.rag_store", store),
+                patch("app.application.legacy.rag.video_index_service.vector_store", vector_store),
+                patch("app.application.legacy.rag.video_index_service.chat_history_store", chat_store),
+                patch("app.application.legacy.rag.retrieval_service.rag_store", store),
+                patch("app.application.legacy.rag.retrieval_service.vector_store", vector_store),
             ):
                 ask_response = self.client.post(
                     "/api/v1/chat/ask",

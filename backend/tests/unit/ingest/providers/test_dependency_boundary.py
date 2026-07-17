@@ -3,7 +3,7 @@ from pathlib import Path
 
 def test_production_code_does_not_import_legacy_transcript_service() -> None:
     backend_root = Path(__file__).resolve().parents[4]
-    legacy_import = "app.services.extraction.transcript_service"
+    legacy_import = "app.application.legacy.extraction.transcript_service"
     violations = []
 
     for path in (backend_root / "app").rglob("*.py"):

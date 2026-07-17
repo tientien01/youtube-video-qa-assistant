@@ -57,6 +57,19 @@ class SentenceTransformerEmbeddingService:
         return [[round(float(value), 6) for value in embedding] for embedding in embeddings]
 
 
+class OllamaEmbeddingService:
+    def __init__(self, model_name: str, base_url: str) -> None:
+        from app.infrastructure.embeddings.ollama import OllamaEmbeddingAdapter
+
+        self._adapter = OllamaEmbeddingAdapter(model=model_name, base_url=base_url)
+
+    def embed_text(self, text: str) -> list[float]:
+        return self._adapter.embed_query(text)
+
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        return self._adapter.embed_documents(texts)
+
+
 def cosine_similarity(left: list[float], right: list[float]) -> float:
     if len(left) != len(right):
         return 0.0
@@ -70,6 +83,8 @@ def build_embedding_service(provider: str | None = None, model_name: str | None 
         return HashingEmbeddingService()
     if selected_provider in {"sentence_transformers", "sentence-transformers"}:
         return SentenceTransformerEmbeddingService(model_name or settings.embedding_model_name)
+    if selected_provider == "ollama":
+        return OllamaEmbeddingService(model_name or settings.embedding_model_name, settings.ollama_base_url)
     raise ValueError(f"Unsupported embedding provider: {selected_provider}")
 
 

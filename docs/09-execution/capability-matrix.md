@@ -11,18 +11,18 @@ This file reports current implementation status. Target behavior lives in specif
 
 | Capability | Current implementation | Target status | Next task |
 |---|---|---:|---|
-| FastAPI `/api/v1` application | Implemented routes for health, video, chat, summary, notes, quiz, debug | `implemented` | TASK-010 |
-| React learning workspace | React JavaScript/Vite UI exists; approved evidence-first mock is specified but not implemented | `implemented` | TASK-010, TASK-013 |
+| FastAPI `/api/v1` application | Typed routes include persistent ingest create/status/retry/cancel contracts and application-owned orchestration | `verified` | TASK-013 composition |
+| React learning workspace | Typed ingest/history boundaries poll real persisted job state; approved evidence-first visual workspace is not implemented | `implemented` | TASK-013 |
 | Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
-| Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, 114 backend tests, frontend lint/build | `verified` | Expand incrementally |
+| Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, backend tests, OpenAPI drift, frontend lint/test/build | `verified` | Expand incrementally |
 | Canonical database foundation | SQLite ORM schema, index lifecycle/unit of work, complete embedding identity, and canonical transcript/chunk repositories | `verified` | Complete |
 | Schema migrations | Alembic migrations, upgrade/downgrade/drift/schema-start checks | `verified` | Complete |
-| Persistent ingest jobs | SQLite state machine, create/status/retry/cancel API, restart recovery, and in-process runner | `verified` | TASK-010 UX |
+| Persistent ingest jobs | SQLite state machine, create/status/retry/cancel API, restart recovery, real frontend polling, retry/cancel controls, and refresh restoration | `verified` | Complete |
 | YouTube URL validation | Implemented baseline | `implemented` | TASK-004 |
 | Transcript extraction | Configurable typed youtube-transcript-api, yt-dlp manual, and yt-dlp automatic provider chain | `verified` | Complete |
 | Format-specific caption parsing | Separate bounded VTT, TTML, and SRV3 parsers with malformed-input rejection | `verified` | Complete |
 | Transcript provenance/quality | Canonical segments, deterministic hashes/IDs, provider/language/type/parser/normalizer provenance, and coverage diagnostics | `verified` | Complete |
-| Atomic/idempotent ingest | Job/video/canonical-transcript publication is atomic and idempotent; new rebuildable index path exists while legacy ingest wiring remains behind a compatibility adapter | `implemented` | TASK-010 migration |
+| Atomic/idempotent ingest | Job/video/canonical-transcript publication is atomic and idempotent; local ingest reports real indexing stages and keeps derived index data rebuildable | `implemented` | TASK-011 release gate |
 | Fixed word chunking | 140 words, 30-word overlap retained as an evaluation control | `implemented` | TASK-011 evaluation |
 | Hierarchical sentence chunking | Deterministic child/parent packing, exact source/timestamp links, whole-unit overlap, hard-limit fallback, Stanza and model-aware tokenizer ports | `verified` | Complete |
 | BM25 retrieval | Active-version-scoped SQLite FTS5 over canonical child chunks with deterministic ranking | `verified` | Complete |
@@ -41,10 +41,9 @@ This file reports current implementation status. Target behavior lives in specif
 ## Known current risks
 
 - Docs previously described configuration and flow that did not match code; the old manual docs were removed.
-- The legacy processor can leave orphan JSON/vector data when it fails; canonical
-  SQLite readiness remains safe, and TASK-010 will switch runtime wiring to the rebuildable index path.
+- A failed local ingest can leave rebuildable JSON/Chroma data; canonical SQLite readiness remains safe.
 - The current oEmbed metadata adapter does not supply duration, so caption-end
   fallback remains common; when a metadata provider supplies duration it takes precedence.
-- The legacy API path still defaults to hashing/JSON retrieval until TASK-010 migrates runtime wiring; hashing remains test/migration-only in the canonical path.
-- The legacy API generation path remains wired through the old optional service until TASK-010 adopts the verified provider-independent orchestration.
+- The compatibility retrieval path honors the configured Ollama embedding model, while hashing remains test/migration-only.
+- The configured local generation path now selects the provider-independent Ollama adapter; Gemini remains explicit opt-in only.
 - Existing working tree contains user-owned notebook, environment-example, and local data changes; tasks MUST preserve them.

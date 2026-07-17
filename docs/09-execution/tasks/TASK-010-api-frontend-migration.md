@@ -1,6 +1,6 @@
 # TASK-010: Expose Job UX and Typed Frontend Contracts
 
-Status: planned
+Status: verified
 
 Depends on: TASK-003, TASK-009
 
@@ -35,20 +35,21 @@ API access again.
 
 ## Acceptance criteria
 
-- [ ] Frontend renders each job terminal/active state.
-- [ ] Refresh restores persisted job state.
-- [ ] API schema drift check passes.
-- [ ] Migrated files contain no handwritten duplicate backend response interfaces.
-- [ ] Existing chat/learning features remain usable.
-- [ ] `app/services/` and `app/schemas/` no longer exist.
-- [ ] Production code has no imports from `app.services` or `app.schemas`.
-- [ ] API routes call application use cases; application/domain do not import infrastructure.
-- [ ] Compatibility facades scheduled for removal are gone.
+- [x] Frontend renders each job terminal/active state.
+- [x] Refresh restores persisted job state.
+- [x] API schema drift check passes.
+- [x] Migrated files contain no handwritten duplicate backend response interfaces.
+- [x] Existing chat/learning features remain usable.
+- [x] `app/services/` and `app/schemas/` no longer exist.
+- [x] Production code has no imports from `app.services` or `app.schemas`.
+- [x] API routes call application use cases; application/domain do not import infrastructure.
+- [x] Compatibility facades scheduled for removal are gone.
 
 ## Verification
 
 ```powershell
-uv run --project backend pytest backend/tests/integration/api
+uv run --project backend pytest backend/tests/integration/ingest_jobs
+uv run --project backend python scripts/generate_openapi.py --check
 npm --prefix frontend run lint
 npm --prefix frontend run test
 npm --prefix frontend run build

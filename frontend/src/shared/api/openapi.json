@@ -1,0 +1,1996 @@
+{
+  "components": {
+    "schemas": {
+      "ChatAskRequest": {
+        "properties": {
+          "question": {
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "retrieval_mode": {
+            "default": "hybrid",
+            "enum": [
+              "bm25",
+              "embedding",
+              "hybrid"
+            ],
+            "title": "Retrieval Mode",
+            "type": "string"
+          },
+          "source_chunk_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Chunk Ids",
+            "type": "array"
+          },
+          "video_id": {
+            "minLength": 1,
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "question"
+        ],
+        "title": "ChatAskRequest",
+        "type": "object"
+      },
+      "ChatAskResponse": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "generation": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          },
+          "groundedness_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groundedness Warning"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          },
+          "retrieval_mode": {
+            "enum": [
+              "bm25",
+              "embedding",
+              "hybrid"
+            ],
+            "title": "Retrieval Mode",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/ChatSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "answer",
+          "retrieval_mode",
+          "sources",
+          "generation"
+        ],
+        "title": "ChatAskResponse",
+        "type": "object"
+      },
+      "ChatHistoryDeleteResponse": {
+        "properties": {
+          "deleted": {
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "deleted"
+        ],
+        "title": "ChatHistoryDeleteResponse",
+        "type": "object"
+      },
+      "ChatHistoryMessage": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "generation": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          },
+          "groundedness_warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groundedness Warning"
+          },
+          "message_id": {
+            "title": "Message Id",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "retrieval_mode": {
+            "enum": [
+              "bm25",
+              "embedding",
+              "hybrid"
+            ],
+            "title": "Retrieval Mode",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/ChatSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "video_id",
+          "question",
+          "answer",
+          "retrieval_mode",
+          "sources",
+          "generation",
+          "created_at"
+        ],
+        "title": "ChatHistoryMessage",
+        "type": "object"
+      },
+      "ChatHistoryResponse": {
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatHistoryMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "messages"
+        ],
+        "title": "ChatHistoryResponse",
+        "type": "object"
+      },
+      "ChatSource": {
+        "properties": {
+          "chunk_id": {
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "end_seconds": {
+            "title": "End Seconds",
+            "type": "number"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "start_seconds": {
+            "title": "Start Seconds",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "text",
+          "start_seconds",
+          "end_seconds",
+          "score"
+        ],
+        "title": "ChatSource",
+        "type": "object"
+      },
+      "GenerationMetadata": {
+        "properties": {
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          },
+          "generation_mode": {
+            "enum": [
+              "llm",
+              "fallback",
+              "cached"
+            ],
+            "title": "Generation Mode",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "generation_mode",
+          "provider"
+        ],
+        "title": "GenerationMetadata",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "IngestJobCreateRequest": {
+        "properties": {
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "url": {
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "IngestJobCreateRequest",
+        "type": "object"
+      },
+      "IngestJobErrorResponse": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "retryable": {
+            "title": "Retryable",
+            "type": "boolean"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "stage",
+          "retryable"
+        ],
+        "title": "IngestJobErrorResponse",
+        "type": "object"
+      },
+      "IngestJobResponse": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IngestJobErrorResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "retryable": {
+            "title": "Retryable",
+            "type": "boolean"
+          },
+          "stage": {
+            "enum": [
+              "pending",
+              "fetching_metadata",
+              "fetching_transcript",
+              "normalizing",
+              "validating",
+              "chunking",
+              "embedding",
+              "committing",
+              "complete"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "running",
+              "retry_wait",
+              "ready",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Fingerprint"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "video_id",
+          "status",
+          "stage",
+          "target_fingerprint",
+          "retryable",
+          "error",
+          "created_at",
+          "started_at",
+          "finished_at"
+        ],
+        "title": "IngestJobResponse",
+        "type": "object"
+      },
+      "QuizQuestion": {
+        "properties": {
+          "correct_answer": {
+            "title": "Correct Answer",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          },
+          "question_type": {
+            "enum": [
+              "multiple_choice",
+              "true_false",
+              "short_answer"
+            ],
+            "title": "Question Type",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/QuizSource"
+          }
+        },
+        "required": [
+          "question_id",
+          "question_type",
+          "question",
+          "options",
+          "correct_answer",
+          "explanation",
+          "source"
+        ],
+        "title": "QuizQuestion",
+        "type": "object"
+      },
+      "QuizRequest": {
+        "properties": {
+          "difficulty": {
+            "default": "medium",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "force": {
+            "default": false,
+            "title": "Force",
+            "type": "boolean"
+          },
+          "mode": {
+            "default": "practice",
+            "enum": [
+              "practice",
+              "exam",
+              "concept_check"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "question_count": {
+            "default": 5,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "question_type": {
+            "default": "mixed",
+            "enum": [
+              "multiple_choice",
+              "true_false",
+              "short_answer",
+              "mixed"
+            ],
+            "title": "Question Type",
+            "type": "string"
+          },
+          "source_chunk_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Chunk Ids",
+            "type": "array"
+          }
+        },
+        "title": "QuizRequest",
+        "type": "object"
+      },
+      "QuizResponse": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "cached": {
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GenerationMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "default": "practice",
+            "enum": [
+              "practice",
+              "exam",
+              "concept_check"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "question_type": {
+            "enum": [
+              "multiple_choice",
+              "true_false",
+              "short_answer",
+              "mixed"
+            ],
+            "title": "Question Type",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuizQuestion"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/QuizSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "difficulty",
+          "question_type",
+          "questions",
+          "sources",
+          "cached"
+        ],
+        "title": "QuizResponse",
+        "type": "object"
+      },
+      "QuizSource": {
+        "properties": {
+          "chunk_id": {
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "end_seconds": {
+            "title": "End Seconds",
+            "type": "number"
+          },
+          "start_seconds": {
+            "title": "Start Seconds",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "text",
+          "start_seconds",
+          "end_seconds"
+        ],
+        "title": "QuizSource",
+        "type": "object"
+      },
+      "RetrievalDebugChunk": {
+        "properties": {
+          "chunk_id": {
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "end_seconds": {
+            "title": "End Seconds",
+            "type": "number"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "start_seconds": {
+            "title": "Start Seconds",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "text",
+          "start_seconds",
+          "end_seconds",
+          "score"
+        ],
+        "title": "RetrievalDebugChunk",
+        "type": "object"
+      },
+      "RetrievalDebugRequest": {
+        "properties": {
+          "question": {
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "retrieval_mode": {
+            "default": "hybrid",
+            "enum": [
+              "bm25",
+              "embedding",
+              "hybrid"
+            ],
+            "title": "Retrieval Mode",
+            "type": "string"
+          },
+          "top_k": {
+            "default": 4,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "video_id": {
+            "minLength": 1,
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "question"
+        ],
+        "title": "RetrievalDebugRequest",
+        "type": "object"
+      },
+      "RetrievalDebugResponse": {
+        "properties": {
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/RetrievalDebugChunk"
+            },
+            "title": "Chunks",
+            "type": "array"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "number"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "retrieval_mode": {
+            "enum": [
+              "bm25",
+              "embedding",
+              "hybrid"
+            ],
+            "title": "Retrieval Mode",
+            "type": "string"
+          },
+          "top_k": {
+            "title": "Top K",
+            "type": "integer"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "question",
+          "retrieval_mode",
+          "top_k",
+          "latency_ms",
+          "chunks"
+        ],
+        "title": "RetrievalDebugResponse",
+        "type": "object"
+      },
+      "StudyNotesRequest": {
+        "properties": {
+          "force": {
+            "default": false,
+            "title": "Force",
+            "type": "boolean"
+          },
+          "learning_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Goal"
+          },
+          "length": {
+            "default": "medium",
+            "enum": [
+              "short",
+              "medium",
+              "long"
+            ],
+            "title": "Length",
+            "type": "string"
+          },
+          "mode": {
+            "default": "concise",
+            "enum": [
+              "concise",
+              "detailed",
+              "timeline",
+              "exam_review",
+              "beginner",
+              "flashcards",
+              "concept_map"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "StudyNotesRequest",
+        "type": "object"
+      },
+      "StudyNotesResponse": {
+        "properties": {
+          "cached": {
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "generation": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          },
+          "learning_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Goal"
+          },
+          "length": {
+            "default": "medium",
+            "enum": [
+              "short",
+              "medium",
+              "long"
+            ],
+            "title": "Length",
+            "type": "string"
+          },
+          "mode": {
+            "default": "concise",
+            "enum": [
+              "concise",
+              "detailed",
+              "timeline",
+              "exam_review",
+              "beginner",
+              "flashcards",
+              "concept_map"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/StudyNotesSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "notes",
+          "sources",
+          "cached",
+          "generation"
+        ],
+        "title": "StudyNotesResponse",
+        "type": "object"
+      },
+      "StudyNotesSource": {
+        "properties": {
+          "chunk_id": {
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "end_seconds": {
+            "title": "End Seconds",
+            "type": "number"
+          },
+          "start_seconds": {
+            "title": "Start Seconds",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "text",
+          "start_seconds",
+          "end_seconds"
+        ],
+        "title": "StudyNotesSource",
+        "type": "object"
+      },
+      "SummaryRequest": {
+        "properties": {
+          "force": {
+            "default": false,
+            "title": "Force",
+            "type": "boolean"
+          },
+          "mode": {
+            "default": "short",
+            "enum": [
+              "short",
+              "detailed",
+              "timeline"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "SummaryRequest",
+        "type": "object"
+      },
+      "SummaryResponse": {
+        "properties": {
+          "cached": {
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "generation": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          },
+          "mode": {
+            "enum": [
+              "short",
+              "detailed",
+              "timeline"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SummarySource"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "mode",
+          "summary",
+          "sources",
+          "cached",
+          "generation"
+        ],
+        "title": "SummaryResponse",
+        "type": "object"
+      },
+      "SummarySource": {
+        "properties": {
+          "chunk_id": {
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "end_seconds": {
+            "title": "End Seconds",
+            "type": "number"
+          },
+          "start_seconds": {
+            "title": "Start Seconds",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "text",
+          "start_seconds",
+          "end_seconds"
+        ],
+        "title": "SummarySource",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VideoDeleteResponse": {
+        "properties": {
+          "deleted": {
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "deleted"
+        ],
+        "title": "VideoDeleteResponse",
+        "type": "object"
+      },
+      "VideoIngestRequest": {
+        "properties": {
+          "url": {
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "VideoIngestRequest",
+        "type": "object"
+      },
+      "VideoIngestResponse": {
+        "properties": {
+          "channel_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel Title"
+          },
+          "chunk_count": {
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "cached",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "transcript_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcript Language"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "title",
+          "url",
+          "duration_seconds",
+          "transcript_language",
+          "chunk_count",
+          "status"
+        ],
+        "title": "VideoIngestResponse",
+        "type": "object"
+      },
+      "VideoMetadataResponse": {
+        "properties": {
+          "channel_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel Title"
+          },
+          "chunk_count": {
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "transcript_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcript Language"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "title",
+          "url",
+          "duration_seconds",
+          "transcript_language",
+          "chunk_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "VideoMetadataResponse",
+        "type": "object"
+      },
+      "VideoRebuildIndexResponse": {
+        "properties": {
+          "chunk_count": {
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "rebuilt": {
+            "title": "Rebuilt",
+            "type": "boolean"
+          },
+          "video_id": {
+            "title": "Video Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "video_id",
+          "rebuilt",
+          "chunk_count"
+        ],
+        "title": "VideoRebuildIndexResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "YouTube Video Q&A Assistant",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/chat/ask": {
+      "post": {
+        "operationId": "ask_question_api_v1_chat_ask_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatAskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask Question",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/api/v1/chat/history/{video_id}": {
+      "delete": {
+        "operationId": "clear_chat_history_api_v1_chat_history__video_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatHistoryDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Clear Chat History",
+        "tags": [
+          "chat"
+        ]
+      },
+      "get": {
+        "operationId": "get_chat_history_api_v1_chat_history__video_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatHistoryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Chat History",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/api/v1/debug/retrieve": {
+      "post": {
+        "operationId": "debug_retrieve_api_v1_debug_retrieve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievalDebugRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalDebugResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Debug Retrieve",
+        "tags": [
+          "debug"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Check",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/ingest-jobs": {
+      "post": {
+        "operationId": "create_ingest_job_api_v1_ingest_jobs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestJobCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Ingest Job",
+        "tags": [
+          "ingest-jobs"
+        ]
+      }
+    },
+    "/api/v1/ingest-jobs/{job_id}": {
+      "get": {
+        "operationId": "get_ingest_job_api_v1_ingest_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Ingest Job",
+        "tags": [
+          "ingest-jobs"
+        ]
+      }
+    },
+    "/api/v1/ingest-jobs/{job_id}/cancel": {
+      "post": {
+        "operationId": "cancel_ingest_job_api_v1_ingest_jobs__job_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Ingest Job",
+        "tags": [
+          "ingest-jobs"
+        ]
+      }
+    },
+    "/api/v1/ingest-jobs/{job_id}/retry": {
+      "post": {
+        "operationId": "retry_ingest_job_api_v1_ingest_jobs__job_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retry Ingest Job",
+        "tags": [
+          "ingest-jobs"
+        ]
+      }
+    },
+    "/api/v1/videos": {
+      "get": {
+        "operationId": "list_videos_api_v1_videos_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VideoMetadataResponse"
+                  },
+                  "title": "Response List Videos Api V1 Videos Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Videos",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/videos/ingest": {
+      "post": {
+        "operationId": "ingest_video_api_v1_videos_ingest_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoIngestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoIngestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingest Video",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/videos/{video_id}": {
+      "delete": {
+        "operationId": "delete_video_api_v1_videos__video_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Video",
+        "tags": [
+          "video"
+        ]
+      },
+      "get": {
+        "operationId": "get_video_api_v1_videos__video_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoMetadataResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Video",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/videos/{video_id}/quiz": {
+      "post": {
+        "operationId": "create_quiz_api_v1_videos__video_id__quiz_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuizRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Quiz",
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/api/v1/videos/{video_id}/rebuild-index": {
+      "post": {
+        "operationId": "rebuild_index_api_v1_videos__video_id__rebuild_index_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoRebuildIndexResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rebuild Index",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/videos/{video_id}/study-notes": {
+      "post": {
+        "operationId": "create_study_notes_api_v1_videos__video_id__study_notes_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/StudyNotesRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyNotesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Study Notes",
+        "tags": [
+          "notes"
+        ]
+      }
+    },
+    "/api/v1/videos/{video_id}/summary": {
+      "post": {
+        "operationId": "summarize_video_api_v1_videos__video_id__summary_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SummaryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summarize Video",
+        "tags": [
+          "summary"
+        ]
+      }
+    }
+  }
+}

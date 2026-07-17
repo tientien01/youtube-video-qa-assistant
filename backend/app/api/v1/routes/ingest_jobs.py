@@ -4,7 +4,7 @@ from app.api.dependencies import DatabaseSchemaError, get_ingest_application
 from app.application.ingest.use_cases import IngestJobApplication, IngestJobNotFound
 from app.core.errors import ApiError
 from app.domain.entities import IngestJob
-from app.schemas.ingest_job import IngestJobCreateRequest, IngestJobErrorResponse, IngestJobResponse
+from app.api.contracts.ingest_job import IngestJobCreateRequest, IngestJobErrorResponse, IngestJobResponse
 
 
 router = APIRouter(prefix="/ingest-jobs", tags=["ingest-jobs"])
@@ -27,7 +27,10 @@ def create_ingest_job(
     application: IngestJobApplication = Depends(_application),
 ) -> IngestJobResponse:
     try:
-        return _to_response(application.create(request.url, client_idempotency_key=request.idempotency_key))
+        return _to_response(
+            application.create(request.url, client_idempotency_key=request.idempotency_key),
+            application,
+        )
     except ValueError as error:
         raise ApiError(status.HTTP_400_BAD_REQUEST, "INVALID_VIDEO_URL", str(error)) from error
 
@@ -37,7 +40,7 @@ def get_ingest_job(
     job_id: str,
     application: IngestJobApplication = Depends(_application),
 ) -> IngestJobResponse:
-    return _to_response(_get_job(application, job_id))
+    return _to_response(_get_job(application, job_id), application)
 
 
 @router.post("/{job_id}/retry", response_model=IngestJobResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -46,7 +49,7 @@ def retry_ingest_job(
     application: IngestJobApplication = Depends(_application),
 ) -> IngestJobResponse:
     try:
-        return _to_response(application.retry(job_id))
+        return _to_response(application.retry(job_id), application)
     except IngestJobNotFound as error:
         raise _not_found(error) from error
     except ValueError as error:
@@ -59,7 +62,7 @@ def cancel_ingest_job(
     application: IngestJobApplication = Depends(_application),
 ) -> IngestJobResponse:
     try:
-        return _to_response(application.cancel(job_id))
+        return _to_response(application.cancel(job_id), application)
     except IngestJobNotFound as error:
         raise _not_found(error) from error
     except ValueError as error:
@@ -77,7 +80,7 @@ def _not_found(error: IngestJobNotFound) -> ApiError:
     return ApiError(status.HTTP_404_NOT_FOUND, "INGEST_JOB_NOT_FOUND", str(error))
 
 
-def _to_response(job: IngestJob) -> IngestJobResponse:
+def _to_response(job: IngestJob, application: IngestJobApplication) -> IngestJobResponse:
     error = None
     if job.error_code is not None:
         error = IngestJobErrorResponse(
@@ -88,7 +91,7 @@ def _to_response(job: IngestJob) -> IngestJobResponse:
         )
     return IngestJobResponse(
         job_id=job.id,
-        video_id=job.video_id,
+        video_id=application.get_video(job.video_id).youtube_video_id,
         status=job.status.value,
         stage=job.current_stage.value,
         target_fingerprint=job.target_fingerprint,
