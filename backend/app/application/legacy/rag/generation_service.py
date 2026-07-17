@@ -10,11 +10,13 @@ from app.application.legacy.llm.context_budget import (
 from app.application.legacy.llm.generation import generate_optional_llm_result
 from app.application.legacy.llm.prompt_builder import build_grounded_answer_prompt
 from app.application.legacy.rag.models import RetrievedChunk
+from app.application.llm.grounded_answer import detect_answer_language
 
 
 @dataclass(frozen=True)
 class AnswerGenerationResult:
     answer: str
+    answer_language: str
     generation: GenerationMetadata
 
 
@@ -34,10 +36,13 @@ def generate_answer_with_metadata(
     question: str,
     retrieved_chunks: list[RetrievedChunk],
     llm_client: LlmClient | None = None,
+    answer_language: str | None = None,
 ) -> AnswerGenerationResult:
+    language = answer_language or detect_answer_language(question)
     if not retrieved_chunks:
         return AnswerGenerationResult(
-            answer=_fallback_answer(question=question, retrieved_chunks=retrieved_chunks),
+            answer=_fallback_answer(question, retrieved_chunks, language),
+            answer_language=language,
             generation=GenerationMetadata(
                 generation_mode="fallback",
                 provider="fallback",
@@ -49,6 +54,7 @@ def generate_answer_with_metadata(
     prompt = build_grounded_answer_prompt(
         question=question,
         retrieved_chunks=compacted_chunks,
+        answer_language=language,
     )
     llm_result = generate_optional_llm_result(
         prompt,
@@ -62,7 +68,11 @@ def generate_answer_with_metadata(
             max_chunk_chars=450,
         )
         llm_result = generate_optional_llm_result(
-            build_grounded_answer_prompt(question=question, retrieved_chunks=compacted_chunks),
+            build_grounded_answer_prompt(
+                question=question,
+                retrieved_chunks=compacted_chunks,
+                answer_language=language,
+            ),
             llm_client=llm_client,
             fallback_log_message="LLM answer retry failed, using fallback answer",
         )
@@ -70,6 +80,7 @@ def generate_answer_with_metadata(
     if llm_result.text is not None:
         return AnswerGenerationResult(
             answer=llm_result.text,
+            answer_language=language,
             generation=GenerationMetadata(
                 generation_mode="llm",
                 provider=llm_result.provider,
@@ -78,7 +89,8 @@ def generate_answer_with_metadata(
         )
 
     return AnswerGenerationResult(
-        answer=_fallback_answer(question=question, retrieved_chunks=retrieved_chunks),
+        answer=_fallback_answer(question, retrieved_chunks, language),
+        answer_language=language,
         generation=GenerationMetadata(
             generation_mode="fallback",
             provider=llm_result.provider,
@@ -87,23 +99,26 @@ def generate_answer_with_metadata(
     )
 
 
-def _fallback_answer(question: str, retrieved_chunks: list[RetrievedChunk]) -> str:
+def _fallback_answer(
+    question: str,
+    retrieved_chunks: list[RetrievedChunk],
+    answer_language: str,
+) -> str:
     if not retrieved_chunks:
-        return (
-            "Mình chưa tìm thấy đoạn transcript đủ liên quan để trả lời câu hỏi này. "
-            "Bạn có thể hỏi cụ thể hơn hoặc kiểm tra lại video đã được ingest chưa."
-        )
+        if answer_language == "vi":
+            return "Chưa tìm thấy bằng chứng transcript đủ liên quan để trả lời câu hỏi này."
+        return "There is not enough relevant transcript evidence to answer this question."
 
     context_lines = [
-        f"- [{_format_timestamp(item.chunk.start_seconds)}] {item.chunk.text}"
-        for item in retrieved_chunks[:3]
+        f"- [{_format_timestamp(item.chunk.start_seconds)}] {item.chunk.text}" for item in retrieved_chunks[:3]
     ]
-
-    return (
-        "Dựa trên các đoạn transcript liên quan nhất, câu trả lời có thể rút ra như sau:\n"
-        + "\n".join(context_lines)
-        + f"\n\nCâu hỏi gốc: {question.strip()}"
+    introduction = (
+        "Dựa trên bằng chứng transcript liên quan nhất:"
+        if answer_language == "vi"
+        else "Based on the most relevant transcript evidence:"
     )
+    question_label = "Câu hỏi" if answer_language == "vi" else "Question"
+    return introduction + "\n" + "\n".join(context_lines) + f"\n\n{question_label}: {question.strip()}"
 
 
 def _format_timestamp(seconds: float) -> str:

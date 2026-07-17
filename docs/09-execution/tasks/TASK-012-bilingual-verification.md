@@ -1,6 +1,6 @@
 # TASK-012: Verify End-to-End Vietnamese and English Behavior
 
-Status: planned
+Status: verified
 
 Depends on: TASK-008, TASK-009, TASK-010, TASK-011, TASK-013
 
@@ -30,15 +30,18 @@ Make Vietnamese and English first-class, tested product behavior rather than pro
 
 ## Acceptance criteria
 
-- [ ] `vi->vi`, `en->en`, `vi->en`, and `en->vi` retrieval cases pass the approved release gate.
-- [ ] Answers follow explicit selection or latest-question language.
-- [ ] Source text and timestamp identity remain unchanged by answer translation.
-- [ ] Language-detection uncertainty follows documented fallback.
-- [ ] Navigation, transcript, answer, and evidence layouts remain usable in both languages.
+- [x] `vi->vi`, `en->en`, `vi->en`, and `en->vi` retrieval cases pass the approved release gate.
+- [x] Answers follow explicit selection or latest-question language.
+- [x] Source text and timestamp identity remain unchanged by answer translation.
+- [x] Language-detection uncertainty follows documented fallback.
+- [x] Navigation, transcript, answer, and evidence layouts remain usable in both languages.
 
 ## Verification
 
-`uv run --project backend pytest backend/tests/e2e/bilingual`
+```powershell
+uv run --project backend pytest backend/tests/e2e/bilingual
+npm --prefix frontend run test:e2e
+```
 
 ## Commit
 

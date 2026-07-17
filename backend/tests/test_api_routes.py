@@ -518,12 +518,17 @@ class ApiRoutesTest(unittest.TestCase):
                         "video_id": "dQw4w9WgXcQ",
                         "question": "How does hybrid retrieval work?",
                         "retrieval_mode": "hybrid",
+                        "answer_language": "vi",
                     },
                 )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["retrieval_mode"], "hybrid")
+        self.assertEqual(response.json()["answer_language"], "vi")
         self.assertGreaterEqual(len(response.json()["sources"]), 1)
+        self.assertEqual(response.json()["sources"][0]["text"], chunk.text)
+        self.assertEqual(response.json()["sources"][0]["start_seconds"], 0)
+        self.assertEqual(response.json()["sources"][0]["end_seconds"], 5)
 
     def test_rebuild_index_endpoint_rebuilds_vectors(self):
         chunk = TranscriptChunk(

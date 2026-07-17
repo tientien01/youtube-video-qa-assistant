@@ -6,6 +6,7 @@ export async function askVideoQuestion({
   question,
   retrievalMode,
   sourceChunkIds = [],
+  answerLanguage,
 }) {
   return requestJson(`${API_BASE_URL}/chat/ask`, {
     method: 'POST',
@@ -17,6 +18,7 @@ export async function askVideoQuestion({
       question,
       retrieval_mode: retrievalMode,
       source_chunk_ids: sourceChunkIds,
+      answer_language: answerLanguage,
     }),
   }, 'Could not send this question.')
 }

@@ -18,7 +18,7 @@ export function WorkspaceChat({ messages, isAsking, error, onAsk, onSelectSource
         {messages.map((message) => (
           <article className="conversation-message" key={message.id}>
             <p className="user-bubble">{message.question}</p>
-            <div className="assistant-answer"><p>{message.answer}</p>
+            <div className="assistant-answer">{message.answerLanguage ? <span className="language-badge">{message.answerLanguage.toUpperCase()}</span> : null}<p>{message.answer}</p>
               <div className="inline-citations">{message.sources.map((source) => <button type="button" key={source.chunk_id} onClick={() => onSelectSource(source)}>{formatTimestamp(source.start_seconds)}</button>)}</div>
               {message.generation?.fallback_reason ? <p className="provider-state">Provider unavailable: {message.generation.fallback_reason}</p> : null}
               {!message.sources.length ? <p className="insufficient-state">Insufficient transcript evidence.</p> : null}

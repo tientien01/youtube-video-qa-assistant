@@ -159,7 +159,13 @@ function App() {
     setIsAsking(true)
     setChatError('')
     try {
-      const response = await askVideoQuestion({ videoId: video.video_id, question, retrievalMode, sourceChunkIds })
+      const response = await askVideoQuestion({
+        videoId: video.video_id,
+        question,
+        retrievalMode,
+        sourceChunkIds,
+        answerLanguage: language,
+      })
       setMessages((current) => {
         const next = [normalizeChatMessage(response, { question }), ...current]
         saveVideoChatHistory(video.video_id, next)
@@ -252,7 +258,7 @@ function LearningPage(context) {
 function SimplePage({ title, text }) { return <section className="simple-page"><h1>{title}</h1><p>{text}</p></section> }
 
 function normalizeVideo(video) { return { ...video, status: video.status || 'cached', updated_at: video.updated_at || new Date().toISOString() } }
-function normalizeChatMessage(message, overrides = {}) { return { id: message.message_id || `${Date.now()}`, question: overrides.question || message.question, answer: message.answer, retrievalMode: message.retrieval_mode || 'hybrid', generation: message.generation, sources: message.sources || [], createdAt: message.created_at || new Date().toISOString() } }
+function normalizeChatMessage(message, overrides = {}) { return { id: message.message_id || `${Date.now()}`, question: overrides.question || message.question, answer: message.answer, answerLanguage: message.answer_language, retrievalMode: message.retrieval_mode || 'hybrid', generation: message.generation, sources: message.sources || [], createdAt: message.created_at || new Date().toISOString() } }
 function wait(milliseconds) { return new Promise((resolve) => setTimeout(resolve, milliseconds)) }
 
 export default App

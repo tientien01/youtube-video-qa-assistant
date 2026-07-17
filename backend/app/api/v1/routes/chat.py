@@ -34,6 +34,7 @@ def ask_question(request: ChatAskRequest) -> ChatAskResponse:
             question=request.question.strip(),
             retrieval_mode=request.retrieval_mode,
             source_chunk_ids=request.source_chunk_ids,
+            answer_language=request.answer_language,
         )
     except VideoNotIndexedError as error:
         logger.warning("Question asked before ingest for video_id=%s", request.video_id)

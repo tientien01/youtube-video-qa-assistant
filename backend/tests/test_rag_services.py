@@ -780,7 +780,7 @@ class RagServicesTest(unittest.TestCase):
     def test_generate_answer_has_clear_fallback_without_context(self):
         answer = generate_answer("What is the main idea?", [])
 
-        self.assertIn("chưa tìm thấy", answer.lower())
+        self.assertIn("not enough relevant transcript evidence", answer.lower())
 
     def test_generate_answer_uses_llm_client_when_available(self):
         chunk = TranscriptChunk(
@@ -800,7 +800,8 @@ class RagServicesTest(unittest.TestCase):
 
         self.assertEqual(answer, "Câu trả lời từ LLM dựa trên transcript.")
         self.assertIsNotNone(llm_client.last_prompt)
-        self.assertIn("Chỉ trả lời dựa trên transcript context", llm_client.last_prompt)
+        self.assertIn("Use only the supplied transcript context", llm_client.last_prompt)
+        self.assertIn("Answer in Vietnamese", llm_client.last_prompt)
         self.assertIn("Grounded answers", llm_client.last_prompt)
 
     def test_generate_answer_falls_back_when_llm_fails(self):
@@ -818,7 +819,7 @@ class RagServicesTest(unittest.TestCase):
             llm_client=FailingLlmClient(),
         )
 
-        self.assertIn("Dựa trên các đoạn transcript", answer)
+        self.assertIn("Dựa trên bằng chứng transcript", answer)
         self.assertIn("Fallback answer", answer)
 
     def test_llm_settings_default_to_fallback_without_api_key(self):

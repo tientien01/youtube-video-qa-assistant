@@ -6,6 +6,7 @@ from app.api.contracts.generation import GenerationMetadata
 
 
 RetrievalMode = Literal["bm25", "embedding", "hybrid"]
+AnswerLanguage = Literal["vi", "en"]
 
 
 class ChatAskRequest(BaseModel):
@@ -13,6 +14,7 @@ class ChatAskRequest(BaseModel):
     question: str = Field(..., min_length=1)
     retrieval_mode: RetrievalMode = "hybrid"
     source_chunk_ids: list[str] = []
+    answer_language: AnswerLanguage | None = None
 
 
 class ChatSource(BaseModel):
@@ -26,6 +28,7 @@ class ChatSource(BaseModel):
 class ChatAskResponse(BaseModel):
     message_id: str | None = None
     answer: str
+    answer_language: AnswerLanguage
     retrieval_mode: RetrievalMode
     sources: list[ChatSource]
     generation: GenerationMetadata
@@ -37,6 +40,7 @@ class ChatHistoryMessage(BaseModel):
     video_id: str
     question: str
     answer: str
+    answer_language: AnswerLanguage
     retrieval_mode: RetrievalMode
     sources: list[ChatSource]
     generation: GenerationMetadata

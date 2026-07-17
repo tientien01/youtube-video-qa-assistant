@@ -3,6 +3,21 @@
     "schemas": {
       "ChatAskRequest": {
         "properties": {
+          "answer_language": {
+            "anyOf": [
+              {
+                "enum": [
+                  "vi",
+                  "en"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer Language"
+          },
           "question": {
             "minLength": 1,
             "title": "Question",
@@ -43,6 +58,14 @@
         "properties": {
           "answer": {
             "title": "Answer",
+            "type": "string"
+          },
+          "answer_language": {
+            "enum": [
+              "vi",
+              "en"
+            ],
+            "title": "Answer Language",
             "type": "string"
           },
           "generation": {
@@ -89,6 +112,7 @@
         },
         "required": [
           "answer",
+          "answer_language",
           "retrieval_mode",
           "sources",
           "generation"
@@ -118,6 +142,14 @@
         "properties": {
           "answer": {
             "title": "Answer",
+            "type": "string"
+          },
+          "answer_language": {
+            "enum": [
+              "vi",
+              "en"
+            ],
+            "title": "Answer Language",
             "type": "string"
           },
           "created_at": {
@@ -172,6 +204,7 @@
           "video_id",
           "question",
           "answer",
+          "answer_language",
           "retrieval_mode",
           "sources",
           "generation",

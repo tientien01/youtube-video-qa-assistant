@@ -12,7 +12,7 @@ This file reports current implementation status. Target behavior lives in specif
 | Capability | Current implementation | Target status | Next task |
 |---|---|---:|---|
 | FastAPI `/api/v1` application | Typed routes include persistent ingest jobs, canonical transcript delivery, and live runtime health contracts | `verified` | Complete |
-| React learning workspace | Evidence-first responsive shell synchronizes player, transcript, grounded chat, citations, and evidence; browser fixtures cover runtime and ingest states | `verified` | TASK-012 bilingual verification |
+| React learning workspace | Evidence-first responsive shell synchronizes player, transcript, grounded chat, citations, and evidence; browser fixtures cover runtime, ingest, and bilingual expansion states | `verified` | Complete |
 | Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
 | Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, backend tests, OpenAPI drift, frontend lint/test/build | `verified` | Expand incrementally |
 | Canonical database foundation | SQLite ORM schema, index lifecycle/unit of work, complete embedding identity, and canonical transcript/chunk repositories | `verified` | Complete |
@@ -35,7 +35,7 @@ This file reports current implementation status. Target behavior lives in specif
 | Gemini adapter | Explicit opt-in REST adapter behind the common contract with structured output and usage metadata | `verified` | Complete |
 | Ollama adapter | Local Qwen3 adapter with structured output, timeout/error mapping, health check, and configurable model/context | `verified` | Complete |
 | Structured answer/citation validation | Strict grounded-answer schema, bilingual policy, allowed-citation validation, and one bounded repair attempt | `verified` | Complete |
-| Vietnamese/English language policy | Transcript selection defaults to ordered `vi`, `en`; no end-to-end retrieval/generation evaluation yet | `implemented` | TASK-012 |
+| Vietnamese/English language policy | Explicit UI/API preference overrides question detection; chat history records answer language, evidence remains original, and all four retrieval directions pass the release gate | `verified` | Complete |
 | Production deployment | Intentionally deferred | `planned` | Future production phase |
 
 ## Known current risks

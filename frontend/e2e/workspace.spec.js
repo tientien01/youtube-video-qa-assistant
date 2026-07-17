@@ -84,10 +84,23 @@ test.beforeEach(async ({ page }) => {
     if (path.endsWith(`/videos/${video.video_id}`)) return json(video)
     if (path.endsWith(`/chat/history/${video.video_id}`)) return json({
       messages: [
-        { message_id: 'answer-1', question: 'How is retrieval grounded?', answer: 'It starts from exact transcript evidence.', sources: [source], generation: { fallback_reason: 'Ollama is offline.' } },
-        { message_id: 'answer-2', question: 'What is outside the video?', answer: 'The transcript does not provide enough evidence.', sources: [] },
+        { message_id: 'answer-1', question: 'How is retrieval grounded?', answer: 'It starts from exact transcript evidence.', answer_language: 'en', sources: [source], generation: { fallback_reason: 'Ollama is offline.' } },
+        { message_id: 'answer-2', question: 'What is outside the video?', answer: 'The transcript does not provide enough evidence.', answer_language: 'en', sources: [] },
       ],
     })
+    if (path.endsWith('/chat/ask')) {
+      const body = request.postDataJSON()
+      const isVietnamese = body.answer_language === 'vi'
+      return json({
+        message_id: `answer-${body.answer_language}`,
+        answer: isVietnamese ? 'Câu trả lời giữ nguyên bằng chứng nguồn.' : 'The answer preserves original source evidence.',
+        answer_language: body.answer_language,
+        retrieval_mode: 'hybrid',
+        sources: [source],
+        generation: { generation_mode: 'llm', provider: 'ollama', fallback_reason: null },
+        groundedness_warning: null,
+      })
+    }
     if (path.endsWith('/ingest-jobs/job-failed')) return json({
       job_id: 'job-failed', video_id: video.video_id, status: 'failed', stage: 'embedding', retryable: true,
       attempt_count: 1, created_at: '2026-07-17T00:00:00Z', updated_at: '2026-07-17T00:00:02Z',
@@ -146,4 +159,22 @@ test('shows the real active ingest stage and cancellation action', async ({ page
   await expect(page.getByText('Creating embeddings')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
   await page.screenshot({ path: 'e2e/screenshots/ingest-running.png', fullPage: true })
+})
+
+test('sends explicit Vietnamese and English preferences without layout overflow', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 900 })
+  await page.goto(`/library/${video.video_id}`)
+  const composer = page.getByRole('textbox', { name: 'Question' })
+
+  await page.getByRole('combobox', { name: 'Language' }).selectOption('en')
+  await composer.fill('Explain the evidence policy.')
+  await page.getByRole('button', { name: 'Send question' }).click()
+  await expect(page.getByText('The answer preserves original source evidence.')).toBeVisible()
+  await expect(page.locator('.assistant-answer .language-badge').first()).toHaveText('EN')
+
+  await page.getByRole('combobox', { name: 'Language' }).selectOption('vi')
+  await composer.fill('Giải thích chính sách bằng chứng.')
+  await page.getByRole('button', { name: 'Send question' }).click()
+  await expect(page.getByText('Câu trả lời giữ nguyên bằng chứng nguồn.')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })

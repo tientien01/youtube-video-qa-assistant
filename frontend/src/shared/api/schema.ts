@@ -7,10 +7,12 @@ export interface components {
       "question": string;
       "retrieval_mode"?: "bm25" | "embedding" | "hybrid";
       "source_chunk_ids"?: Array<string>;
+      "answer_language"?: "vi" | "en" | null;
     };
     "ChatAskResponse": {
       "message_id"?: string | null;
       "answer": string;
+      "answer_language": "vi" | "en";
       "retrieval_mode": "bm25" | "embedding" | "hybrid";
       "sources": Array<components["schemas"]["ChatSource"]>;
       "generation": components["schemas"]["GenerationMetadata"];
@@ -25,6 +27,7 @@ export interface components {
       "video_id": string;
       "question": string;
       "answer": string;
+      "answer_language": "vi" | "en";
       "retrieval_mode": "bm25" | "embedding" | "hybrid";
       "sources": Array<components["schemas"]["ChatSource"]>;
       "generation": components["schemas"]["GenerationMetadata"];

@@ -19,6 +19,7 @@ class StoredChatMessage:
     generation: dict
     groundedness_warning: str | None
     created_at: str
+    answer_language: str = "vi"
 
 
 class LocalChatHistoryStore:
@@ -33,6 +34,7 @@ class LocalChatHistoryStore:
         video_id: str,
         question: str,
         answer: str,
+        answer_language: str,
         retrieval_mode: RetrievalMode,
         sources: list[ChatSource],
         generation: GenerationMetadata,
@@ -49,6 +51,7 @@ class LocalChatHistoryStore:
             generation=generation.model_dump(),
             groundedness_warning=groundedness_warning,
             created_at=datetime.now(UTC).isoformat(),
+            answer_language=answer_language,
         )
         self._messages_by_video.setdefault(video_id, []).insert(0, message)
         self._save()
@@ -56,10 +59,7 @@ class LocalChatHistoryStore:
 
     def list_messages(self, video_id: str) -> list[ChatHistoryMessage]:
         self._ensure_loaded()
-        return [
-            _message_to_schema(message)
-            for message in self._messages_by_video.get(video_id, [])
-        ]
+        return [_message_to_schema(message) for message in self._messages_by_video.get(video_id, [])]
 
     def delete_video(self, video_id: str) -> bool:
         self._ensure_loaded()
@@ -77,10 +77,7 @@ class LocalChatHistoryStore:
         if self._storage_path.exists():
             raw_data = json.loads(self._storage_path.read_text(encoding="utf-8"))
             self._messages_by_video = {
-                video_id: [
-                    StoredChatMessage(**message_data)
-                    for message_data in messages
-                ]
+                video_id: [StoredChatMessage(**message_data) for message_data in messages]
                 for video_id, messages in raw_data.items()
             }
 
@@ -104,6 +101,7 @@ def _message_to_schema(message: StoredChatMessage) -> ChatHistoryMessage:
         video_id=message.video_id,
         question=message.question,
         answer=message.answer,
+        answer_language=message.answer_language,
         retrieval_mode=message.retrieval_mode,
         sources=[ChatSource(**source) for source in message.sources],
         generation=GenerationMetadata(**message.generation),

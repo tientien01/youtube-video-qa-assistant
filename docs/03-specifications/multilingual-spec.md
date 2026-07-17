@@ -1,7 +1,7 @@
 ---
 id: SPEC-I18N-001
 document_status: approved
-implementation_status: planned
+implementation_status: verified
 normative: true
 last_verified: 2026-07-16
 ---
@@ -28,6 +28,11 @@ Store BCP 47-compatible language codes when known. Preserve provider language co
 ## Evaluation
 
 The release dataset MUST include `vi->vi`, `en->en`, `vi->en`, and `en->vi` retrieval cases. Generation evaluation MUST check answer-language compliance independently from factual grounding.
+
+The Local V1 implementation exposes `answer_language` (`vi` or `en`) in chat
+requests, responses, and stored history. When omitted, the latest question is
+detected; uncertain input uses the caller/session fallback and then English as
+the product default. Retrieval and evidence payloads are never translated.
 
 ## Future expansion
 

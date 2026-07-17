@@ -2,40 +2,40 @@ from app.api.contracts.notes import StudyNotesLength, StudyNotesMode
 from app.api.contracts.quiz import QuizDifficulty, QuizMode, QuizQuestionType
 from app.api.contracts.summary import SummaryMode
 from app.application.legacy.rag.models import RetrievedChunk, TranscriptChunk
+from app.application.llm.grounded_answer import detect_answer_language
 
 
-def build_grounded_answer_prompt(question: str, retrieved_chunks: list[RetrievedChunk]) -> str:
+def build_grounded_answer_prompt(
+    question: str,
+    retrieved_chunks: list[RetrievedChunk],
+    answer_language: str | None = None,
+) -> str:
+    language = answer_language or detect_answer_language(question)
+    language_instruction = "Answer in Vietnamese." if language == "vi" else "Answer in English."
     context = "\n".join(
-        _format_context_line(index=index, item=item)
-        for index, item in enumerate(retrieved_chunks, start=1)
+        _format_context_line(index=index, item=item) for index, item in enumerate(retrieved_chunks, start=1)
     )
+    return f"""You are a grounded video learning assistant.
+Use only the supplied transcript context. If it is insufficient, clearly abstain.
+Do not add facts outside the transcript or invent timestamps.
+Keep quoted source words in their original transcript language.
+{language_instruction}
 
-    return f"""Bạn là trợ lý học tập giúp người dùng hiểu nội dung video YouTube.
-Chỉ trả lời dựa trên transcript context được cung cấp.
-Nếu transcript context không đủ thông tin, hãy nói rõ: "Mình chưa có đủ thông tin từ transcript để trả lời chắc chắn."
-Không bịa thêm thông tin ngoài transcript.
-Trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu.
-Không tự tạo timestamp mới. Timestamp nguồn sẽ được hệ thống hiển thị riêng từ retrieved chunks.
-
-Câu hỏi:
+Question:
 {question.strip()}
 
 Transcript context:
 {context}
 
-Câu trả lời:"""
+Answer:"""
 
 
 def build_summary_prompt(mode: SummaryMode, chunks: list[TranscriptChunk]) -> str:
     context = "\n".join(
-        _format_chunk_context_line(index=index, chunk=chunk)
-        for index, chunk in enumerate(chunks, start=1)
+        _format_chunk_context_line(index=index, chunk=chunk) for index, chunk in enumerate(chunks, start=1)
     )
     mode_instruction = {
-        "short": (
-            "Tạo đúng 5-7 gạch đầu dòng. "
-            "Mỗi gạch đầu dòng là một câu hoàn chỉnh, súc tích, không bị bỏ dở."
-        ),
+        "short": ("Tạo đúng 5-7 gạch đầu dòng. Mỗi gạch đầu dòng là một câu hoàn chỉnh, súc tích, không bị bỏ dở."),
         "detailed": (
             "Tạo summary chi tiết theo các ý chính, có cấu trúc rõ ràng. "
             "Mỗi ý phải là câu hoàn chỉnh và chỉ dùng thông tin trong transcript."
@@ -69,8 +69,7 @@ def build_summary_section_prompt(
     section_count: int,
 ) -> str:
     context = "\n".join(
-        _format_chunk_context_line(index=index, chunk=chunk)
-        for index, chunk in enumerate(chunks, start=1)
+        _format_chunk_context_line(index=index, chunk=chunk) for index, chunk in enumerate(chunks, start=1)
     )
     if mode == "timeline":
         output_instruction = "Create 3-5 timeline bullets. Each bullet must start with a timestamp from the context."
@@ -94,8 +93,7 @@ Section summary:"""
 
 def build_summary_merge_prompt(mode: SummaryMode, section_summaries: list[str]) -> str:
     context = "\n\n".join(
-        f"Section {index}:\n{summary.strip()}"
-        for index, summary in enumerate(section_summaries, start=1)
+        f"Section {index}:\n{summary.strip()}" for index, summary in enumerate(section_summaries, start=1)
     )
     mode_instruction = {
         "short": "Create exactly 5-7 concise bullets.",
@@ -123,8 +121,7 @@ def build_study_notes_prompt(
     learning_goal: str | None = None,
 ) -> str:
     context = "\n".join(
-        _format_chunk_context_line(index=index, chunk=chunk)
-        for index, chunk in enumerate(chunks, start=1)
+        _format_chunk_context_line(index=index, chunk=chunk) for index, chunk in enumerate(chunks, start=1)
     )
     mode_instruction = {
         "concise": "Tạo notes ngắn, tập trung vào ý chính nhất.",
@@ -141,9 +138,7 @@ def build_study_notes_prompt(
         "long": "Độ dài dài: 8-12 mục chính nhưng vẫn không chép transcript dài.",
     }[length]
     goal_instruction = (
-        f"\nMục tiêu học của người dùng: {learning_goal.strip()}"
-        if learning_goal and learning_goal.strip()
-        else ""
+        f"\nMục tiêu học của người dùng: {learning_goal.strip()}" if learning_goal and learning_goal.strip() else ""
     )
 
     return f"""Bạn là trợ lý học tập tạo study notes từ video YouTube.
@@ -177,14 +172,9 @@ def build_study_notes_section_prompt(
     section_count: int,
 ) -> str:
     context = "\n".join(
-        _format_chunk_context_line(index=index, chunk=chunk)
-        for index, chunk in enumerate(chunks, start=1)
+        _format_chunk_context_line(index=index, chunk=chunk) for index, chunk in enumerate(chunks, start=1)
     )
-    goal_instruction = (
-        f"\nLearning goal: {learning_goal.strip()}"
-        if learning_goal and learning_goal.strip()
-        else ""
-    )
+    goal_instruction = f"\nLearning goal: {learning_goal.strip()}" if learning_goal and learning_goal.strip() else ""
 
     return f"""You create compact study notes for one section of a YouTube transcript.
 Use only the provided transcript context. Do not invent facts or timestamps.
@@ -207,14 +197,9 @@ def build_study_notes_merge_prompt(
     length: StudyNotesLength,
     learning_goal: str | None,
 ) -> str:
-    context = "\n\n".join(
-        f"Section {index}:\n{notes.strip()}"
-        for index, notes in enumerate(section_notes, start=1)
-    )
+    context = "\n\n".join(f"Section {index}:\n{notes.strip()}" for index, notes in enumerate(section_notes, start=1))
     goal_instruction = (
-        f"\nMục tiêu học của người dùng: {learning_goal.strip()}"
-        if learning_goal and learning_goal.strip()
-        else ""
+        f"\nMục tiêu học của người dùng: {learning_goal.strip()}" if learning_goal and learning_goal.strip() else ""
     )
 
     return f"""Bạn là trợ lý học tập tạo study notes từ các section notes của video YouTube.
@@ -244,8 +229,7 @@ def build_quiz_prompt(
     mode: QuizMode,
 ) -> str:
     context = "\n".join(
-        _format_chunk_context_line(index=index, chunk=chunk)
-        for index, chunk in enumerate(chunks, start=1)
+        _format_chunk_context_line(index=index, chunk=chunk) for index, chunk in enumerate(chunks, start=1)
     )
 
     return f"""Bạn là trợ lý học tập tạo quiz từ transcript video YouTube.

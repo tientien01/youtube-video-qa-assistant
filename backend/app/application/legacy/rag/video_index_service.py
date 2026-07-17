@@ -3,9 +3,20 @@ from collections.abc import Callable
 
 from app.application.ingest.ports import IngestAttemptReport
 from app.application.ingest.transcript import TranscriptAcquisition, TranscriptAcquisitionError
-from app.api.contracts.chat import ChatAskResponse, ChatHistoryDeleteResponse, ChatHistoryResponse, ChatSource
+from app.api.contracts.chat import (
+    AnswerLanguage,
+    ChatAskResponse,
+    ChatHistoryDeleteResponse,
+    ChatHistoryResponse,
+    ChatSource,
+)
 from app.api.contracts.transcript import TranscriptSegment
-from app.api.contracts.video import VideoDeleteResponse, VideoIngestResponse, VideoMetadataResponse, VideoRebuildIndexResponse
+from app.api.contracts.video import (
+    VideoDeleteResponse,
+    VideoIngestResponse,
+    VideoMetadataResponse,
+    VideoRebuildIndexResponse,
+)
 from app.application.legacy.extraction.video_url_service import extract_youtube_video_id
 from app.application.legacy.extraction.youtube_metadata_service import fetch_youtube_metadata
 from app.application.legacy.learning.generated_output_store import generated_output_store
@@ -15,6 +26,7 @@ from app.application.legacy.rag.local_store import VideoNotIndexedError, rag_sto
 from app.application.legacy.rag.metadata_store import VideoMetadata, metadata_store
 from app.application.legacy.rag.retrieval_service import RetrievalMode, retrieve_chunks
 from app.application.legacy.rag.text_processing import chunk_transcript
+from app.application.llm.grounded_answer import detect_answer_language
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +34,9 @@ vector_store = None
 _transcript_acquirer: Callable[[str], TranscriptAcquisition] | None = None
 
 
-def configure_video_runtime(*, configured_vector_store, transcript_acquirer: Callable[[str], TranscriptAcquisition]) -> None:
+def configure_video_runtime(
+    *, configured_vector_store, transcript_acquirer: Callable[[str], TranscriptAcquisition]
+) -> None:
     global vector_store, _transcript_acquirer
     vector_store = configured_vector_store
     _transcript_acquirer = transcript_acquirer
@@ -203,7 +217,9 @@ def ask_video_question(
     question: str,
     retrieval_mode: RetrievalMode = "hybrid",
     source_chunk_ids: list[str] | None = None,
+    answer_language: AnswerLanguage | None = None,
 ) -> ChatAskResponse:
+    resolved_language = answer_language or detect_answer_language(question)
     logger.info(
         "Retrieving context for video_id=%s question_length=%s mode=%s",
         video_id,
@@ -218,9 +234,16 @@ def ask_video_question(
     )
     groundedness_warning = _groundedness_warning(retrieved_chunks)
     if groundedness_warning:
-        generation_result = _build_low_confidence_generation(groundedness_warning)
+        generation_result = _build_bilingual_low_confidence_generation(
+            groundedness_warning,
+            resolved_language,
+        )
     else:
-        generation_result = generate_answer_with_metadata(question=question, retrieved_chunks=retrieved_chunks)
+        generation_result = generate_answer_with_metadata(
+            question=question,
+            retrieved_chunks=retrieved_chunks,
+            answer_language=resolved_language,
+        )
     logger.info(
         "Generated answer for video_id=%s source_count=%s",
         video_id,
@@ -229,6 +252,7 @@ def ask_video_question(
 
     response = ChatAskResponse(
         answer=generation_result.answer,
+        answer_language=resolved_language,
         retrieval_mode=retrieval_mode,
         sources=[
             ChatSource(
@@ -247,6 +271,7 @@ def ask_video_question(
         video_id=video_id,
         question=question,
         answer=response.answer,
+        answer_language=response.answer_language,
         retrieval_mode=retrieval_mode,
         sources=response.sources,
         generation=response.generation,
@@ -322,12 +347,18 @@ def _groundedness_warning(retrieved_chunks: list) -> str | None:
     return None
 
 
-def _build_low_confidence_generation(reason: str):
+def _build_bilingual_low_confidence_generation(reason: str, answer_language: str):
     from app.api.contracts.generation import GenerationMetadata
     from app.application.legacy.rag.generation_service import AnswerGenerationResult
 
+    answer = (
+        "Chưa có đủ thông tin từ transcript để trả lời chắc chắn."
+        if answer_language == "vi"
+        else "There is not enough transcript evidence to answer with confidence."
+    )
     return AnswerGenerationResult(
-        answer="Mình chưa có đủ thông tin từ transcript để trả lời chắc chắn. Bạn có thể thử hỏi cụ thể hơn hoặc chọn một timestamp/chunk liên quan.",
+        answer=answer,
+        answer_language=answer_language,
         generation=GenerationMetadata(
             generation_mode="fallback",
             provider="groundedness-check",
