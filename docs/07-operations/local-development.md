@@ -3,7 +3,7 @@ id: OPS-LOCAL-001
 document_status: approved
 implementation_status: verified
 normative: true
-last_verified: 2026-07-16
+last_verified: 2026-07-17
 ---
 
 # Supported Local Development Environment
@@ -75,6 +75,17 @@ python -m uv run --project backend alembic -c backend/alembic.ini downgrade base
 ```
 
 Model downloads and live YouTube/Ollama smoke tests are explicit operations and are not part of `scripts/verify.py`.
+
+Install the Stanza Vietnamese and English sentence models explicitly after the
+locked backend environment is synchronized. Ingest never downloads these models:
+
+```powershell
+python -m uv run --project backend python -m stanza.download vi
+python -m uv run --project backend python -m stanza.download en
+```
+
+The hierarchical chunker may be constructed with the documented deterministic
+regex fallback in environments where Stanza assets are intentionally absent.
 
 ## Runtime profiles
 

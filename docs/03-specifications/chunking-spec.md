@@ -1,9 +1,9 @@
 ---
 id: SPEC-CHUNK-001
 document_status: approved
-implementation_status: planned
+implementation_status: verified
 normative: true
-last_verified: 2026-07-16
+last_verified: 2026-07-17
 related_adrs: [ADR-005]
 ---
 

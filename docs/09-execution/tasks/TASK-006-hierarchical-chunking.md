@@ -1,6 +1,6 @@
 # TASK-006: Implement Hierarchical Timestamp-Aware Chunking
 
-Status: planned
+Status: verified
 
 Depends on: TASK-005
 
@@ -30,11 +30,11 @@ Replace fixed word chunks with deterministic library-assisted child/parent chunk
 
 ## Acceptance criteria
 
-- [ ] Every chunk maps to valid ordered source segment IDs and exact derived timestamps.
-- [ ] Vietnamese and English fixtures preserve sentence boundaries better than the fixed-word baseline cases.
-- [ ] Missing punctuation and oversized segments respect hard limits through documented fallback.
-- [ ] Same input/config produces byte-equivalent chunk records and IDs.
-- [ ] Stanza unavailability produces an actionable setup error or configured deterministic fallback.
+- [x] Every chunk maps to valid ordered source segment IDs and exact derived timestamps.
+- [x] Vietnamese and English fixtures preserve sentence boundaries better than the fixed-word baseline cases.
+- [x] Missing punctuation and oversized segments respect hard limits through documented fallback.
+- [x] Same input/config produces byte-equivalent chunk records and IDs.
+- [x] Stanza unavailability produces an actionable setup error or configured deterministic fallback.
 
 ## Verification
 

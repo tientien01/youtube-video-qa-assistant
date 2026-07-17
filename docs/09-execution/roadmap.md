@@ -2,7 +2,7 @@
 id: EXEC-ROADMAP-001
 document_status: approved
 normative: true
-last_verified: 2026-07-16
+last_verified: 2026-07-17
 ---
 
 # Implementation Roadmap
@@ -61,6 +61,6 @@ TASK-011 + TASK-013
 
 ## Ready now
 
-`TASK-001` through `TASK-005` are verified. `TASK-006` is ready to build
-hierarchical chunks from canonical transcript segments. `TASK-009` may
-proceed independently on the LLM branch of the roadmap.
+`TASK-001` through `TASK-006` are verified. `TASK-007` is ready to build the
+rebuildable multilingual dense index from canonical hierarchical chunks.
+`TASK-009` may proceed independently on the LLM branch of the roadmap.

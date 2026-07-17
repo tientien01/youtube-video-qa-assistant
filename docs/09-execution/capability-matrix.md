@@ -2,7 +2,7 @@
 id: EXEC-STATUS-001
 document_status: approved
 normative: true
-last_verified: 2026-07-16
+last_verified: 2026-07-17
 ---
 
 # Capability Matrix
@@ -15,7 +15,7 @@ This file reports current implementation status. Target behavior lives in specif
 | React learning workspace | React JavaScript/Vite UI exists; approved evidence-first mock is specified but not implemented | `implemented` | TASK-010, TASK-013 |
 | Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
 | Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, 114 backend tests, frontend lint/build | `verified` | Expand incrementally |
-| Canonical database foundation | SQLite ORM schema, unit of work, and repository adapters implemented beside legacy JSON stores | `implemented` | Expand in TASK-006–007 |
+| Canonical database foundation | SQLite ORM schema, unit of work, and repository adapters implemented beside legacy JSON stores | `implemented` | Expand in TASK-007 |
 | Schema migrations | Alembic migrations, upgrade/downgrade/drift/schema-start checks | `verified` | Complete |
 | Persistent ingest jobs | SQLite state machine, create/status/retry/cancel API, restart recovery, and in-process runner | `verified` | TASK-010 UX |
 | YouTube URL validation | Implemented baseline | `implemented` | TASK-004 |
@@ -23,8 +23,8 @@ This file reports current implementation status. Target behavior lives in specif
 | Format-specific caption parsing | Separate bounded VTT, TTML, and SRV3 parsers with malformed-input rejection | `verified` | Complete |
 | Transcript provenance/quality | Canonical segments, deterministic hashes/IDs, provider/language/type/parser/normalizer provenance, and coverage diagnostics | `verified` | TASK-006 consumer |
 | Atomic/idempotent ingest | Job/video/canonical-transcript publication is atomic and idempotent; legacy derived writes remain behind a compatibility adapter | `implemented` | TASK-006–007 |
-| Fixed word chunking | 140 words, 30-word overlap | `implemented` | TASK-006 |
-| Hierarchical sentence chunking | Not implemented | `planned` | TASK-006 |
+| Fixed word chunking | 140 words, 30-word overlap retained as an evaluation control | `implemented` | TASK-011 evaluation |
+| Hierarchical sentence chunking | Deterministic child/parent packing, exact source/timestamp links, whole-unit overlap, hard-limit fallback, Stanza and model-aware tokenizer ports | `verified` | Complete |
 | BM25 retrieval | Local JSON BM25 baseline | `implemented` | TASK-008 |
 | Dense retrieval | Hashing/sentence-transformer and local JSON/Chroma adapters | `implemented` | TASK-007 |
 | Qdrant local index | Not implemented | `planned` | TASK-007 |
