@@ -4,14 +4,14 @@ document_status: approved
 implementation_status: verified
 normative: true
 last_verified: 2026-07-17
-related_adrs: [ADR-005]
+related_adrs: [ADR-005, ADR-006]
 ---
 
 # Chunking Specification
 
 ## Chosen strategy
 
-Local V1 MUST use library-assisted, timestamp-aware hierarchical sentence chunking. A library owns linguistic sentence segmentation; project code owns timestamp mapping, packing, overlap, hierarchy, and invariants.
+Local V1 release defaults to the evaluated 140-word, 30-word-overlap control from ADR-006. Library-assisted, timestamp-aware hierarchical sentence chunking remains implemented and is the required evaluation challenger; project code owns timestamp mapping, packing, overlap, hierarchy, and invariants.
 
 ## Components
 
@@ -33,7 +33,7 @@ canonical transcript segments
 -> overlap and timing validation
 ```
 
-## Initial defaults
+## Hierarchical challenger defaults
 
 ```yaml
 strategy: hierarchical_sentence
@@ -71,4 +71,4 @@ If punctuation-based sentence segmentation is unreliable:
 
 ## Baseline and evaluation
 
-The current fixed segment/word chunker MUST remain available temporarily as the evaluation control. Semantic boundary refinement MUST NOT become default unless it improves retrieval/citation metrics without unacceptable indexing cost.
+The fixed word chunker is the measured Local V1 default from ADR-006. Hierarchical chunking remains available and MUST be reevaluated as the reviewed dataset grows. Semantic boundary refinement MUST NOT become default unless it improves retrieval/citation metrics without unacceptable indexing cost.

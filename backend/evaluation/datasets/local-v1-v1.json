@@ -1,0 +1,231 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "local-v1-bilingual-retrieval",
+  "version": "1.0.0",
+  "curation": {
+    "source": "Manually authored factual fixture with exact timestamped segment provenance",
+    "review_method": "Each question was checked against the committed segment text; labels identify the minimum supporting segments",
+    "reviewer": "codex-manual-source-review",
+    "reviewed_at": "2026-07-17"
+  },
+  "videos": [
+    {
+      "video_id": "eval-rag-en",
+      "language": "en",
+      "segments": [
+        {
+          "segment_id": "en-s1",
+          "start_ms": 0,
+          "end_ms": 38000,
+          "text": "Retrieval augmented generation first searches a trusted knowledge collection and then gives the retrieved passages to a language model. The model is instructed to answer from that evidence instead of relying only on parameters learned during training. This separation makes the source material inspectable and allows an application to refresh knowledge without retraining the model."
+        },
+        {
+          "segment_id": "en-s2",
+          "start_ms": 40000,
+          "end_ms": 76000,
+          "text": "Lexical retrieval is strongest when a question repeats exact names, identifiers, or rare keywords from the transcript. Dense retrieval represents the question and transcript chunks as vectors, so it can recover paraphrases that share meaning but few literal words. Neither signal is universally best, especially across Vietnamese and English questions."
+        },
+        {
+          "segment_id": "en-s3",
+          "start_ms": 79000,
+          "end_ms": 116000,
+          "text": "Reciprocal rank fusion combines ordered lexical and dense result lists without pretending that BM25 and cosine scores have the same scale. Each candidate receives a contribution based on its rank in every source. A later multilingual cross encoder can rerank the fused candidates by reading the question together with each passage."
+        },
+        {
+          "segment_id": "en-s4",
+          "start_ms": 120000,
+          "end_ms": 156000,
+          "text": "Timestamp citations preserve the path from an answer back to the original video. A citation should retain the canonical segment identity and exact start and end times. When a learner selects evidence, the player can seek to that interval and the transcript can highlight the unchanged source words rather than a generated quotation."
+        },
+        {
+          "segment_id": "en-s5",
+          "start_ms": 160000,
+          "end_ms": 197000,
+          "text": "Chunking must balance enough context with precise retrieval. Hierarchical sentence chunks keep whole linguistic units, attach child chunks to wider parent windows, and preserve source links. Fixed word windows remain useful as an evaluation control, but splitting only by word count can cut a sentence or mix unrelated moments from a video."
+        },
+        {
+          "segment_id": "en-s6",
+          "start_ms": 201000,
+          "end_ms": 238000,
+          "text": "An unanswerable question should not trigger an invented response. The system must recognize when retrieved evidence is insufficient, return an explicit abstention state, and avoid attaching decorative citations. Provider failures are different from insufficient evidence and should be reported as availability errors so that ingest and retrieval can remain usable."
+        }
+      ]
+    },
+    {
+      "video_id": "eval-study-vi",
+      "language": "vi",
+      "segments": [
+        {
+          "segment_id": "vi-s1",
+          "start_ms": 0,
+          "end_ms": 37000,
+          "text": "Ôn tập ngắt quãng là phương pháp phân bố các lần học theo thời gian thay vì học dồn trong một buổi. Khi người học sắp quên, hệ thống đưa kiến thức trở lại để củng cố trí nhớ. Khoảng cách giữa các lần ôn tăng dần nếu câu trả lời đúng và được rút ngắn khi người học còn nhầm lẫn."
+        },
+        {
+          "segment_id": "vi-s2",
+          "start_ms": 41000,
+          "end_ms": 78000,
+          "text": "Thẻ ghi nhớ hiệu quả chỉ nên kiểm tra một ý rõ ràng. Mặt trước đặt câu hỏi ngắn, còn mặt sau cung cấp đáp án cùng lời giải thích vừa đủ. Một thẻ chứa quá nhiều dữ kiện khiến người học khó xác định phần nào đã nhớ và phần nào vẫn cần luyện tập."
+        },
+        {
+          "segment_id": "vi-s3",
+          "start_ms": 82000,
+          "end_ms": 119000,
+          "text": "Thực hành truy hồi yêu cầu người học tự nhớ lại thông tin trước khi xem đáp án. Việc chỉ đọc lại ghi chú thường tạo cảm giác quen thuộc nhưng không chứng minh rằng kiến thức có thể được gọi ra khi cần. Câu hỏi tự luận ngắn và bài kiểm tra không mở tài liệu là hai cách tạo nỗ lực truy hồi."
+        },
+        {
+          "segment_id": "vi-s4",
+          "start_ms": 123000,
+          "end_ms": 159000,
+          "text": "Phản hồi nên xuất hiện ngay sau một lần thử nghiêm túc. Nếu trả lời sai, người học cần biết lỗi nằm ở khái niệm nào và xem lại đúng đoạn bài giảng liên quan. Dấu thời gian của video giúp mở chính xác nguồn giải thích thay vì buộc người học tìm lại toàn bộ bài học."
+        },
+        {
+          "segment_id": "vi-s5",
+          "start_ms": 163000,
+          "end_ms": 200000,
+          "text": "Một lịch học bền vững kết hợp ôn tập ngắt quãng với thực hành truy hồi. Thuật toán chọn thời điểm ôn, còn câu hỏi buộc người học chủ động tạo câu trả lời. Hai thành phần giải quyết hai vấn đề khác nhau: thời điểm tiếp xúc lại và mức độ nỗ lực nhận thức trong lần tiếp xúc đó."
+        },
+        {
+          "segment_id": "vi-s6",
+          "start_ms": 204000,
+          "end_ms": 241000,
+          "text": "Kết quả học tập nên được đánh giá bằng khả năng giải thích và áp dụng sau một khoảng trì hoãn. Số giờ xem video hoặc số lần đọc ghi chú không tự động chứng minh sự hiểu biết. Bài kiểm tra chuyển giao, trong đó người học dùng khái niệm ở tình huống mới, cung cấp bằng chứng mạnh hơn."
+        }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "q-en-same",
+      "video_id": "eval-rag-en",
+      "question": "Why does retrieval augmented generation not require retraining when knowledge changes?",
+      "question_language": "en",
+      "source_language": "en",
+      "case_type": "same_language",
+      "relevant_segment_ids": ["en-s1"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "en-s1 explicitly separates refreshed external knowledge from model retraining."}
+    },
+    {
+      "question_id": "q-vi-cross-en",
+      "video_id": "eval-rag-en",
+      "question": "Vì sao hợp nhất thứ hạng không cộng trực tiếp điểm BM25 và cosine?",
+      "question_language": "vi",
+      "source_language": "en",
+      "case_type": "cross_language",
+      "relevant_segment_ids": ["en-s3"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "en-s3 explains that RRF avoids equating incomparable score scales."}
+    },
+    {
+      "question_id": "q-en-keyword",
+      "video_id": "eval-rag-en",
+      "question": "What does reciprocal rank fusion do?",
+      "question_language": "en",
+      "source_language": "en",
+      "case_type": "keyword",
+      "relevant_segment_ids": ["en-s3"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "The exact named method and its behavior occur in en-s3."}
+    },
+    {
+      "question_id": "q-en-paraphrase",
+      "video_id": "eval-rag-en",
+      "question": "How can a learner jump from an answer back to the precise moment that supports it?",
+      "question_language": "en",
+      "source_language": "en",
+      "case_type": "paraphrase",
+      "relevant_segment_ids": ["en-s4"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "en-s4 links timestamp evidence to player seeking and transcript highlighting."}
+    },
+    {
+      "question_id": "q-en-multi",
+      "video_id": "eval-rag-en",
+      "question": "Which retrieval signals are combined and what component can refine their fused candidates?",
+      "question_language": "en",
+      "source_language": "en",
+      "case_type": "multi_evidence",
+      "relevant_segment_ids": ["en-s2", "en-s3"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "en-s2 defines lexical/dense signals and en-s3 describes fusion and cross-encoder reranking."}
+    },
+    {
+      "question_id": "q-en-unanswerable",
+      "video_id": "eval-rag-en",
+      "question": "What subscription price does the hosted enterprise plan charge?",
+      "question_language": "en",
+      "source_language": "en",
+      "case_type": "unanswerable",
+      "relevant_segment_ids": [],
+      "unanswerable": true,
+      "review": {"status": "reviewed", "rationale": "No segment discusses hosted plans, billing, or prices."}
+    },
+    {
+      "question_id": "q-vi-same",
+      "video_id": "eval-study-vi",
+      "question": "Ôn tập ngắt quãng thay đổi khoảng cách ôn như thế nào khi người học trả lời đúng hoặc sai?",
+      "question_language": "vi",
+      "source_language": "vi",
+      "case_type": "same_language",
+      "relevant_segment_ids": ["vi-s1"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "vi-s1 states that intervals grow after correct answers and shrink after confusion."}
+    },
+    {
+      "question_id": "q-en-cross-vi",
+      "video_id": "eval-study-vi",
+      "question": "Why is rereading notes weaker than trying to recall an answer first?",
+      "question_language": "en",
+      "source_language": "vi",
+      "case_type": "cross_language",
+      "relevant_segment_ids": ["vi-s3"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "vi-s3 contrasts familiarity from rereading with active retrieval effort."}
+    },
+    {
+      "question_id": "q-vi-keyword",
+      "video_id": "eval-study-vi",
+      "question": "Thực hành truy hồi là gì?",
+      "question_language": "vi",
+      "source_language": "vi",
+      "case_type": "keyword",
+      "relevant_segment_ids": ["vi-s3"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "vi-s3 directly defines the named learning method."}
+    },
+    {
+      "question_id": "q-vi-paraphrase",
+      "video_id": "eval-study-vi",
+      "question": "Chỉ số nào phản ánh hiểu biết tốt hơn việc đếm số giờ xem bài giảng?",
+      "question_language": "vi",
+      "source_language": "vi",
+      "case_type": "paraphrase",
+      "relevant_segment_ids": ["vi-s6"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "vi-s6 recommends delayed explanation, application, and transfer tests over viewing hours."}
+    },
+    {
+      "question_id": "q-vi-multi",
+      "video_id": "eval-study-vi",
+      "question": "Một lịch học kết hợp thời điểm ôn và nỗ lực tự nhớ bằng hai kỹ thuật nào?",
+      "question_language": "vi",
+      "source_language": "vi",
+      "case_type": "multi_evidence",
+      "relevant_segment_ids": ["vi-s1", "vi-s3", "vi-s5"],
+      "unanswerable": false,
+      "review": {"status": "reviewed", "rationale": "vi-s1 and vi-s3 define the techniques; vi-s5 explicitly explains their combination."}
+    },
+    {
+      "question_id": "q-vi-unanswerable",
+      "video_id": "eval-study-vi",
+      "question": "Tác giả khuyến nghị uống bao nhiêu miligam caffeine trước khi học?",
+      "question_language": "vi",
+      "source_language": "vi",
+      "case_type": "unanswerable",
+      "relevant_segment_ids": [],
+      "unanswerable": true,
+      "review": {"status": "reviewed", "rationale": "Không đoạn nào nói về caffeine hoặc liều lượng."}
+    }
+  ]
+}

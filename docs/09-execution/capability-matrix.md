@@ -22,15 +22,15 @@ This file reports current implementation status. Target behavior lives in specif
 | Transcript extraction | Configurable typed youtube-transcript-api, yt-dlp manual, and yt-dlp automatic provider chain | `verified` | Complete |
 | Format-specific caption parsing | Separate bounded VTT, TTML, and SRV3 parsers with malformed-input rejection | `verified` | Complete |
 | Transcript provenance/quality | Canonical segments, deterministic hashes/IDs, provider/language/type/parser/normalizer provenance, and coverage diagnostics | `verified` | Complete |
-| Atomic/idempotent ingest | Job/video/canonical-transcript publication is atomic and idempotent; local ingest reports real indexing stages and keeps derived index data rebuildable | `implemented` | TASK-011 release gate |
-| Fixed word chunking | 140 words, 30-word overlap retained as an evaluation control | `implemented` | TASK-011 evaluation |
-| Hierarchical sentence chunking | Deterministic child/parent packing, exact source/timestamp links, whole-unit overlap, hard-limit fallback, Stanza and model-aware tokenizer ports | `verified` | Complete |
+| Atomic/idempotent ingest | Job/video/canonical-transcript publication is atomic and idempotent; local ingest reports real indexing stages and keeps derived index data rebuildable | `implemented` | Local V1 hardening |
+| Fixed word chunking | Evaluated Local V1 default: 140 words with 30-word overlap | `verified` | Reevaluate with dataset growth |
+| Hierarchical sentence chunking | Verified timestamp-aware challenger; not selected by the v1.0 evaluation dataset | `verified` | Reevaluate with dataset growth |
 | BM25 retrieval | Active-version-scoped SQLite FTS5 over canonical child chunks with deterministic ranking | `verified` | Complete |
 | Dense retrieval | Separate query/document embedding ports, Ollama Qwen3 adapter, deterministic fake, identity validation, batching, and canonical chunk hydration | `verified` | Complete |
 | Qdrant local index | Version-keyed local collections, health checks, rebuild/activation/rollback, query, cleanup, and SQLite reconstruction | `verified` | Complete |
-| RRF hybrid fusion | Rank-only RRF with deterministic ties, source diagnostics, deduplication, and parent/neighbor expansion | `verified` | TASK-011 evaluation |
-| Cross-encoder reranking | Optional local-only BAAI/bge-reranker-v2-m3 adapter; light profile remains model-free | `verified` | TASK-011 evaluation |
-| Retrieval evaluation | Metrics runner/example dataset exists; no curated release dataset | `implemented` | TASK-011 |
+| RRF hybrid fusion | Evaluated standard-profile default with BGE-M3; rank-only fusion retains deterministic ties and diagnostics | `verified` | Complete |
+| Cross-encoder reranking | Evaluated opt-in BAAI/bge-reranker-v2-m3; quality gain did not justify measured default latency | `verified` | Reevaluate on stronger hardware |
+| Retrieval evaluation | Versioned 12-case reviewed bilingual dataset, reproducible runner, machine-readable/Markdown report, and ADR-006 | `verified` | Expand dataset |
 | Provider-independent LLM port | Typed request/result/capability/usage/error contracts with application-owned grounded orchestration | `verified` | Complete |
 | Gemini adapter | Explicit opt-in REST adapter behind the common contract with structured output and usage metadata | `verified` | Complete |
 | Ollama adapter | Local Qwen3 adapter with structured output, timeout/error mapping, health check, and configurable model/context | `verified` | Complete |

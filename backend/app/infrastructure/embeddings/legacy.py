@@ -59,9 +59,9 @@ class SentenceTransformerEmbeddingService:
 
 class OllamaEmbeddingService:
     def __init__(self, model_name: str, base_url: str) -> None:
-        from app.infrastructure.embeddings.ollama import OllamaEmbeddingAdapter
+        from app.infrastructure.embeddings.ollama import OllamaEmbedding
 
-        self._adapter = OllamaEmbeddingAdapter(model=model_name, base_url=base_url)
+        self._adapter = OllamaEmbedding(model=model_name, base_url=base_url)
 
     def embed_text(self, text: str) -> list[float]:
         return self._adapter.embed_query(text)

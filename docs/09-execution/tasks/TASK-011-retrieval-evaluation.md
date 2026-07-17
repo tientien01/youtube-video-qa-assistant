@@ -1,6 +1,6 @@
 # TASK-011: Establish the Retrieval Release Gate
 
-Status: planned
+Status: verified
 
 Depends on: TASK-006, TASK-008
 
@@ -30,10 +30,10 @@ Create a reviewed bilingual dataset and reproducible report that selects chunkin
 
 ## Acceptance criteria
 
-- [ ] Every question has reviewed relevant segment/chunk evidence or an unanswerable label.
-- [ ] Report contains all specified quality and cost metrics.
-- [ ] Runs are reproducible from committed config and dataset version.
-- [ ] Default selection is recorded in a follow-up ADR with tradeoffs.
+- [x] Every question has reviewed relevant segment/chunk evidence or an unanswerable label.
+- [x] Report contains all specified quality and cost metrics.
+- [x] Runs are reproducible from committed config and dataset version.
+- [x] Default selection is recorded in a follow-up ADR with tradeoffs.
 
 ## Verification
 

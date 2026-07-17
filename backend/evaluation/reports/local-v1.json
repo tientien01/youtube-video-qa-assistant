@@ -1,0 +1,321 @@
+{
+  "schema_version": "1.0",
+  "dataset": {
+    "id": "local-v1-bilingual-retrieval",
+    "version": "1.0.0",
+    "sha256": "6deeb4214e93454ac387768f3fb007e21b3f996083bee3ac1d4707cacf8ac4e0",
+    "question_count": 12,
+    "reviewed_count": 12
+  },
+  "config_sha256": "ce7dff5a781d24b224c3e06b1ced81608e3de31834fa4d359b64a3c4b3e3808f",
+  "hardware": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+    "logical_cpu_count": 14,
+    "python": "3.12.13"
+  },
+  "run": {
+    "duration_ms": 153500.7609,
+    "python_peak_memory_mb": 276.42
+  },
+  "variants": [
+    {
+      "variant_id": "fixed_word|none|lexical",
+      "chunker": "fixed_word",
+      "embedding": "none",
+      "retrieval": "lexical",
+      "quality": {
+        "recall_at_k": 1.0,
+        "hit_rate_at_k": 1.0,
+        "mrr": 0.9583,
+        "ndcg_at_k": 0.9745,
+        "citation_accuracy": 0.3646,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 7,
+        "index_time_ms": 0.0,
+        "p50_query_latency_ms": 0.7068,
+        "p95_query_latency_ms": 0.8954
+      }
+    },
+    {
+      "variant_id": "fixed_word|ollama/qwen3-embedding:0.6b|dense",
+      "chunker": "fixed_word",
+      "embedding": "ollama/qwen3-embedding:0.6b",
+      "retrieval": "dense",
+      "quality": {
+        "recall_at_k": 1.0,
+        "hit_rate_at_k": 1.0,
+        "mrr": 0.9583,
+        "ndcg_at_k": 0.9692,
+        "citation_accuracy": 0.3646,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 7,
+        "index_time_ms": 7205.44,
+        "p50_query_latency_ms": 327.1572,
+        "p95_query_latency_ms": 367.1805
+      }
+    },
+    {
+      "variant_id": "fixed_word|ollama/qwen3-embedding:0.6b|rrf",
+      "chunker": "fixed_word",
+      "embedding": "ollama/qwen3-embedding:0.6b",
+      "retrieval": "rrf",
+      "quality": {
+        "recall_at_k": 1.0,
+        "hit_rate_at_k": 1.0,
+        "mrr": 0.9583,
+        "ndcg_at_k": 0.9626,
+        "citation_accuracy": 0.3646,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 7,
+        "index_time_ms": 7205.44,
+        "p50_query_latency_ms": 327.683,
+        "p95_query_latency_ms": 367.8988
+      }
+    },
+    {
+      "variant_id": "fixed_word|ollama/qwen3-embedding:0.6b|reranked",
+      "chunker": "fixed_word",
+      "embedding": "ollama/qwen3-embedding:0.6b",
+      "retrieval": "reranked",
+      "quality": {
+        "recall_at_k": 1.0,
+        "hit_rate_at_k": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_k": 1.0,
+        "citation_accuracy": 0.3687,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 7,
+        "index_time_ms": 7205.44,
+        "p50_query_latency_ms": 4752.3274,
+        "p95_query_latency_ms": 5070.3218
+      }
+    },
+    {
+      "variant_id": "fixed_word|BAAI/bge-m3|dense",
+      "chunker": "fixed_word",
+      "embedding": "BAAI/bge-m3",
+      "retrieval": "dense",
+      "quality": {
+        "recall_at_k": 1.0,
+        "hit_rate_at_k": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_k": 0.9866,
+        "citation_accuracy": 0.3687,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 7,
+        "index_time_ms": 4000.09,
+        "p50_query_latency_ms": 160.7825,
+        "p95_query_latency_ms": 190.4975
+      }
+    },
+    {
+      "variant_id": "fixed_word|BAAI/bge-m3|rrf",
+      "chunker": "fixed_word",
+      "embedding": "BAAI/bge-m3",
+      "retrieval": "rrf",
+      "quality": {
+        "recall_at_k": 1.0,
+        "hit_rate_at_k": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_k": 0.9933,
+        "citation_accuracy": 0.3687,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 7,
+        "index_time_ms": 4000.09,
+        "p50_query_latency_ms": 161.48,
+        "p95_query_latency_ms": 191.4174
+      }
+    },
+    {
+      "variant_id": "fixed_word|BAAI/bge-m3|reranked",
+      "chunker": "fixed_word",
+      "embedding": "BAAI/bge-m3",
+      "retrieval": "reranked",
+      "quality": {
+        "recall_at_k": 1.0,
+        "hit_rate_at_k": 1.0,
+        "mrr": 1.0,
+        "ndcg_at_k": 1.0,
+        "citation_accuracy": 0.3687,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 7,
+        "index_time_ms": 4000.09,
+        "p50_query_latency_ms": 4610.1229,
+        "p95_query_latency_ms": 4870.3339
+      }
+    },
+    {
+      "variant_id": "hierarchical_sentence|none|lexical",
+      "chunker": "hierarchical_sentence",
+      "embedding": "none",
+      "retrieval": "lexical",
+      "quality": {
+        "recall_at_k": 0.4722,
+        "hit_rate_at_k": 0.5,
+        "mrr": 0.5,
+        "ndcg_at_k": 0.5,
+        "citation_accuracy": 0.3056,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 13,
+        "index_time_ms": 0.0,
+        "p50_query_latency_ms": 0.7843,
+        "p95_query_latency_ms": 1.3248
+      }
+    },
+    {
+      "variant_id": "hierarchical_sentence|ollama/qwen3-embedding:0.6b|dense",
+      "chunker": "hierarchical_sentence",
+      "embedding": "ollama/qwen3-embedding:0.6b",
+      "retrieval": "dense",
+      "quality": {
+        "recall_at_k": 0.5833,
+        "hit_rate_at_k": 0.5833,
+        "mrr": 0.5833,
+        "ndcg_at_k": 0.5833,
+        "citation_accuracy": 0.3611,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 13,
+        "index_time_ms": 6189.66,
+        "p50_query_latency_ms": 341.4883,
+        "p95_query_latency_ms": 402.165
+      }
+    },
+    {
+      "variant_id": "hierarchical_sentence|ollama/qwen3-embedding:0.6b|rrf",
+      "chunker": "hierarchical_sentence",
+      "embedding": "ollama/qwen3-embedding:0.6b",
+      "retrieval": "rrf",
+      "quality": {
+        "recall_at_k": 0.4722,
+        "hit_rate_at_k": 0.5,
+        "mrr": 0.5,
+        "ndcg_at_k": 0.5,
+        "citation_accuracy": 0.3056,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 13,
+        "index_time_ms": 6189.66,
+        "p50_query_latency_ms": 342.3845,
+        "p95_query_latency_ms": 402.9818
+      }
+    },
+    {
+      "variant_id": "hierarchical_sentence|ollama/qwen3-embedding:0.6b|reranked",
+      "chunker": "hierarchical_sentence",
+      "embedding": "ollama/qwen3-embedding:0.6b",
+      "retrieval": "reranked",
+      "quality": {
+        "recall_at_k": 0.5833,
+        "hit_rate_at_k": 0.5833,
+        "mrr": 0.5833,
+        "ndcg_at_k": 0.5833,
+        "citation_accuracy": 0.3611,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 13,
+        "index_time_ms": 6189.66,
+        "p50_query_latency_ms": 4152.8255,
+        "p95_query_latency_ms": 4517.2731
+      }
+    },
+    {
+      "variant_id": "hierarchical_sentence|BAAI/bge-m3|dense",
+      "chunker": "hierarchical_sentence",
+      "embedding": "BAAI/bge-m3",
+      "retrieval": "dense",
+      "quality": {
+        "recall_at_k": 0.5833,
+        "hit_rate_at_k": 0.5833,
+        "mrr": 0.5833,
+        "ndcg_at_k": 0.5833,
+        "citation_accuracy": 0.3611,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 13,
+        "index_time_ms": 2991.75,
+        "p50_query_latency_ms": 176.1648,
+        "p95_query_latency_ms": 183.1121
+      }
+    },
+    {
+      "variant_id": "hierarchical_sentence|BAAI/bge-m3|rrf",
+      "chunker": "hierarchical_sentence",
+      "embedding": "BAAI/bge-m3",
+      "retrieval": "rrf",
+      "quality": {
+        "recall_at_k": 0.5833,
+        "hit_rate_at_k": 0.5833,
+        "mrr": 0.5417,
+        "ndcg_at_k": 0.5526,
+        "citation_accuracy": 0.3611,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 13,
+        "index_time_ms": 2991.75,
+        "p50_query_latency_ms": 176.95,
+        "p95_query_latency_ms": 184.4587
+      }
+    },
+    {
+      "variant_id": "hierarchical_sentence|BAAI/bge-m3|reranked",
+      "chunker": "hierarchical_sentence",
+      "embedding": "BAAI/bge-m3",
+      "retrieval": "reranked",
+      "quality": {
+        "recall_at_k": 0.5833,
+        "hit_rate_at_k": 0.5833,
+        "mrr": 0.5833,
+        "ndcg_at_k": 0.5833,
+        "citation_accuracy": 0.3611,
+        "unanswerable_false_positive_rate": 1.0
+      },
+      "cost": {
+        "chunk_count": 13,
+        "index_time_ms": 2991.75,
+        "p50_query_latency_ms": 3937.5755,
+        "p95_query_latency_ms": 4326.927
+      }
+    }
+  ],
+  "recommendation": {
+    "variant_id": "fixed_word|BAAI/bge-m3|rrf",
+    "selection_policy": "within the post-baseline 0.01 citation/nDCG equivalence margin, choose lower p95 latency; then Recall@K and MRR",
+    "quality": {
+      "recall_at_k": 1.0,
+      "hit_rate_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.9933,
+      "citation_accuracy": 0.3687,
+      "unanswerable_false_positive_rate": 1.0
+    },
+    "cost": {
+      "chunk_count": 7,
+      "index_time_ms": 4000.09,
+      "p50_query_latency_ms": 161.48,
+      "p95_query_latency_ms": 191.4174
+    }
+  }
+}

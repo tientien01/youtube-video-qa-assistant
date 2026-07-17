@@ -4,7 +4,7 @@ document_status: approved
 implementation_status: implemented
 normative: true
 last_verified: 2026-07-17
-related_adrs: [ADR-003, ADR-004]
+related_adrs: [ADR-003, ADR-004, ADR-006]
 ---
 
 # Embedding and Retrieval Specification
@@ -24,8 +24,8 @@ query
 
 ## Embeddings
 
-- Default local candidate: `qwen3-embedding:0.6b` through an Ollama adapter.
-- Required benchmark challenger: `BAAI/bge-m3`.
+- Standard-profile default: `BAAI/bge-m3`, selected by ADR-006.
+- Service-light alternative: `qwen3-embedding:0.6b` through an Ollama adapter.
 - Hashing embeddings MAY be used only for deterministic tests and migration comparison.
 - Document and query embedding methods MUST be separate even if an adapter shares implementation.
 - Index and query MUST use the same model identity, revision, dimension, normalization, and instruction policy.
@@ -46,7 +46,7 @@ Local V1 MUST use Reciprocal Rank Fusion instead of directly adding normalized B
 
 ## Reranking
 
-- Standard profile uses `BAAI/bge-reranker-v2-m3` on the fused top 15-30 candidates.
+- `BAAI/bge-reranker-v2-m3` is an evaluated opt-in because its measured Local V1 latency exceeded the quality-equivalent RRF variant.
 - Light profile MAY disable reranking.
 - The reranker MUST implement a provider-independent interface.
 - Final context normally contains 5-8 unique evidence chunks before expansion.
