@@ -227,6 +227,7 @@ class IndexVersionModel(Base):
     embedding_model: Mapped[str] = mapped_column(String(255))
     embedding_revision: Mapped[str | None] = mapped_column(String(128))
     embedding_dimension: Mapped[int] = mapped_column(Integer)
+    embedding_config: Mapped[dict[str, object]] = mapped_column(JSON, default=dict, server_default=text("'{}'"))
     status: Mapped[IndexVersionStatus] = mapped_column(
         _enum_type(IndexVersionStatus, "index_version_status"),
         index=True,

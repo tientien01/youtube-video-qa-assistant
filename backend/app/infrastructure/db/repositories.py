@@ -4,10 +4,12 @@ from sqlalchemy.orm import Session
 from app.domain.entities import (
     Chunk,
     ChunkSegmentLink,
+    ChunkType,
     IndexVersion,
     IngestAttempt,
     IngestJob,
     IngestJobStatus,
+    IndexVersionStatus,
     Transcript,
     TranscriptSegment,
     Video,
@@ -281,6 +283,7 @@ class SqlAlchemyIndexRepository:
                 embedding_model=index_version.embedding_model,
                 embedding_revision=index_version.embedding_revision,
                 embedding_dimension=index_version.embedding_dimension,
+                embedding_config=index_version.embedding_config,
                 status=index_version.status,
                 created_at=index_version.created_at,
                 activated_at=index_version.activated_at,
@@ -292,6 +295,53 @@ class SqlAlchemyIndexRepository:
     def get_version(self, index_version_id: str) -> IndexVersion | None:
         model = self._session.get(IndexVersionModel, index_version_id)
         return _index_version_from_model(model) if model is not None else None
+
+    def get_by_fingerprint(self, video_id: str, fingerprint: str) -> IndexVersion | None:
+        model = self._session.scalar(
+            select(IndexVersionModel).where(
+                IndexVersionModel.video_id == video_id,
+                IndexVersionModel.fingerprint == fingerprint,
+            )
+        )
+        return _index_version_from_model(model) if model is not None else None
+
+    def get_active(self, video_id: str) -> IndexVersion | None:
+        model = self._session.scalar(
+            select(IndexVersionModel).where(
+                IndexVersionModel.video_id == video_id,
+                IndexVersionModel.status == IndexVersionStatus.READY,
+            )
+        )
+        return _index_version_from_model(model) if model is not None else None
+
+    def save_version(self, index_version: IndexVersion) -> IndexVersion:
+        model = self._session.get(IndexVersionModel, index_version.id)
+        if model is None:
+            raise LookupError(f"Index version {index_version.id} was not found.")
+        model.status = index_version.status
+        model.activated_at = index_version.activated_at
+        self._session.flush()
+        return index_version
+
+    def activate(self, video_id: str, index_version_id: str) -> IndexVersion:
+        target = self._session.get(IndexVersionModel, index_version_id)
+        if target is None or target.video_id != video_id:
+            raise LookupError(f"Index version {index_version_id} does not belong to video {video_id}.")
+        if target.status is not IndexVersionStatus.BUILDING:
+            raise ValueError("Only a building index version can become active.")
+        self._session.execute(
+            update(IndexVersionModel)
+            .where(
+                IndexVersionModel.video_id == video_id,
+                IndexVersionModel.status == IndexVersionStatus.READY,
+            )
+            .values(status=IndexVersionStatus.INACTIVE)
+        )
+        activated = _index_version_from_model(target).activate()
+        target.status = activated.status
+        target.activated_at = activated.activated_at
+        self._session.flush()
+        return activated
 
     def add_chunks(self, chunks: list[Chunk]) -> list[Chunk]:
         self._session.add_all(
@@ -328,6 +378,27 @@ class SqlAlchemyIndexRepository:
         )
         self._session.flush()
         return links
+
+    def list_chunks(self, index_version_id: str, *, child_only: bool = False) -> list[Chunk]:
+        statement = select(ChunkModel).where(ChunkModel.index_version_id == index_version_id)
+        if child_only:
+            statement = statement.where(ChunkModel.chunk_type == ChunkType.CHILD)
+        models = self._session.scalars(
+            statement.order_by(ChunkModel.chunk_type.desc(), ChunkModel.sequence_number)
+        ).all()
+        return [_chunk_from_model(model) for model in models]
+
+    def get_chunks(self, index_version_id: str, chunk_ids: list[str]) -> list[Chunk]:
+        if not chunk_ids:
+            return []
+        models = self._session.scalars(
+            select(ChunkModel).where(
+                ChunkModel.index_version_id == index_version_id,
+                ChunkModel.id.in_(chunk_ids),
+            )
+        ).all()
+        by_id = {model.id: _chunk_from_model(model) for model in models}
+        return [by_id[chunk_id] for chunk_id in chunk_ids if chunk_id in by_id]
 
 
 def _video_from_model(model: VideoModel) -> Video:
@@ -419,7 +490,24 @@ def _index_version_from_model(model: IndexVersionModel) -> IndexVersion:
         embedding_model=model.embedding_model,
         embedding_revision=model.embedding_revision,
         embedding_dimension=model.embedding_dimension,
+        embedding_config=model.embedding_config,
         status=model.status,
         created_at=model.created_at,
         activated_at=model.activated_at,
+    )
+
+
+def _chunk_from_model(model: ChunkModel) -> Chunk:
+    return Chunk(
+        id=model.id,
+        video_id=model.video_id,
+        transcript_id=model.transcript_id,
+        index_version_id=model.index_version_id,
+        parent_chunk_id=model.parent_chunk_id,
+        sequence_number=model.sequence_number,
+        chunk_type=model.chunk_type,
+        text=model.text,
+        start_ms=model.start_ms,
+        end_ms=model.end_ms,
+        token_count=model.token_count,
     )

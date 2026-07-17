@@ -87,6 +87,17 @@ python -m uv run --project backend python -m stanza.download en
 The hierarchical chunker may be constructed with the documented deterministic
 regex fallback in environments where Stanza assets are intentionally absent.
 
+The target local dense-index candidate is installed explicitly in Ollama; test
+and migration gates use deterministic fake embeddings and do not require it:
+
+```powershell
+ollama pull qwen3-embedding:0.6b
+```
+
+Qdrant runs through the Python client's local persistent mode under the
+configured application data directory. It is derived storage and may be
+recreated from SQLite without losing canonical transcripts or chunks.
+
 ## Runtime profiles
 
 ### Test

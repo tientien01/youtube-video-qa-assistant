@@ -252,9 +252,29 @@ class IndexVersion:
     embedding_dimension: int
     id: str = field(default_factory=new_id)
     embedding_revision: str | None = None
+    embedding_config: dict[str, object] = field(default_factory=dict)
     status: IndexVersionStatus = IndexVersionStatus.BUILDING
     created_at: datetime = field(default_factory=utc_now)
     activated_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        if self.embedding_dimension <= 0:
+            raise ValueError("Embedding dimension must be positive.")
+
+    def activate(self, *, now: datetime | None = None) -> IndexVersion:
+        if self.status is not IndexVersionStatus.BUILDING:
+            raise ValueError("Only a building index version can become ready.")
+        return replace(self, status=IndexVersionStatus.READY, activated_at=now or utc_now())
+
+    def fail(self) -> IndexVersion:
+        if self.status is not IndexVersionStatus.BUILDING:
+            raise ValueError("Only a building index version can fail.")
+        return replace(self, status=IndexVersionStatus.FAILED, activated_at=None)
+
+    def deactivate(self) -> IndexVersion:
+        if self.status is not IndexVersionStatus.READY:
+            raise ValueError("Only a ready index version can become inactive.")
+        return replace(self, status=IndexVersionStatus.INACTIVE)
 
 
 @dataclass(frozen=True, slots=True)

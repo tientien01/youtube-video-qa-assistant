@@ -1,9 +1,9 @@
 ---
 id: SPEC-RETRIEVAL-001
 document_status: approved
-implementation_status: planned
+implementation_status: in_progress
 normative: true
-last_verified: 2026-07-16
+last_verified: 2026-07-17
 related_adrs: [ADR-003, ADR-004]
 ---
 

@@ -1,111 +1,25 @@
-import hashlib
-import math
-from typing import Protocol
+"""Compatibility imports for the legacy RAG path.
 
-from app.core.config import get_settings
-from app.services.rag.text_processing import clean_text, tokenize
+New code must depend on ``app.application.embeddings`` and infrastructure
+adapters directly.
+"""
 
+from app.infrastructure.embeddings.legacy import (
+    EMBEDDING_DIMENSIONS,
+    EmbeddingService,
+    HashingEmbeddingService,
+    SentenceTransformerEmbeddingService,
+    build_embedding_service,
+    cosine_similarity,
+    embedding_service,
+)
 
-EMBEDDING_DIMENSIONS = 256
-
-
-class EmbeddingService(Protocol):
-    def embed_text(self, text: str) -> list[float]:
-        ...
-
-    def embed_texts(self, texts: list[str]) -> list[list[float]]:
-        ...
-
-
-class HashingEmbeddingService:
-    def __init__(self, dimensions: int = EMBEDDING_DIMENSIONS) -> None:
-        self._dimensions = dimensions
-
-    def embed_text(self, text: str) -> list[float]:
-        vector = [0.0] * self._dimensions
-        normalized_text = clean_text(text.lower())
-
-        for token in tokenize(normalized_text):
-            _add_feature(vector, f"tok:{token}", 1.0)
-            for ngram in _character_ngrams(token):
-                _add_feature(vector, f"ngram:{ngram}", 0.35)
-
-        return _normalize(vector)
-
-    def embed_texts(self, texts: list[str]) -> list[list[float]]:
-        return [self.embed_text(text) for text in texts]
-
-
-class SentenceTransformerEmbeddingService:
-    def __init__(self, model_name: str) -> None:
-        try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError as error:
-            raise RuntimeError(
-                "sentence-transformers is required when EMBEDDING_PROVIDER=sentence_transformers."
-            ) from error
-
-        self._model_name = model_name
-        self._model = SentenceTransformer(model_name)
-
-    def embed_text(self, text: str) -> list[float]:
-        return self.embed_texts([text])[0]
-
-    def embed_texts(self, texts: list[str]) -> list[list[float]]:
-        if not texts:
-            return []
-
-        embeddings = self._model.encode(
-            texts,
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        )
-        return [
-            [round(float(value), 6) for value in embedding]
-            for embedding in embeddings
-        ]
-
-
-def cosine_similarity(left: list[float], right: list[float]) -> float:
-    if len(left) != len(right):
-        return 0.0
-
-    return round(sum(left_item * right_item for left_item, right_item in zip(left, right)), 6)
-
-
-def _character_ngrams(token: str, size: int = 3) -> list[str]:
-    if len(token) <= size:
-        return [token]
-
-    return [token[index:index + size] for index in range(len(token) - size + 1)]
-
-
-def _add_feature(vector: list[float], feature: str, weight: float) -> None:
-    digest = hashlib.blake2b(feature.encode("utf-8"), digest_size=8).digest()
-    raw_value = int.from_bytes(digest, byteorder="big", signed=False)
-    index = raw_value % len(vector)
-    sign = 1.0 if (raw_value >> 1) % 2 == 0 else -1.0
-    vector[index] += sign * weight
-
-
-def _normalize(vector: list[float]) -> list[float]:
-    magnitude = math.sqrt(sum(value * value for value in vector))
-    if magnitude == 0:
-        return vector
-
-    return [round(value / magnitude, 6) for value in vector]
-
-
-def build_embedding_service(provider: str | None = None, model_name: str | None = None) -> EmbeddingService:
-    settings = get_settings()
-    selected_provider = (provider or settings.embedding_provider).lower()
-    if selected_provider == "hashing":
-        return HashingEmbeddingService()
-
-    if selected_provider in {"sentence_transformers", "sentence-transformers"}:
-        return SentenceTransformerEmbeddingService(model_name or settings.embedding_model_name)
-
-    raise ValueError(f"Unsupported embedding provider: {selected_provider}")
-
-
-embedding_service = build_embedding_service()
+__all__ = [
+    "EMBEDDING_DIMENSIONS",
+    "EmbeddingService",
+    "HashingEmbeddingService",
+    "SentenceTransformerEmbeddingService",
+    "build_embedding_service",
+    "cosine_similarity",
+    "embedding_service",
+]

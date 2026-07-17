@@ -1,6 +1,6 @@
 # TASK-007: Add Multilingual Embedding and Qdrant Local Index
 
-Status: planned
+Status: verified
 
 Depends on: TASK-006
 
@@ -31,11 +31,11 @@ Create a rebuildable dense index with provider-independent embedding and vector 
 
 ## Acceptance criteria
 
-- [ ] Tests run without Ollama using the fake adapter.
-- [ ] Index/query model mismatch is rejected.
-- [ ] Rebuild from SQLite produces a queryable active version.
-- [ ] Failed rebuild preserves the prior active index.
-- [ ] Qdrant is never required to reconstruct canonical transcript data.
+- [x] Tests run without Ollama using the fake adapter.
+- [x] Index/query model mismatch is rejected.
+- [x] Rebuild from SQLite produces a queryable active version.
+- [x] Failed rebuild preserves the prior active index.
+- [x] Qdrant is never required to reconstruct canonical transcript data.
 
 ## Verification
 
