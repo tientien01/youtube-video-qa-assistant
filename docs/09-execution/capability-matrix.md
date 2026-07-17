@@ -31,10 +31,10 @@ This file reports current implementation status. Target behavior lives in specif
 | RRF hybrid fusion | Rank-only RRF with deterministic ties, source diagnostics, deduplication, and parent/neighbor expansion | `verified` | TASK-011 evaluation |
 | Cross-encoder reranking | Optional local-only BAAI/bge-reranker-v2-m3 adapter; light profile remains model-free | `verified` | TASK-011 evaluation |
 | Retrieval evaluation | Metrics runner/example dataset exists; no curated release dataset | `implemented` | TASK-011 |
-| Provider-independent LLM port | Minimal text-generation protocol exists | `implemented` | TASK-009 |
-| Gemini adapter | Optional adapter exists | `implemented` | TASK-009 |
-| Ollama adapter | Not implemented | `planned` | TASK-009 |
-| Structured answer/citation validation | Sources returned separately; no strict model schema validation | `planned` | TASK-009 |
+| Provider-independent LLM port | Typed request/result/capability/usage/error contracts with application-owned grounded orchestration | `verified` | Complete |
+| Gemini adapter | Explicit opt-in REST adapter behind the common contract with structured output and usage metadata | `verified` | Complete |
+| Ollama adapter | Local Qwen3 adapter with structured output, timeout/error mapping, health check, and configurable model/context | `verified` | Complete |
+| Structured answer/citation validation | Strict grounded-answer schema, bilingual policy, allowed-citation validation, and one bounded repair attempt | `verified` | Complete |
 | Vietnamese/English language policy | Transcript selection defaults to ordered `vi`, `en`; no end-to-end retrieval/generation evaluation yet | `implemented` | TASK-012 |
 | Production deployment | Intentionally deferred | `planned` | Future production phase |
 
@@ -46,4 +46,5 @@ This file reports current implementation status. Target behavior lives in specif
 - The current oEmbed metadata adapter does not supply duration, so caption-end
   fallback remains common; when a metadata provider supplies duration it takes precedence.
 - The legacy API path still defaults to hashing/JSON retrieval until TASK-010 migrates runtime wiring; hashing remains test/migration-only in the canonical path.
+- The legacy API generation path remains wired through the old optional service until TASK-010 adopts the verified provider-independent orchestration.
 - Existing working tree contains user-owned notebook, environment-example, and local data changes; tasks MUST preserve them.

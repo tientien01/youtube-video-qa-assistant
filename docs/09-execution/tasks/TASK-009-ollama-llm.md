@@ -1,6 +1,6 @@
 # TASK-009: Complete the LLM-Independent Ollama Path
 
-Status: planned
+Status: verified
 
 Depends on: TASK-001
 
@@ -33,11 +33,11 @@ Upgrade the minimal LLM protocol and make Ollama the free local generation path 
 
 ## Acceptance criteria
 
-- [ ] Application tests pass with only the fake provider.
-- [ ] Ollama and Gemini SDK types never leave adapters.
-- [ ] Unknown citation IDs cannot reach a successful API response unnoticed.
-- [ ] Ollama unavailable leaves ingest/retrieval healthy and generation explicitly unavailable.
-- [ ] Provider/model are configurable and reported in generation metadata.
+- [x] Application tests pass with only the fake provider.
+- [x] Ollama and Gemini SDK types never leave adapters.
+- [x] Unknown citation IDs cannot reach a successful API response unnoticed.
+- [x] Ollama unavailable leaves ingest/retrieval healthy and generation explicitly unavailable.
+- [x] Provider/model are configurable and reported in generation metadata.
 
 ## Verification
 

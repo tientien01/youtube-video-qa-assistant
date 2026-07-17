@@ -55,6 +55,7 @@ include = [
     "app/infrastructure/embeddings",
     "app/infrastructure/ingest/in_process_runner.py",
     "app/infrastructure/ingest/transcript",
+    "app/infrastructure/llm",
     "app/infrastructure/reranking",
     "app/infrastructure/vector",
     "app/schemas",

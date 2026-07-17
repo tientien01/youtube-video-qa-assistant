@@ -61,6 +61,7 @@ TASK-011 + TASK-013
 
 ## Ready now
 
-`TASK-001` through `TASK-008` are verified. `TASK-009` is the next remaining
-dependency-order task and completes the local LLM branch before the evaluation
-and API/frontend migration gates.
+`TASK-001` through `TASK-009` are verified. `TASK-010` is the next
+dependency-order task and can migrate API/frontend runtime wiring to persistent
+jobs, canonical retrieval, and provider-independent generation. `TASK-011` is
+also dependency-ready for the retrieval release gate.

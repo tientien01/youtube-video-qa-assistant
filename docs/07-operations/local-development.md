@@ -94,6 +94,15 @@ and migration gates use deterministic fake embeddings and do not require it:
 ollama pull qwen3-embedding:0.6b
 ```
 
+Generation models are explicit local assets as well. Install only the profile
+you intend to run; deterministic generation tests use the fake provider:
+
+```powershell
+ollama pull qwen3:4b
+# Standard profile only:
+ollama pull qwen3:8b
+```
+
 Qdrant runs through the Python client's local persistent mode under the
 configured application data directory. It is derived storage and may be
 recreated from SQLite without losing canonical transcripts or chunks.
