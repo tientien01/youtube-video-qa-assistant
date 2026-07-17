@@ -1,5 +1,6 @@
 from typing import Literal
 
+from app.application.retrieval.fusion import SourceCandidate, reciprocal_rank_fusion
 from app.core.config import get_settings
 from app.services.rag.local_store import VideoNotIndexedError, rag_store
 from app.services.rag.models import RetrievedChunk
@@ -43,26 +44,23 @@ def _retrieve_hybrid(video_id: str, question: str, top_k: int) -> list[Retrieved
     if not bm25_results and not embedding_results:
         return []
 
-    bm25_scores = _normalize_scores(bm25_results)
-    embedding_scores = _normalize_scores(embedding_results)
     chunk_by_id = {
         result.chunk.chunk_id: result.chunk
         for result in [*bm25_results, *embedding_results]
     }
-
-    scored_chunks = [
+    fused = reciprocal_rank_fusion(
+        {
+            "lexical": [SourceCandidate(item.chunk.chunk_id, item.score) for item in bm25_results],
+            "dense": [SourceCandidate(item.chunk.chunk_id, item.score) for item in embedding_results],
+        }
+    )
+    return [
         RetrievedChunk(
-            chunk=chunk,
-            score=round(
-                (0.45 * bm25_scores.get(chunk_id, 0.0))
-                + (0.55 * embedding_scores.get(chunk_id, 0.0)),
-                6,
-            ),
+            chunk=chunk_by_id[candidate.chunk_id],
+            score=round(candidate.fused_score, 8),
         )
-        for chunk_id, chunk in chunk_by_id.items()
+        for candidate in fused[:top_k]
     ]
-    scored_chunks.sort(key=lambda item: item.score, reverse=True)
-    return [item for item in scored_chunks[:top_k] if item.score > 0]
 
 
 def _candidate_top_k(top_k: int) -> int:
@@ -95,18 +93,3 @@ def _ensure_vector_index(video_id: str) -> None:
         raise VideoNotIndexedError("Video has not been indexed yet.")
 
     vector_store.upsert_video(video_id, chunks)
-
-
-def _normalize_scores(results: list[RetrievedChunk]) -> dict[str, float]:
-    if not results:
-        return {}
-
-    max_score = max(result.score for result in results)
-    if max_score <= 0:
-        return {}
-
-    return {
-        result.chunk.chunk_id: round(result.score / max_score, 6)
-        for result in results
-        if result.score > 0
-    }

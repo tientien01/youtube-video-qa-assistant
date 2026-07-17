@@ -25,11 +25,11 @@ This file reports current implementation status. Target behavior lives in specif
 | Atomic/idempotent ingest | Job/video/canonical-transcript publication is atomic and idempotent; new rebuildable index path exists while legacy ingest wiring remains behind a compatibility adapter | `implemented` | TASK-010 migration |
 | Fixed word chunking | 140 words, 30-word overlap retained as an evaluation control | `implemented` | TASK-011 evaluation |
 | Hierarchical sentence chunking | Deterministic child/parent packing, exact source/timestamp links, whole-unit overlap, hard-limit fallback, Stanza and model-aware tokenizer ports | `verified` | Complete |
-| BM25 retrieval | Local JSON BM25 baseline | `implemented` | TASK-008 |
-| Dense retrieval | Separate query/document embedding ports, Ollama Qwen3 adapter, deterministic fake, identity validation, batching, and canonical chunk hydration | `verified` | TASK-008 fusion |
+| BM25 retrieval | Active-version-scoped SQLite FTS5 over canonical child chunks with deterministic ranking | `verified` | Complete |
+| Dense retrieval | Separate query/document embedding ports, Ollama Qwen3 adapter, deterministic fake, identity validation, batching, and canonical chunk hydration | `verified` | Complete |
 | Qdrant local index | Version-keyed local collections, health checks, rebuild/activation/rollback, query, cleanup, and SQLite reconstruction | `verified` | Complete |
-| RRF hybrid fusion | Weighted normalized score fusion | `planned` | TASK-008 |
-| Cross-encoder reranking | Lexical overlap reranker | `planned` | TASK-008 |
+| RRF hybrid fusion | Rank-only RRF with deterministic ties, source diagnostics, deduplication, and parent/neighbor expansion | `verified` | TASK-011 evaluation |
+| Cross-encoder reranking | Optional local-only BAAI/bge-reranker-v2-m3 adapter; light profile remains model-free | `verified` | TASK-011 evaluation |
 | Retrieval evaluation | Metrics runner/example dataset exists; no curated release dataset | `implemented` | TASK-011 |
 | Provider-independent LLM port | Minimal text-generation protocol exists | `implemented` | TASK-009 |
 | Gemini adapter | Optional adapter exists | `implemented` | TASK-009 |

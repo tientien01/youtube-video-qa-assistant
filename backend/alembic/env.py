@@ -17,6 +17,13 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def _include_object(object_, name: str | None, type_: str, reflected: bool, compare_to) -> bool:
+    del object_, reflected, compare_to
+    # FTS5 and its shadow tables are managed by the explicit migration because
+    # SQLAlchemy metadata cannot represent SQLite virtual tables and triggers.
+    return not (type_ == "table" and name is not None and name.startswith("chunk_fts"))
+
+
 def _database_url() -> str:
     configured_url = config.get_main_option("sqlalchemy.url").strip()
     if configured_url:
@@ -39,6 +46,7 @@ def run_migrations_offline() -> None:
         compare_type=True,
         render_as_batch=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=_include_object,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -65,6 +73,7 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             render_as_batch=connection.dialect.name == "sqlite",
+            include_object=_include_object,
         )
         with context.begin_transaction():
             context.run_migrations()

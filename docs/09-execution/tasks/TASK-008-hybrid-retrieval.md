@@ -1,6 +1,6 @@
 # TASK-008: Implement FTS5, RRF, and Multilingual Reranking
 
-Status: planned
+Status: verified
 
 Depends on: TASK-007
 
@@ -28,11 +28,11 @@ Replace transitional score weighting with inspectable hybrid retrieval and optio
 
 ## Acceptance criteria
 
-- [ ] Unit fixtures prove RRF using ranks rather than raw score addition.
-- [ ] Filters prevent cross-video/version leakage.
-- [ ] Lexical, dense, hybrid, and reranked modes remain independently testable.
-- [ ] Light profile works without the reranker model.
-- [ ] Diagnostics expose source rank, fused rank, reranker score, and latency.
+- [x] Unit fixtures prove RRF using ranks rather than raw score addition.
+- [x] Filters prevent cross-video/version leakage.
+- [x] Lexical, dense, hybrid, and reranked modes remain independently testable.
+- [x] Light profile works without the reranker model.
+- [x] Diagnostics expose source rank, fused rank, reranker score, and latency.
 
 ## Verification
 

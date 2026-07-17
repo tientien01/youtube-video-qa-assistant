@@ -61,6 +61,6 @@ TASK-011 + TASK-013
 
 ## Ready now
 
-`TASK-001` through `TASK-007` are verified. `TASK-008` is ready to add FTS5,
-RRF fusion, and multilingual reranking over canonical child chunks. `TASK-009`
-may proceed independently on the LLM branch of the roadmap.
+`TASK-001` through `TASK-008` are verified. `TASK-009` is the next remaining
+dependency-order task and completes the local LLM branch before the evaluation
+and API/frontend migration gates.

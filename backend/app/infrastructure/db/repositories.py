@@ -1,4 +1,6 @@
-from sqlalchemy import select, update
+import re
+
+from sqlalchemy import select, text as sql_text, update
 from sqlalchemy.orm import Session
 
 from app.domain.entities import (
@@ -14,6 +16,7 @@ from app.domain.entities import (
     TranscriptSegment,
     Video,
 )
+from app.application.retrieval.ports import LexicalMatch
 from app.infrastructure.db.models import (
     ChunkModel,
     ChunkSegmentModel,
@@ -399,6 +402,60 @@ class SqlAlchemyIndexRepository:
         ).all()
         by_id = {model.id: _chunk_from_model(model) for model in models}
         return [by_id[chunk_id] for chunk_id in chunk_ids if chunk_id in by_id]
+
+
+class SqliteFtsIndex:
+    """SQLite FTS5 candidate search, always scoped to one video/index version."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def search(
+        self,
+        index_version_id: str,
+        video_id: str,
+        query: str,
+        *,
+        limit: int,
+    ) -> list[LexicalMatch]:
+        if limit <= 0:
+            return []
+        fts_query = _fts_query(query)
+        if not fts_query:
+            return []
+        rows = self._session.execute(
+            sql_text(
+                """
+                SELECT c.id AS chunk_id, bm25(chunk_fts) AS bm25_score
+                FROM chunk_fts
+                JOIN chunks AS c
+                  ON c.id = chunk_fts.chunk_id
+                 AND c.video_id = :video_id
+                 AND c.index_version_id = :index_version_id
+                 AND c.chunk_type = 'child'
+                WHERE chunk_fts MATCH :query
+                  AND chunk_fts.video_id = :video_id
+                  AND chunk_fts.index_version_id = :index_version_id
+                ORDER BY bm25_score ASC, c.id ASC
+                LIMIT :limit
+                """
+            ),
+            {
+                "query": fts_query,
+                "video_id": video_id,
+                "index_version_id": index_version_id,
+                "limit": limit,
+            },
+        ).all()
+        return [LexicalMatch(chunk_id=str(row.chunk_id), score=-float(row.bm25_score)) for row in rows]
+
+
+_FTS_TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
+
+
+def _fts_query(query: str) -> str:
+    tokens = _FTS_TOKEN.findall(query.casefold())
+    return " OR ".join(f'"{token.replace(chr(34), chr(34) * 2)}"' for token in tokens)
 
 
 def _video_from_model(model: VideoModel) -> Video:

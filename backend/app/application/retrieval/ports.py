@@ -19,6 +19,12 @@ class VectorMatch:
     score: float
 
 
+@dataclass(frozen=True, slots=True)
+class LexicalMatch:
+    chunk_id: str
+    score: float
+
+
 class VectorIndex(Protocol):
     def health_check(self) -> bool: ...
 
@@ -38,9 +44,28 @@ class VectorIndex(Protocol):
     def delete(self, index_version_id: str) -> bool: ...
 
 
+class LexicalIndex(Protocol):
+    def search(
+        self,
+        index_version_id: str,
+        video_id: str,
+        query: str,
+        *,
+        limit: int,
+    ) -> list[LexicalMatch]: ...
+
+
+class Reranker(Protocol):
+    @property
+    def model_id(self) -> str: ...
+
+    def score(self, query: str, documents: list[str], *, batch_size: int = 8) -> list[float]: ...
+
+
 class IndexUnitOfWork(Protocol):
     transcripts: TranscriptRepository
     indexes: IndexRepository
+    lexical: LexicalIndex
 
     def __enter__(self) -> Self: ...
 

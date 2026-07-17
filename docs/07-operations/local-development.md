@@ -98,6 +98,14 @@ Qdrant runs through the Python client's local persistent mode under the
 configured application data directory. It is derived storage and may be
 recreated from SQLite without losing canonical transcripts or chunks.
 
+The standard profile's optional multilingual reranker is also an explicit,
+large local asset. Download it before enabling reranked mode; the light profile
+does not load or require it:
+
+```powershell
+python -m uv run --project backend hf download BAAI/bge-reranker-v2-m3
+```
+
 ## Runtime profiles
 
 ### Test

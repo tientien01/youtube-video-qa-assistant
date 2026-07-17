@@ -15,6 +15,7 @@ from app.infrastructure.db.repositories import (
     SqlAlchemyIndexRepository,
     SqlAlchemyTranscriptRepository,
     SqlAlchemyVideoRepository,
+    SqliteFtsIndex,
 )
 
 
@@ -69,6 +70,7 @@ class SqlAlchemyIndexUnitOfWork:
         self._session = self._session_factory()
         self.transcripts = SqlAlchemyTranscriptRepository(self._session)
         self.indexes = SqlAlchemyIndexRepository(self._session)
+        self.lexical = SqliteFtsIndex(self._session)
         return self
 
     def commit(self) -> None:
