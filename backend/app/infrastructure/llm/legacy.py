@@ -16,6 +16,8 @@ def create_legacy_llm_client(settings: Settings) -> LlmClient | None:
                 model=settings.llm_model,
                 base_url=settings.ollama_base_url,
                 timeout_seconds=settings.llm_timeout_seconds,
+                context_window=settings.llm_context_window,
+                keep_alive=settings.ollama_keep_alive,
                 gemini_api_key=settings.gemini_api_key,
             )
         )

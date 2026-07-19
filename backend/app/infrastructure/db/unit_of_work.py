@@ -23,6 +23,7 @@ class SqlAlchemyIngestUnitOfWork:
     videos: VideoRepository
     jobs: IngestJobRepository
     transcripts: TranscriptRepository
+    indexes: IndexRepository
 
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
@@ -34,6 +35,7 @@ class SqlAlchemyIngestUnitOfWork:
         self.videos = SqlAlchemyVideoRepository(self._session)
         self.jobs = SqlAlchemyIngestJobRepository(self._session)
         self.transcripts = SqlAlchemyTranscriptRepository(self._session)
+        self.indexes = SqlAlchemyIndexRepository(self._session)
         return self
 
     def commit(self) -> None:

@@ -13,7 +13,8 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.api.dependencies import get_database_runtime, get_video_transcript_application
-from app.application.video import VideoTranscript
+from app.api.v1.routes.video import _library_application
+from app.application.video import VideoLibraryItem, VideoNotFound, VideoTranscript
 from app.application.legacy.chat_history_store import LocalChatHistoryStore
 from app.application.legacy.extraction.transcript_service import TranscriptFetchError, TranscriptNotFoundError
 from app.application.legacy.learning.generated_output_store import LocalGeneratedOutputStore
@@ -56,7 +57,12 @@ class ApiRoutesTest(unittest.TestCase):
         self.assertEqual(payload["api"]["status"], "available")
         self.assertEqual(payload["api"]["label"], "API")
         self.assertEqual(payload["sqlite"]["status"], "available")
+        self.assertIsNone(payload["sqlite"]["detail"])
         self.assertEqual(payload["vector_index"]["provider"], "local_json")
+        self.assertEqual(
+            payload["vector_index"]["detail"],
+            "Derived: backend/data/vector_store/local_vector_index.json",
+        )
         self.assertEqual(payload["llm"]["status"], "unavailable")
 
     def test_transcript_endpoint_preserves_segment_identity_and_timestamps(self):
@@ -187,102 +193,98 @@ class ApiRoutesTest(unittest.TestCase):
         self.assertEqual(response.json()["chunk_count"], 1)
 
     def test_video_history_lists_ingested_videos(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
-            metadata_store.upsert_video(
-                video_id="dQw4w9WgXcQ",
-                url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                title="Cached video",
-                duration_seconds=5,
-                transcript_language="en",
-                chunk_count=1,
-            )
+        class LibraryApplicationStub:
+            def list(self):
+                return [
+                    VideoLibraryItem(
+                        video_id="dQw4w9WgXcQ",
+                        url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                        title="Cached video",
+                        channel_title=None,
+                        thumbnail_url=None,
+                        duration_seconds=5,
+                        transcript_language="en",
+                        chunk_count=1,
+                        created_at="2026-07-19T00:00:00+00:00",
+                        updated_at="2026-07-19T00:00:00+00:00",
+                    )
+                ]
 
-            with patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store):
-                response = self.client.get("/api/v1/videos")
+        app.dependency_overrides[_library_application] = LibraryApplicationStub
+        try:
+            response = self.client.get("/api/v1/videos")
+        finally:
+            app.dependency_overrides.pop(_library_application, None)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
         self.assertEqual(response.json()[0]["video_id"], "dQw4w9WgXcQ")
 
     def test_video_history_gets_one_video(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
-            metadata_store.upsert_video(
-                video_id="dQw4w9WgXcQ",
-                url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                title="Cached video",
-                duration_seconds=5,
-                transcript_language="en",
-                chunk_count=1,
-            )
+        class LibraryApplicationStub:
+            def get(self, video_id):
+                return VideoLibraryItem(
+                    video_id=video_id,
+                    url=f"https://www.youtube.com/watch?v={video_id}",
+                    title="Cached video",
+                    channel_title=None,
+                    thumbnail_url=None,
+                    duration_seconds=5,
+                    transcript_language="en",
+                    chunk_count=1,
+                    created_at="2026-07-19T00:00:00+00:00",
+                    updated_at="2026-07-19T00:00:00+00:00",
+                )
 
-            with patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store):
-                response = self.client.get("/api/v1/videos/dQw4w9WgXcQ")
+        app.dependency_overrides[_library_application] = LibraryApplicationStub
+        try:
+            response = self.client.get("/api/v1/videos/dQw4w9WgXcQ")
+        finally:
+            app.dependency_overrides.pop(_library_application, None)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["title"], "Cached video")
 
     def test_video_history_returns_404_for_missing_video(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
+        class LibraryApplicationStub:
+            def get(self, video_id):
+                raise VideoNotFound(f"Video {video_id} was not found in the local library.")
 
-            with patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store):
-                response = self.client.get("/api/v1/videos/missing0000")
+        app.dependency_overrides[_library_application] = LibraryApplicationStub
+        try:
+            response = self.client.get("/api/v1/videos/missing0000")
+        finally:
+            app.dependency_overrides.pop(_library_application, None)
 
         self.assertEqual(response.status_code, 404)
 
     def test_video_history_deletes_video(self):
-        chunk = TranscriptChunk(
-            chunk_id="dQw4w9WgXcQ-0001",
-            video_id="dQw4w9WgXcQ",
-            text="Cached transcript chunk.",
-            start_seconds=0,
-            end_seconds=5,
-        )
+        class LibraryApplicationStub:
+            def delete(self, video_id):
+                return video_id == "dQw4w9WgXcQ"
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            store = LocalRagStore(Path(temp_dir) / "index.json")
-            metadata_store = LocalVideoMetadataStore(Path(temp_dir) / "metadata.json")
-            vector_store = LocalVectorStore(Path(temp_dir) / "vectors.json")
-            output_store = LocalGeneratedOutputStore(Path(temp_dir) / "outputs.json")
-            store.upsert_video("dQw4w9WgXcQ", [chunk])
-            metadata_store.upsert_video(
-                video_id="dQw4w9WgXcQ",
-                url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                title="Cached video",
-                duration_seconds=5,
-                transcript_language="en",
-                chunk_count=1,
-            )
-            output_store.upsert_output(
-                video_id="dQw4w9WgXcQ",
-                output_type="summary",
-                mode="short",
-                content="Cached summary",
-                source_chunk_ids=[chunk.chunk_id],
-            )
-
-            with (
-                patch("app.application.legacy.rag.video_index_service.rag_store", store),
-                patch("app.application.legacy.rag.video_index_service.vector_store", vector_store),
-                patch("app.application.legacy.rag.video_index_service.metadata_store", metadata_store),
-                patch("app.application.legacy.rag.video_index_service.generated_output_store", output_store),
-            ):
-                response = self.client.delete("/api/v1/videos/dQw4w9WgXcQ")
-
-            self.assertFalse(store.has_video("dQw4w9WgXcQ"))
-            self.assertIsNone(metadata_store.get_video("dQw4w9WgXcQ"))
-            self.assertIsNone(
-                output_store.get_output(
-                    video_id="dQw4w9WgXcQ",
-                    output_type="summary",
-                    mode="short",
-                )
-            )
+        app.dependency_overrides[_library_application] = LibraryApplicationStub
+        try:
+            response = self.client.delete("/api/v1/videos/dQw4w9WgXcQ")
+        finally:
+            app.dependency_overrides.pop(_library_application, None)
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()["deleted"])
+
+    def test_video_history_delete_is_idempotent_for_stale_browser_entry(self):
+        class LibraryApplicationStub:
+            def delete(self, _video_id):
+                return False
+
+        app.dependency_overrides[_library_application] = LibraryApplicationStub
+        try:
+            response = self.client.delete("/api/v1/videos/missing0000")
+        finally:
+            app.dependency_overrides.pop(_library_application, None)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["deleted"])
 
     def test_summary_endpoint_generates_short_summary(self):
         chunk = TranscriptChunk(

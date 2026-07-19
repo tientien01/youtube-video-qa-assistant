@@ -2,6 +2,8 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+
+from app.core.paths import DATA_DIR
 from uuid import uuid4
 
 
@@ -55,10 +57,7 @@ class LocalQuizAttemptStore:
         if self._storage_path.exists():
             raw_data = json.loads(self._storage_path.read_text(encoding="utf-8"))
             self._attempts_by_video = {
-                video_id: [
-                    StoredQuizAttempt(**attempt_data)
-                    for attempt_data in attempts
-                ]
+                video_id: [StoredQuizAttempt(**attempt_data) for attempt_data in attempts]
                 for video_id, attempts in raw_data.items()
             }
 
@@ -77,8 +76,7 @@ class LocalQuizAttemptStore:
 
 
 def _default_storage_path() -> Path:
-    backend_root = Path(__file__).resolve().parents[4]
-    return backend_root / "data" / "quiz_attempts" / "local_quiz_attempts.json"
+    return DATA_DIR / "quiz_attempts" / "local_quiz_attempts.json"
 
 
 quiz_attempt_store = LocalQuizAttemptStore()

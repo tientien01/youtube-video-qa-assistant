@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Callable
+from typing import Any, cast
 
 from app.application.ingest.ports import IngestAttemptReport
 from app.application.ingest.transcript import TranscriptAcquisition, TranscriptAcquisitionError
@@ -30,7 +31,8 @@ from app.application.llm.grounded_answer import detect_answer_language
 
 
 logger = logging.getLogger(__name__)
-vector_store = None
+# Provider objects remain contained at this compatibility composition boundary.
+vector_store: Any = None
 _transcript_acquirer: Callable[[str], TranscriptAcquisition] | None = None
 
 
@@ -180,22 +182,30 @@ def get_ingested_video(video_id: str) -> VideoMetadataResponse:
 
 
 def delete_ingested_video(video_id: str) -> VideoDeleteResponse:
+    if not delete_legacy_video_data(video_id):
+        raise VideoNotIndexedError("Video has not been indexed yet.")
+
+    logger.info("Deleted video_id=%s from legacy local stores", video_id)
+    return VideoDeleteResponse(video_id=video_id, deleted=True)
+
+
+def delete_legacy_video_data(video_id: str) -> bool:
+    """Remove compatibility data without deciding canonical video existence."""
+
     deleted_chunks = rag_store.delete_video(video_id)
     deleted_vectors = vector_store.delete_video(video_id)
     deleted_metadata = metadata_store.delete_video(video_id)
     deleted_outputs = generated_output_store.delete_video(video_id)
     deleted_chat_history = chat_history_store.delete_video(video_id)
-    if (
-        not deleted_chunks
-        and not deleted_vectors
-        and not deleted_metadata
-        and not deleted_outputs
-        and not deleted_chat_history
-    ):
-        raise VideoNotIndexedError("Video has not been indexed yet.")
-
-    logger.info("Deleted video_id=%s from local library", video_id)
-    return VideoDeleteResponse(video_id=video_id, deleted=True)
+    return any(
+        (
+            deleted_chunks,
+            deleted_vectors,
+            deleted_metadata,
+            deleted_outputs,
+            deleted_chat_history,
+        )
+    )
 
 
 def rebuild_video_index(video_id: str) -> VideoRebuildIndexResponse:
@@ -219,7 +229,7 @@ def ask_video_question(
     source_chunk_ids: list[str] | None = None,
     answer_language: AnswerLanguage | None = None,
 ) -> ChatAskResponse:
-    resolved_language = answer_language or detect_answer_language(question)
+    resolved_language = cast(AnswerLanguage, answer_language or detect_answer_language(question))
     logger.info(
         "Retrieving context for video_id=%s question_length=%s mode=%s",
         video_id,

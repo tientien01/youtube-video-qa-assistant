@@ -136,13 +136,19 @@ test('keeps the workspace usable without horizontal overflow on mobile', async (
   await page.screenshot({ path: 'e2e/screenshots/workspace-mobile.png', fullPage: true })
 })
 
-test('shows honest empty, planned, runtime-offline, and retryable ingest states', async ({ page }) => {
+test('shows honest empty, runtime-offline, retryable ingest, and learner navigation states', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('youtube-qa-active-ingest-job', 'job-failed'))
   await page.goto('/')
   await expect(page.getByText('Degraded')).toBeVisible()
   await expect(page.getByText('Ollama embedding model is unavailable.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Flashcards' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Summary' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Study Notes' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Export' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Flashcards' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Activity' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Developer' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Settings' })).toHaveCount(0)
   await page.screenshot({ path: 'e2e/screenshots/ingest-failed.png', fullPage: true })
 })
 

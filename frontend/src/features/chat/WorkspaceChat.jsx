@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Send, Sparkles } from 'lucide-react'
 import { formatTimestamp } from '../../shared/utils/time'
 
 export function WorkspaceChat({ messages, isAsking, error, onAsk, onSelectSource, onClear }) {
@@ -14,7 +15,7 @@ export function WorkspaceChat({ messages, isAsking, error, onAsk, onSelectSource
     <section className="workspace-panel conversation-panel" aria-label="Ask this video">
       <header className="workspace-panel-header"><div><p className="panel-kicker">Grounded assistant</p><h2>Ask this video</h2></div>{messages.length ? <button className="text-button" type="button" onClick={onClear}>Clear</button> : null}</header>
       <div className="conversation-scroll">
-        {!messages.length && !isAsking ? <div className="chat-empty"><span>✦</span><strong>Start with the source</strong><p>Ask about a concept, claim, or moment in this video.</p></div> : null}
+        {!messages.length && !isAsking ? <div className="chat-empty"><Sparkles className="empty-icon" size={28} strokeWidth={1.7} aria-hidden="true" /><strong>Start with the source</strong><p>Ask about a concept, claim, or moment in this video.</p></div> : null}
         {messages.map((message) => (
           <article className="conversation-message" key={message.id}>
             <p className="user-bubble">{message.question}</p>
@@ -30,7 +31,7 @@ export function WorkspaceChat({ messages, isAsking, error, onAsk, onSelectSource
       </div>
       <form className="workspace-composer" onSubmit={submit}>
         <label><span className="sr-only">Question</span><textarea rows="2" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask a question grounded in this video…" disabled={isAsking} /></label>
-        <button type="submit" disabled={isAsking || !question.trim()} aria-label="Send question">↑</button>
+        <button type="submit" disabled={isAsking || !question.trim()} aria-label="Send question" title="Send question"><Send size={17} aria-hidden="true" /></button>
       </form>
     </section>
   )

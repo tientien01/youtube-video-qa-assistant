@@ -889,6 +889,8 @@ class RagServicesTest(unittest.TestCase):
                 "LLM_PROVIDER": "ollama",
                 "LLM_MODEL": "qwen2.5-coder:7b",
                 "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+                "OLLAMA_KEEP_ALIVE": "45m",
+                "LLM_CONTEXT_WINDOW": "8192",
                 "EMBEDDING_PROVIDER": "ollama",
                 "EMBEDDING_MODEL": "embeddinggemma",
             },
@@ -899,6 +901,8 @@ class RagServicesTest(unittest.TestCase):
         self.assertEqual(settings.llm_provider, "ollama")
         self.assertEqual(settings.llm_model, "qwen2.5-coder:7b")
         self.assertEqual(settings.ollama_base_url, "http://127.0.0.1:11434")
+        self.assertEqual(settings.ollama_keep_alive, "45m")
+        self.assertEqual(settings.llm_context_window, 8192)
         self.assertEqual(settings.embedding_provider, "ollama")
         self.assertEqual(settings.embedding_model_name, "embeddinggemma")
 

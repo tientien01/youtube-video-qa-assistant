@@ -2,9 +2,12 @@ import json
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
+
+from app.core.paths import DATA_DIR
 from uuid import uuid4
 
-from app.api.contracts.chat import ChatHistoryMessage, ChatSource, RetrievalMode
+from app.api.contracts.chat import AnswerLanguage, ChatHistoryMessage, ChatSource, RetrievalMode
 from app.api.contracts.generation import GenerationMetadata
 
 
@@ -101,8 +104,8 @@ def _message_to_schema(message: StoredChatMessage) -> ChatHistoryMessage:
         video_id=message.video_id,
         question=message.question,
         answer=message.answer,
-        answer_language=message.answer_language,
-        retrieval_mode=message.retrieval_mode,
+        answer_language=cast(AnswerLanguage, message.answer_language),
+        retrieval_mode=cast(RetrievalMode, message.retrieval_mode),
         sources=[ChatSource(**source) for source in message.sources],
         generation=GenerationMetadata(**message.generation),
         groundedness_warning=message.groundedness_warning,
@@ -111,8 +114,7 @@ def _message_to_schema(message: StoredChatMessage) -> ChatHistoryMessage:
 
 
 def _default_storage_path() -> Path:
-    backend_root = Path(__file__).resolve().parents[3]
-    return backend_root / "data" / "chat_history" / "local_chat_history.json"
+    return DATA_DIR / "chat_history" / "local_chat_history.json"
 
 
 chat_history_store = LocalChatHistoryStore()

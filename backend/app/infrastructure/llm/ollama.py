@@ -20,14 +20,16 @@ class OllamaLlmProvider:
         *,
         model: str = "qwen3:4b",
         base_url: str = "http://127.0.0.1:11434",
-        context_window: int = 32_768,
-        timeout_seconds: float = 60.0,
+        context_window: int = 8_192,
+        timeout_seconds: float = 120.0,
+        keep_alive: str = "30m",
         client: httpx.Client | None = None,
     ) -> None:
-        if not model.strip() or context_window <= 0:
-            raise ValueError("Ollama model and context window must be configured.")
+        if not model.strip() or context_window <= 0 or not keep_alive.strip():
+            raise ValueError("Ollama model, context window, and keep-alive must be configured.")
         self._model = model
         self._context_window = context_window
+        self._keep_alive = keep_alive
         self._client = client or httpx.Client(base_url=base_url, timeout=timeout_seconds)
 
     @property
@@ -66,6 +68,7 @@ class OllamaLlmProvider:
             "messages": messages,
             "stream": False,
             "think": False,
+            "keep_alive": self._keep_alive,
             "options": {
                 "temperature": request.options.temperature,
                 "num_predict": request.options.max_output_tokens,

@@ -1,5 +1,6 @@
 import json
 import re
+from typing import cast
 
 from app.api.contracts.generation import GenerationMetadata
 from app.api.contracts.quiz import (
@@ -111,12 +112,6 @@ def generate_quiz(
             question_type=question_type,
             mode=quiz_mode,
         )
-        if generation is None:
-            generation = GenerationMetadata(
-                generation_mode="fallback",
-                provider="fallback",
-                fallback_reason="LLM quiz generation is not configured.",
-            )
 
     generated_output_store.upsert_output(
         video_id=video_id,
@@ -176,11 +171,7 @@ def _select_source_chunks(
 ) -> list[TranscriptChunk]:
     if source_chunk_ids:
         chunks_by_id = {chunk.chunk_id: chunk for chunk in chunks}
-        selected_chunks = [
-            chunks_by_id[chunk_id]
-            for chunk_id in source_chunk_ids
-            if chunk_id in chunks_by_id
-        ]
+        selected_chunks = [chunks_by_id[chunk_id] for chunk_id in source_chunk_ids if chunk_id in chunks_by_id]
         if selected_chunks:
             return selected_chunks[:question_count]
 
@@ -200,7 +191,7 @@ def _generate_llm_quiz(
     question_type: QuizQuestionType,
     mode: QuizMode,
     llm_client: LlmClient | None,
-) -> tuple[list[QuizQuestion], GenerationMetadata | None]:
+) -> tuple[list[QuizQuestion], GenerationMetadata]:
     compacted_chunks = compact_transcript_chunks(
         chunks,
         max_total_chars=6500,
@@ -324,7 +315,7 @@ def _extract_json_object(text: str) -> str:
     if start == -1 or end == -1 or end <= start:
         raise ValueError("No JSON object found.")
 
-    return stripped_text[start:end + 1]
+    return stripped_text[start : end + 1]
 
 
 def _coerce_generated_question_type(
@@ -333,10 +324,10 @@ def _coerce_generated_question_type(
     requested_type: QuizQuestionType,
 ) -> GeneratedQuizQuestionType:
     if requested_type in {"multiple_choice", "true_false", "short_answer"}:
-        return requested_type
+        return cast(GeneratedQuizQuestionType, requested_type)
 
     if generated_type in {"multiple_choice", "true_false", "short_answer"}:
-        return generated_type
+        return cast(GeneratedQuizQuestionType, generated_type)
 
     return "multiple_choice"
 
@@ -465,7 +456,7 @@ def _build_explanation(chunk: TranscriptChunk, difficulty: QuizDifficulty) -> st
     }[difficulty]
     source_note = _shorten_text(chunk.text, max_length=220)
     return (
-        f"{difficulty_note} Đáp án dựa trên ý trong transcript: \"{source_note}\" "
+        f'{difficulty_note} Đáp án dựa trên ý trong transcript: "{source_note}" '
         f"Nguồn nằm trong đoạn {_format_timestamp(chunk.start_seconds)}-{_format_timestamp(chunk.end_seconds)}."
     )
 
@@ -485,7 +476,7 @@ def _question_to_payload(question: QuizQuestion) -> dict[str, object]:
 def _response_mode_from_cache_mode(cache_mode: str) -> QuizMode:
     mode = cache_mode.split(":", maxsplit=1)[0]
     if mode in {"practice", "exam", "concept_check"}:
-        return mode
+        return cast(QuizMode, mode)
 
     return "practice"
 
@@ -495,11 +486,17 @@ def _question_from_payload(
     chunk_by_id: dict[str, TranscriptChunk],
 ) -> QuizQuestion:
     chunk = chunk_by_id[str(payload["source_chunk_id"])]
+    question_type = str(payload["question_type"])
+    if question_type not in {"multiple_choice", "true_false", "short_answer"}:
+        raise ValueError(f"Unsupported cached question type: {question_type}")
+    raw_options = payload["options"]
+    if not isinstance(raw_options, list):
+        raise ValueError("Cached quiz options must be a list.")
     return QuizQuestion(
         question_id=str(payload["question_id"]),
-        question_type=payload["question_type"],
+        question_type=cast(GeneratedQuizQuestionType, question_type),
         question=str(payload["question"]),
-        options=list(payload["options"]),
+        options=[str(option) for option in raw_options],
         correct_answer=str(payload["correct_answer"]),
         explanation=str(payload["explanation"]),
         source=_chunk_to_source(chunk),

@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from app.core.paths import DATA_DIR
+
 
 @dataclass(frozen=True)
 class GeneratedOutput:
@@ -96,9 +98,9 @@ class LocalGeneratedOutputStore:
                 provider=output.provider,
                 fallback_reason=output.fallback_reason,
             )
-            self._outputs.setdefault(output.output_type, {}).setdefault(output.video_id, {})[
-                output.mode
-            ] = generated_output
+            self._outputs.setdefault(output.output_type, {}).setdefault(output.video_id, {})[output.mode] = (
+                generated_output
+            )
 
         self._save()
 
@@ -124,8 +126,7 @@ class LocalGeneratedOutputStore:
             self._outputs = {
                 output_type: {
                     video_id: {
-                        mode: _generated_output_from_data(output_data)
-                        for mode, output_data in outputs_by_mode.items()
+                        mode: _generated_output_from_data(output_data) for mode, output_data in outputs_by_mode.items()
                     }
                     for video_id, outputs_by_mode in outputs_by_video.items()
                 }
@@ -138,10 +139,7 @@ class LocalGeneratedOutputStore:
         self._storage_path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             output_type: {
-                video_id: {
-                    mode: output.__dict__
-                    for mode, output in outputs_by_mode.items()
-                }
+                video_id: {mode: output.__dict__ for mode, output in outputs_by_mode.items()}
                 for video_id, outputs_by_mode in outputs_by_video.items()
             }
             for output_type, outputs_by_video in self._outputs.items()
@@ -153,8 +151,7 @@ class LocalGeneratedOutputStore:
 
 
 def _default_storage_path() -> Path:
-    backend_root = Path(__file__).resolve().parents[4]
-    return backend_root / "data" / "generated_outputs" / "local_generated_outputs.json"
+    return DATA_DIR / "generated_outputs" / "local_generated_outputs.json"
 
 
 def _utc_now() -> str:

@@ -47,6 +47,9 @@ TASK-006 + TASK-008 + TASK-009
 
 TASK-011 + TASK-013
     -> TASK-012 Bilingual product verification
+
+TASK-002 + TASK-003 + TASK-007 + TASK-010
+    -> TASK-014 Canonical video library lifecycle
 ```
 
 ## Milestones
@@ -61,7 +64,6 @@ TASK-011 + TASK-013
 
 ## Ready now
 
-`TASK-001` through `TASK-009` are verified. `TASK-010` is the next
-dependency-order task and can migrate API/frontend runtime wiring to persistent
-jobs, canonical retrieval, and provider-independent generation. `TASK-011` is
-also dependency-ready for the retrieval release gate.
+`TASK-001` through `TASK-013` are verified. `TASK-014` hardens the remaining
+video library lifecycle boundary by making SQLite authoritative for list/get/delete
+and isolating deprecated runtime stores beneath one backend data root.

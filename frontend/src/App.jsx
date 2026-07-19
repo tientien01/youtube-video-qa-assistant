@@ -27,11 +27,11 @@ import { VideoHistory } from './features/video/VideoHistory'
 import { VideoIngestForm } from './features/video/VideoIngestForm'
 import { ACTIVE_INGEST_STATUSES } from './features/video/ingestJobState'
 import {
-  mergeVideoHistory,
   readCurrentVideo,
   readVideoChatHistory,
   readVideoHistory,
   removeVideoFromStorage,
+  replaceVideoHistory,
   saveCurrentVideo,
   saveVideoChatHistory,
   saveVideoToHistory,
@@ -70,7 +70,7 @@ function App() {
   useEffect(() => {
     let active = true
     listVideos()
-      .then((items) => active && setVideoHistory(mergeVideoHistory(items)))
+      .then((items) => active && setVideoHistory(replaceVideoHistory(items)))
       .catch((requestError) => active && setError(requestError.message))
       .finally(() => active && setIsHistoryLoading(false))
     getRuntimeHealth()
@@ -196,6 +196,7 @@ function App() {
 
   async function handleDeleteVideo(videoId) {
     try { await deleteVideo(videoId) } catch (requestError) { setError(requestError.message); return }
+    setError('')
     setVideoHistory(removeVideoFromStorage(videoId))
     if (video?.video_id === videoId) { setVideo(null); router.navigate('/library') }
   }
@@ -239,9 +240,10 @@ function renderPage(context) {
   const { route, router, video } = context
   if (route.page === 'workspace' && video) return <VideoWorkspace video={video} transcript={context.transcript} transcriptLoading={context.isTranscriptLoading} transcriptError={context.transcriptError} messages={context.messages} isAsking={context.isAsking} chatError={context.chatError} onAsk={context.handleAsk} onClear={context.handleClearChatHistory} />
   if (route.page === 'home' || route.page === 'library') return <LibraryPage home={route.page === 'home'} {...context} />
-  if (route.page === 'learning') return <LearningPage {...context} />
-  if (route.page === 'notes') return <NotesPanel video={video} notes={context.notes} onGenerate={context.handleGenerateNotes} isLoading={context.isNotesLoading} error="" />
-  if (route.page === 'quizzes') return <QuizPanel video={video} quiz={context.quiz} onGenerate={context.handleGenerateQuiz} isLoading={context.isQuizLoading} error="" />
+  if (route.page === 'learning') return <SummaryPage {...context} />
+  if (route.page === 'notes') return <NotesPage {...context} />
+  if (route.page === 'quizzes') return <QuizzesPage {...context} />
+  if (route.page === 'export') return <ExportPage {...context} />
   if (route.page === 'developer') return <RagDebugPanel video={video} debugResult={context.debugResult} onRetrieve={context.handleDebugRetrieve} onAskInChat={() => router.navigate(video ? `/library/${video.video_id}` : '/library')} isLoading={context.isDebugLoading} error="" />
   if (route.page === 'settings') return <SimplePage title="Settings" text="Runtime settings are read from the backend environment. Edit the local .env and restart the API to apply provider or model changes." />
   return <SimplePage title="Page unavailable" text="This destination is not part of the working Local V1 routes." />
@@ -251,8 +253,24 @@ function LibraryPage({ home, video, videoHistory, ingestJob, error, isHistoryLoa
   return <div className="library-page"><header className="page-heading"><p className="panel-kicker">{home ? 'Local-first learning' : 'Your collection'}</p><h1>{home ? 'Learn from any supported YouTube video.' : 'Video library'}</h1><p>Ingest once, then study with transcript-grounded answers and timestamped evidence.</p></header><div className="library-grid"><VideoIngestForm onSubmit={handleIngest} onRetry={handleRetryIngest} onCancel={handleCancelIngest} ingestJob={ingestJob} />{error ? <p className="error-message">{error}</p> : null}<VideoHistory videos={videoHistory} currentVideoId={video?.video_id} onSelect={applySelectedVideo} onDelete={handleDeleteVideo} isLoading={isHistoryLoading} /></div></div>
 }
 
-function LearningPage(context) {
-  return <div className="learning-page"><header className="page-heading"><p className="panel-kicker">Study tools</p><h1>Learning workspace</h1><p>Generate artifacts from the selected video without losing source traceability.</p></header><div className="learning-tools"><SummaryPanel video={context.video} summary={context.summary} onGenerate={context.handleGenerateSummary} isLoading={context.isSummaryLoading} error="" /><NotesPanel video={context.video} notes={context.notes} onGenerate={context.handleGenerateNotes} isLoading={context.isNotesLoading} error="" /><QuizPanel video={context.video} quiz={context.quiz} onGenerate={context.handleGenerateQuiz} isLoading={context.isQuizLoading} error="" /><ExportPanel video={context.video} summary={context.summary} notes={context.notes} quiz={context.quiz} selectedMessages={context.messages} /></div></div>
+function SummaryPage(context) {
+  return <ArtifactPage kicker="Study tool" title="Summary" description="Generate a timestamped overview from the selected video."><SummaryPanel video={context.video} summary={context.summary} onGenerate={context.handleGenerateSummary} isLoading={context.isSummaryLoading} error="" /></ArtifactPage>
+}
+
+function NotesPage(context) {
+  return <ArtifactPage kicker="Study tool" title="Study Notes" description="Turn the selected video into structured notes for your learning goal."><NotesPanel video={context.video} notes={context.notes} onGenerate={context.handleGenerateNotes} isLoading={context.isNotesLoading} error="" /></ArtifactPage>
+}
+
+function QuizzesPage(context) {
+  return <ArtifactPage kicker="Practice" title="Quizzes" description="Generate grounded questions and review every answer with timestamped evidence."><QuizPanel video={context.video} quiz={context.quiz} onGenerate={context.handleGenerateQuiz} isLoading={context.isQuizLoading} error="" /></ArtifactPage>
+}
+
+function ExportPage(context) {
+  return <ArtifactPage kicker="Portable learning" title="Export" description="Build a Markdown study pack from the artifacts you have generated."><ExportPanel video={context.video} summary={context.summary} notes={context.notes} quiz={context.quiz} selectedMessages={context.messages} /></ArtifactPage>
+}
+
+function ArtifactPage({ kicker, title, description, children }) {
+  return <div className="learning-page"><header className="page-heading"><p className="panel-kicker">{kicker}</p><h1>{title}</h1><p>{description}</p></header><div className="learning-tools">{children}</div></div>
 }
 
 function SimplePage({ title, text }) { return <section className="simple-page"><h1>{title}</h1><p>{text}</p></section> }

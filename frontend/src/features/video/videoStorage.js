@@ -26,6 +26,10 @@ export function saveVideoToHistory(video) {
   return nextHistory
 }
 
+export function replaceVideoHistory(videos) {
+  return mergeVideoHistory(videos, [])
+}
+
 export function mergeVideoHistory(incomingVideos, existingVideos = readVideoHistory()) {
   const videoMap = new Map()
 

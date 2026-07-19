@@ -79,6 +79,14 @@ class SqlAlchemyVideoRepository:
         models = self._session.scalars(select(VideoModel).order_by(VideoModel.updated_at.desc()).limit(limit)).all()
         return [_video_from_model(model) for model in models]
 
+    def delete(self, video_id: str) -> bool:
+        model = self._session.get(VideoModel, video_id)
+        if model is None:
+            return False
+        self._session.delete(model)
+        self._session.flush()
+        return True
+
 
 class SqlAlchemyIngestJobRepository:
     def __init__(self, session: Session) -> None:
@@ -316,6 +324,14 @@ class SqlAlchemyIndexRepository:
             )
         )
         return _index_version_from_model(model) if model is not None else None
+
+    def list_versions(self, video_id: str) -> list[IndexVersion]:
+        models = self._session.scalars(
+            select(IndexVersionModel)
+            .where(IndexVersionModel.video_id == video_id)
+            .order_by(IndexVersionModel.created_at, IndexVersionModel.id)
+        ).all()
+        return [_index_version_from_model(model) for model in models]
 
     def save_version(self, index_version: IndexVersion) -> IndexVersion:
         model = self._session.get(IndexVersionModel, index_version.id)

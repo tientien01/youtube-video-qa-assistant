@@ -16,8 +16,9 @@ class LlmProviderConfig:
     provider: str = "ollama"
     model: str = "qwen3:4b"
     base_url: str = "http://127.0.0.1:11434"
-    timeout_seconds: float = 60.0
-    context_window: int = 32_768
+    timeout_seconds: float = 120.0
+    context_window: int = 8_192
+    keep_alive: str = "30m"
     gemini_api_key: str | None = None
 
 
@@ -33,6 +34,7 @@ def create_llm_provider(
             base_url=config.base_url,
             timeout_seconds=config.timeout_seconds,
             context_window=config.context_window,
+            keep_alive=config.keep_alive,
             client=client,
         )
     if provider == "gemini":

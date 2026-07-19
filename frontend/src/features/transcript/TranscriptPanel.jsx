@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Play } from 'lucide-react'
 import { formatTimestamp } from '../../shared/utils/time'
 
 export function TranscriptPanel({ transcript, loading, error, currentTime, selectedSource, onSeek }) {
@@ -34,7 +35,7 @@ export function TranscriptPanel({ transcript, loading, error, currentTime, selec
             >
               <time>{formatTimestamp(segment.start_seconds)}</time>
               <span>{segment.original_text}</span>
-              {active ? <b aria-label="Currently playing">▶</b> : null}
+              {active ? <Play className="transcript-play-icon" size={14} fill="currentColor" role="img" aria-label="Currently playing" /> : null}
             </button>
           )
         })}

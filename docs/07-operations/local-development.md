@@ -74,6 +74,12 @@ development and tests, not routine deletion of user data:
 python -m uv run --project backend alembic -c backend/alembic.ini downgrade base
 ```
 
+All runtime storage is rooted at `backend/data` regardless of whether commands
+run from the repository root or `backend`. `backend/backend/data` and
+`backend/app/data` are invalid legacy layouts. Preserved files discovered in
+those locations belong under `backend/data/legacy/misplaced` until their content
+has been migrated or explicitly removed.
+
 Model downloads and live YouTube/Ollama smoke tests are explicit operations and are not part of `scripts/verify.py`.
 
 Install the Stanza Vietnamese and English sentence models explicitly after the
@@ -143,6 +149,21 @@ No YouTube, model download, Ollama, or paid provider. Uses fixtures, temporary S
 - Tests override settings without reading developer credentials.
 - Model downloads occur in an explicit setup command.
 - Ollama unavailability disables generation, not ingest or retrieval.
+
+The light local generation defaults keep the selected model warm for 30 minutes,
+use an 8K context window, and allow 120 seconds for non-streaming structured
+generation. Slower CPU-only machines MAY raise the timeout explicitly without
+changing provider behavior:
+
+```text
+LLM_TIMEOUT_SECONDS=180
+LLM_CONTEXT_WINDOW=8192
+OLLAMA_KEEP_ALIVE=30m
+```
+
+Avoid increasing the context window unless the available RAM/VRAM can support
+it; larger context allocation can increase first-token latency and trigger more
+timeouts.
 
 Optional transcript configuration uses comma-separated provider/language order:
 

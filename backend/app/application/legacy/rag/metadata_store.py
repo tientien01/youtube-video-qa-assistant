@@ -4,6 +4,8 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from app.core.paths import DATA_DIR
+
 
 @dataclass(frozen=True)
 class VideoMetadata:
@@ -98,8 +100,7 @@ class LocalVideoMetadataStore:
 
 
 def _default_storage_path() -> Path:
-    backend_root = Path(__file__).resolve().parents[4]
-    return backend_root / "data" / "vector_store" / "local_video_metadata.json"
+    return DATA_DIR / "vector_store" / "local_video_metadata.json"
 
 
 def _next_updated_at(existing_metadata: Iterable[VideoMetadata]) -> str:

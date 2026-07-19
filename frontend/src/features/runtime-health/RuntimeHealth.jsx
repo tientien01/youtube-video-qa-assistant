@@ -12,7 +12,10 @@ export function RuntimeHealth({ health, error, compact = false }) {
         {components.map((component) => (
           <div key={component.label}>
             <span className={`status-dot ${component.status}`} aria-hidden="true" />
-            <span>{component.label}</span>
+            <span className="runtime-component-label">
+              <span>{component.label}</span>
+              {component.detail ? <small>{component.detail}</small> : null}
+            </span>
             <strong>{component.status}</strong>
           </div>
         ))}
@@ -30,7 +33,7 @@ export function RuntimeCards({ health }) {
       </article>
       <article>
         <span className={`status-dot ${health?.sqlite.status || 'unavailable'}`} aria-hidden="true" />
-        <div><small>SQLite database</small><strong>{formatBytes(health?.database_size_bytes)}</strong></div>
+        <div><small>SQLite database</small><strong>{formatBytes(health?.database_size_bytes)}</strong><small>{health?.sqlite.detail || 'Canonical path unavailable'}</small></div>
       </article>
     </div>
   )

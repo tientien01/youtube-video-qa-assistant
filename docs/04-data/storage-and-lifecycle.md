@@ -52,9 +52,35 @@ The current JSON-backed API remains active during migration. `start_database_run
 
 Chunks are reproducible from canonical segments and chunker configuration. Embeddings and Qdrant points are reproducible from chunks and embedding configuration. Generated artifacts are not reproducible guarantees and retain their provider/prompt/model metadata.
 
+## Local runtime layout
+
+All backend-owned runtime files MUST resolve from one absolute `backend/data`
+root and MUST NOT depend on the process working directory:
+
+```text
+backend/data/
+|-- app.db                         # canonical SQLite database
+|-- vector_store/                  # rebuildable local vector data
+|   |-- qdrant/                    # target Local V1 dense index
+|   |-- chroma/                    # deprecated compatibility index
+|   `-- local_*.json               # deprecated compatibility indexes
+|-- chat_history/                  # deprecated until canonical migration
+|-- generated_outputs/             # deprecated until canonical migration
+|-- quiz_attempts/                 # deprecated until canonical migration
+`-- legacy/misplaced/              # preserved data from old path defects
+```
+
+Paths such as `backend/backend/data` and `backend/app/data` are invalid. A
+configured relative path is backend-relative; repeated leading `backend`
+components are normalized so they cannot create a nested backend directory.
+
 ## Delete
 
 Deleting a video MUST remove or tombstone its transcript, chunks, active vectors, chats, and generated artifacts according to one documented transaction policy. A failed vector deletion MUST be retryable and MUST NOT resurrect the canonical video.
+
+Library deletion is idempotent. SQLite canonical deletion commits before
+deprecated-store cleanup, and repeating the request retries cleanup without
+returning a false `not indexed` error for an already-absent video.
 
 ## Migration path
 

@@ -33,7 +33,7 @@ package = false
 cache-dir = ".uv-cache"
 
 [tool.pytest.ini_options]
-addopts = "-ra"
+addopts = "-ra --import-mode=importlib"
 cache_dir = ".cache/pytest"
 pythonpath = ["."]
 testpaths = ["tests"]

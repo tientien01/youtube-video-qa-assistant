@@ -13,23 +13,40 @@ from app.api.contracts.video import (
 )
 from app.application.legacy.rag.local_store import VideoNotIndexedError
 from app.application.legacy.rag.video_index_service import (
-    delete_ingested_video,
-    get_ingested_video,
     ingest_video_content,
-    list_ingested_videos,
     rebuild_video_index,
 )
-from app.api.dependencies import get_video_transcript_application
-from app.application.video import TranscriptNotFound, VideoTranscriptApplication
+from app.api.dependencies import DatabaseSchemaError, get_video_library_application, get_video_transcript_application
+from app.application.video import (
+    TranscriptNotFound,
+    VideoLibraryApplication,
+    VideoLibraryItem,
+    VideoNotFound,
+    VideoTranscriptApplication,
+)
+from app.core.errors import ApiError
 
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/videos", tags=["video"])
 
 
+def _library_application() -> VideoLibraryApplication:
+    try:
+        return get_video_library_application()
+    except DatabaseSchemaError as error:
+        raise ApiError(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="DATABASE_SCHEMA_NOT_READY",
+            message=str(error),
+        ) from error
+
+
 @router.get("", response_model=list[VideoMetadataResponse])
-def list_videos() -> list[VideoMetadataResponse]:
-    return list_ingested_videos()
+def list_videos(
+    application: VideoLibraryApplication = Depends(_library_application),
+) -> list[VideoMetadataResponse]:
+    return [_metadata_response(item) for item in application.list()]
 
 
 @router.post(
@@ -60,11 +77,14 @@ def ingest_video(request: VideoIngestRequest) -> VideoIngestResponse:
 
 
 @router.get("/{video_id}", response_model=VideoMetadataResponse)
-def get_video(video_id: str) -> VideoMetadataResponse:
+def get_video(
+    video_id: str,
+    application: VideoLibraryApplication = Depends(_library_application),
+) -> VideoMetadataResponse:
     try:
-        return get_ingested_video(video_id)
-    except VideoNotIndexedError as error:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+        return _metadata_response(application.get(video_id))
+    except VideoNotFound as error:
+        raise ApiError(status.HTTP_404_NOT_FOUND, "VIDEO_NOT_FOUND", str(error)) from error
 
 
 @router.get("/{video_id}/transcript", response_model=VideoTranscriptResponse)
@@ -92,11 +112,11 @@ def get_video_transcript(
 
 
 @router.delete("/{video_id}", response_model=VideoDeleteResponse)
-def delete_video(video_id: str) -> VideoDeleteResponse:
-    try:
-        return delete_ingested_video(video_id)
-    except VideoNotIndexedError as error:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+def delete_video(
+    video_id: str,
+    application: VideoLibraryApplication = Depends(_library_application),
+) -> VideoDeleteResponse:
+    return VideoDeleteResponse(video_id=video_id, deleted=application.delete(video_id))
 
 
 @router.post("/{video_id}/rebuild-index", response_model=VideoRebuildIndexResponse)
@@ -105,3 +125,18 @@ def rebuild_index(video_id: str) -> VideoRebuildIndexResponse:
         return rebuild_video_index(video_id)
     except VideoNotIndexedError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+
+
+def _metadata_response(item: VideoLibraryItem) -> VideoMetadataResponse:
+    return VideoMetadataResponse(
+        video_id=item.video_id,
+        title=item.title,
+        url=item.url,
+        channel_title=item.channel_title,
+        thumbnail_url=item.thumbnail_url,
+        duration_seconds=item.duration_seconds,
+        transcript_language=item.transcript_language,
+        chunk_count=item.chunk_count,
+        created_at=item.created_at,
+        updated_at=item.updated_at,
+    )

@@ -46,6 +46,7 @@ def test_ollama_structured_payload_usage_and_health() -> None:
     result = provider.generate(_request())
 
     assert payloads[0]["stream"] is False
+    assert payloads[0]["keep_alive"] == "30m"
     assert payloads[0]["format"]["type"] == "object"
     assert payloads[0]["options"]["num_ctx"] == 4_096
     assert result.usage.total_tokens == 18

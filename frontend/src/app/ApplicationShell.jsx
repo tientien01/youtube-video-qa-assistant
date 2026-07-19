@@ -1,15 +1,23 @@
+import {
+  ArrowLeft,
+  ArrowRight,
+  Download,
+  FileText,
+  GraduationCap,
+  House,
+  Library,
+  NotebookPen,
+  Play,
+} from 'lucide-react'
 import { RuntimeCards, RuntimeHealth } from '../features/runtime-health/RuntimeHealth'
 
 const NAVIGATION = [
-  ['home', 'Home', '/', '⌂', false],
-  ['library', 'Library', '/library', '▤', false],
-  ['learning', 'Learning', '/learning', '◇', false],
-  ['notes', 'Notes', '/notes', '□', false],
-  ['quizzes', 'Quizzes', '/quizzes', '✓', false],
-  ['flashcards', 'Flashcards', '/flashcards', '▱', true],
-  ['activity', 'Activity', '/activity', '◷', true],
-  ['developer', 'Developer', '/developer', '⌘', false],
-  ['settings', 'Settings', '/settings', '⚙', false],
+  { id: 'home', label: 'Home', path: '/', Icon: House },
+  { id: 'library', label: 'Library', path: '/library', Icon: Library },
+  { id: 'learning', label: 'Summary', path: '/learning', Icon: FileText },
+  { id: 'notes', label: 'Study Notes', path: '/notes', Icon: NotebookPen },
+  { id: 'quizzes', label: 'Quizzes', path: '/quizzes', Icon: GraduationCap },
+  { id: 'export', label: 'Export', path: '/export', Icon: Download },
 ]
 
 export function ApplicationShell({ route, navigate, video, health, healthError, language, onLanguage, children }) {
@@ -17,19 +25,20 @@ export function ApplicationShell({ route, navigate, video, health, healthError, 
     <div className="product-shell">
       <aside className="navigation-rail">
         <button className="product-mark" type="button" onClick={() => navigate('/')} aria-label="Go home">
-          <span>▶</span><div><strong>FrameNote</strong><small>Video learning</small></div>
+          <span className="brand-icon" aria-hidden="true"><Play size={19} fill="currentColor" /></span>
+          <div><strong>FrameNote</strong><small>Video learning</small></div>
         </button>
         <nav aria-label="Primary navigation">
-          {NAVIGATION.map(([id, label, path, icon, planned]) => (
+          {NAVIGATION.map(({ id, label, path, Icon }) => (
             <button
               key={id}
               type="button"
               className={route.page === id || (id === 'library' && route.page === 'workspace') ? 'active' : ''}
-              onClick={() => !planned && navigate(path)}
-              disabled={planned}
-              title={planned ? `${label} — Coming later` : label}
+              onClick={() => navigate(path)}
+              title={label}
             >
-              <span aria-hidden="true">{icon}</span><b>{label}</b>{planned ? <small>Later</small> : null}
+              <Icon className="nav-icon" size={19} strokeWidth={1.8} aria-hidden="true" />
+              <b>{label}</b>
             </button>
           ))}
         </nav>
@@ -38,8 +47,12 @@ export function ApplicationShell({ route, navigate, video, health, healthError, 
       <div className="shell-main">
         <header className="top-bar">
           <div className="history-controls">
-            <button type="button" onClick={() => history.back()} aria-label="Go back">←</button>
-            <button type="button" onClick={() => history.forward()} aria-label="Go forward">→</button>
+            <button type="button" onClick={() => history.back()} aria-label="Go back" title="Go back">
+              <ArrowLeft size={17} aria-hidden="true" />
+            </button>
+            <button type="button" onClick={() => history.forward()} aria-label="Go forward" title="Go forward">
+              <ArrowRight size={17} aria-hidden="true" />
+            </button>
           </div>
           <p className="breadcrumb"><span>Library</span>{video ? <> / <strong>{video.title}</strong></> : null}</p>
           <div className="command-unavailable" aria-label="Global search unavailable">Search unavailable <kbd>Ctrl K</kbd></div>

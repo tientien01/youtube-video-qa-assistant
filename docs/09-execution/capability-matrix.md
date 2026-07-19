@@ -2,7 +2,7 @@
 id: EXEC-STATUS-001
 document_status: approved
 normative: true
-last_verified: 2026-07-17
+last_verified: 2026-07-19
 ---
 
 # Capability Matrix
@@ -12,10 +12,11 @@ This file reports current implementation status. Target behavior lives in specif
 | Capability | Current implementation | Target status | Next task |
 |---|---|---:|---|
 | FastAPI `/api/v1` application | Typed routes include persistent ingest jobs, canonical transcript delivery, and live runtime health contracts | `verified` | Complete |
-| React learning workspace | Evidence-first responsive shell synchronizes player, transcript, grounded chat, citations, and evidence; browser fixtures cover runtime, ingest, and bilingual expansion states | `verified` | Complete |
+| React learning workspace | Evidence-first responsive shell synchronizes player, transcript, grounded chat, citations, and evidence; learner navigation separates Summary, Study Notes, Quizzes, and Export with a consistent Lucide icon family | `verified` | Complete |
 | Reproducible Python environment | Python 3.12, backend `pyproject.toml`, committed `uv.lock`, and pinned Node marker | `verified` | Complete |
 | Local quality command | Root PowerShell/cross-platform gate; lock, Ruff, incremental Pyright, backend tests, OpenAPI drift, frontend lint/test/build | `verified` | Expand incrementally |
 | Canonical database foundation | SQLite ORM schema, index lifecycle/unit of work, complete embedding identity, and canonical transcript/chunk repositories | `verified` | Complete |
+| Canonical video library lifecycle | SQLite-authoritative list/get/idempotent delete, cascading canonical cleanup, legacy-store cleanup, and server-authoritative browser reconciliation | `verified` | Complete |
 | Schema migrations | Alembic migrations, upgrade/downgrade/drift/schema-start checks | `verified` | Complete |
 | Persistent ingest jobs | SQLite state machine, create/status/retry/cancel API, restart recovery, real frontend polling, retry/cancel controls, and refresh restoration | `verified` | Complete |
 | YouTube URL validation | Implemented baseline | `implemented` | TASK-004 |
@@ -33,7 +34,7 @@ This file reports current implementation status. Target behavior lives in specif
 | Retrieval evaluation | Versioned 12-case reviewed bilingual dataset, reproducible runner, machine-readable/Markdown report, and ADR-006 | `verified` | Expand dataset |
 | Provider-independent LLM port | Typed request/result/capability/usage/error contracts with application-owned grounded orchestration | `verified` | Complete |
 | Gemini adapter | Explicit opt-in REST adapter behind the common contract with structured output and usage metadata | `verified` | Complete |
-| Ollama adapter | Local Qwen3 adapter with structured output, timeout/error mapping, health check, and configurable model/context | `verified` | Complete |
+| Ollama adapter | Local Qwen3 adapter with structured output, timeout/error mapping, health check, configurable model/context, and bounded model keep-alive to reduce cold-start fallback | `verified` | Complete |
 | Structured answer/citation validation | Strict grounded-answer schema, bilingual policy, allowed-citation validation, and one bounded repair attempt | `verified` | Complete |
 | Vietnamese/English language policy | Explicit UI/API preference overrides question detection; chat history records answer language, evidence remains original, and all four retrieval directions pass the release gate | `verified` | Complete |
 | Production deployment | Intentionally deferred | `planned` | Future production phase |

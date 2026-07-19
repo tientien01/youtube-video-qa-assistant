@@ -4,18 +4,21 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from app.core.paths import BACKEND_ROOT, CHROMA_DIR, resolve_data_path, resolve_database_url
 
-BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
 LOCAL_ENV_FILE = BACKEND_ROOT / ".env"
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 DEFAULT_OLLAMA_LLM_MODEL = "qwen3:4b"
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_OLLAMA_EMBEDDING_MODEL = "embeddinggemma"
+DEFAULT_OLLAMA_CONTEXT_WINDOW = 8_192
+DEFAULT_OLLAMA_KEEP_ALIVE = "30m"
+DEFAULT_LLM_TIMEOUT_SECONDS = 120.0
 DEFAULT_EMBEDDING_PROVIDER = "hashing"
 DEFAULT_EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 DEFAULT_VECTOR_STORE_PROVIDER = "local_json"
-DEFAULT_CHROMA_PERSIST_DIR = BACKEND_ROOT / "data" / "vector_store" / "chroma"
-DEFAULT_DATABASE_PATH = BACKEND_ROOT / "data" / "app.db"
+DEFAULT_CHROMA_PERSIST_DIR = CHROMA_DIR
 DEFAULT_TRANSCRIPT_PROVIDER_ORDER = (
     "youtube_transcript_api",
     "yt_dlp_manual",
@@ -33,9 +36,11 @@ class Settings:
     llm_provider: str
     llm_model: str
     ollama_base_url: str
+    ollama_keep_alive: str
     gemini_api_key: str | None
     gemini_model: str
     llm_timeout_seconds: float
+    llm_context_window: int
     embedding_provider: str
     embedding_model_name: str
     vector_store_provider: str
@@ -74,9 +79,11 @@ def get_settings() -> Settings:
             or (DEFAULT_GEMINI_MODEL if provider == "gemini" else DEFAULT_OLLAMA_LLM_MODEL)
         ),
         ollama_base_url=_read_optional_env("OLLAMA_BASE_URL") or DEFAULT_OLLAMA_BASE_URL,
+        ollama_keep_alive=_read_optional_env("OLLAMA_KEEP_ALIVE") or DEFAULT_OLLAMA_KEEP_ALIVE,
         gemini_api_key=gemini_api_key,
         gemini_model=_read_optional_env("GEMINI_MODEL") or DEFAULT_GEMINI_MODEL,
-        llm_timeout_seconds=_read_timeout_seconds("LLM_TIMEOUT_SECONDS", default=20.0),
+        llm_timeout_seconds=_read_timeout_seconds("LLM_TIMEOUT_SECONDS", default=DEFAULT_LLM_TIMEOUT_SECONDS),
+        llm_context_window=_read_positive_int("LLM_CONTEXT_WINDOW", default=DEFAULT_OLLAMA_CONTEXT_WINDOW),
         embedding_provider=(_read_optional_env("EMBEDDING_PROVIDER") or DEFAULT_EMBEDDING_PROVIDER).lower(),
         embedding_model_name=(
             _read_optional_env("EMBEDDING_MODEL")
@@ -91,7 +98,7 @@ def get_settings() -> Settings:
         chroma_persist_dir=_read_backend_path("CHROMA_PERSIST_DIR", default=DEFAULT_CHROMA_PERSIST_DIR),
         reranker_enabled=_read_bool("RERANKER_ENABLED", default=False),
         rerank_top_k=_read_positive_int("RERANK_TOP_K", default=8),
-        database_url=_read_optional_env("DATABASE_URL") or f"sqlite:///{DEFAULT_DATABASE_PATH.resolve().as_posix()}",
+        database_url=resolve_database_url(_read_optional_env("DATABASE_URL")),
         transcript_provider_order=tuple(
             _read_list_env("TRANSCRIPT_PROVIDER_ORDER", default=list(DEFAULT_TRANSCRIPT_PROVIDER_ORDER))
         ),
@@ -153,16 +160,4 @@ def _read_positive_int(name: str, *, default: int) -> int:
 
 
 def _read_backend_path(name: str, *, default: Path) -> Path:
-    raw_value = _read_optional_env(name)
-    if raw_value is None:
-        return default
-
-    path = Path(raw_value)
-    if path.is_absolute():
-        return path
-
-    parts = path.parts
-    if parts and parts[0].lower() == "backend":
-        return BACKEND_ROOT.joinpath(*parts[1:])
-
-    return BACKEND_ROOT / path
+    return resolve_data_path(_read_optional_env(name), default=default)

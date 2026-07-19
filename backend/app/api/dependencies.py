@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from threading import Lock
 
 from app.application.ingest.use_cases import IngestJobApplication
-from app.application.video import VideoTranscriptApplication
+from app.application.video import VideoLibraryApplication, VideoTranscriptApplication
+from app.application.legacy.rag.local_store import rag_store
+from app.application.legacy.rag.video_index_service import delete_legacy_video_data
 from app.core.config import get_settings
 from app.infrastructure.db.migration_guard import DatabaseSchemaError
 from app.infrastructure.db.runtime import DatabaseRuntime, start_database_runtime
@@ -60,6 +62,15 @@ def get_video_transcript_application() -> VideoTranscriptApplication:
     return VideoTranscriptApplication(lambda: SqlAlchemyIngestUnitOfWork(database.session_factory))
 
 
+def get_video_library_application() -> VideoLibraryApplication:
+    database = get_database_runtime()
+    return VideoLibraryApplication(
+        lambda: SqlAlchemyIngestUnitOfWork(database.session_factory),
+        legacy_chunk_count=rag_store.get_video_chunk_count,
+        delete_legacy_data=delete_legacy_video_data,
+    )
+
+
 def close_ingest_runtime() -> None:
     global _container
     with _container_lock:
@@ -74,5 +85,6 @@ __all__ = [
     "close_ingest_runtime",
     "get_database_runtime",
     "get_ingest_application",
+    "get_video_library_application",
     "get_video_transcript_application",
 ]

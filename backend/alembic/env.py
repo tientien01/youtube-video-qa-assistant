@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import os
 from logging.config import fileConfig
-from pathlib import Path
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.infrastructure.db.models import Base
+from app.core.paths import resolve_database_url
 
 
 config = context.config
@@ -27,15 +27,13 @@ def _include_object(object_, name: str | None, type_: str, reflected: bool, comp
 def _database_url() -> str:
     configured_url = config.get_main_option("sqlalchemy.url").strip()
     if configured_url:
-        return configured_url
+        return resolve_database_url(configured_url)
 
     environment_url = os.environ.get("DATABASE_URL", "").strip()
     if environment_url:
-        return environment_url
+        return resolve_database_url(environment_url)
 
-    backend_root = Path(__file__).resolve().parents[1]
-    database_path = (backend_root / "data" / "app.db").resolve().as_posix()
-    return f"sqlite:///{database_path}"
+    return resolve_database_url(None)
 
 
 def run_migrations_offline() -> None:

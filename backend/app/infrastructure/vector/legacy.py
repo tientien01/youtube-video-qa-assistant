@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from app.core.config import get_settings
+from app.core.paths import VECTOR_STORE_DIR
 from app.infrastructure.embeddings.legacy import EmbeddingService, cosine_similarity, embedding_service
 from app.application.legacy.rag.models import RetrievedChunk, TranscriptChunk
 
@@ -189,8 +190,7 @@ class ChromaVectorStore:
 
 
 def _default_storage_path() -> Path:
-    backend_root = Path(__file__).resolve().parents[3]
-    return backend_root / "data" / "vector_store" / "local_vector_index.json"
+    return VECTOR_STORE_DIR / "local_vector_index.json"
 
 
 def build_vector_store(provider: str | None = None):

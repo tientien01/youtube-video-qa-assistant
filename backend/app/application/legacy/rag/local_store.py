@@ -3,6 +3,7 @@ import math
 from collections import Counter
 from pathlib import Path
 
+from app.core.paths import DATA_DIR
 from app.application.legacy.rag.models import RetrievedChunk, TranscriptChunk
 from app.application.legacy.rag.text_processing import tokenize
 
@@ -53,11 +54,7 @@ class LocalRagStore:
             return []
 
         document_tokens = [tokenize(chunk.text) for chunk in chunks]
-        document_frequency = Counter(
-            token
-            for tokens in document_tokens
-            for token in set(tokens)
-        )
+        document_frequency = Counter(token for tokens in document_tokens for token in set(tokens))
         average_length = sum(len(tokens) for tokens in document_tokens) / max(len(document_tokens), 1)
 
         scored_chunks = [
@@ -92,10 +89,7 @@ class LocalRagStore:
 
     def _save(self) -> None:
         self._storage_path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            video_id: [chunk.__dict__ for chunk in chunks]
-            for video_id, chunks in self._index.items()
-        }
+        payload = {video_id: [chunk.__dict__ for chunk in chunks] for video_id, chunks in self._index.items()}
         self._storage_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -103,8 +97,7 @@ class LocalRagStore:
 
 
 def _default_storage_path() -> Path:
-    backend_root = Path(__file__).resolve().parents[4]
-    return backend_root / "data" / "vector_store" / "local_rag_index.json"
+    return DATA_DIR / "vector_store" / "local_rag_index.json"
 
 
 def _bm25_score(

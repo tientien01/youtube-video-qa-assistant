@@ -26,6 +26,7 @@ export function parseRoute(path) {
     ['/learning', 'learning'],
     ['/notes', 'notes'],
     ['/quizzes', 'quizzes'],
+    ['/export', 'export'],
     ['/developer', 'developer'],
     ['/settings', 'settings'],
   ])

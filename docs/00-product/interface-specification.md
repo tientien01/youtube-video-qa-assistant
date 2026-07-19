@@ -3,7 +3,7 @@ id: PRODUCT-UI-001
 document_status: approved
 implementation_status: verified
 normative: true
-last_verified: 2026-07-16
+last_verified: 2026-07-18
 reference: user-approved video workspace mock, 2026-07-16
 ---
 
@@ -59,15 +59,18 @@ At a reference viewport of 1680x960:
 | Home | `/` | Ingest entry, recent videos, interrupted/failed job recovery |
 | Library | `/library` | Searchable video library and ingest status |
 | Video workspace | `/library/:videoId` | Player, transcript, chat, and evidence; primary mock screen |
-| Learning | `/learning` | Entry to summaries and study workflows |
+| Summary | `/learning` | Generate and review timestamped video summaries |
 | Notes | `/notes` | Saved/generated notes grouped by video |
 | Quizzes | `/quizzes` | Generated quizzes and attempts |
-| Flashcards | `/flashcards` | Study-card view when backed by persisted data; otherwise clearly marked planned |
-| Activity | `/activity` | Local ingest/generation history when backed by persisted events; no fabricated events |
-| Developer | `/developer` | Retrieval diagnostics and evaluation tools, visually separated from learner flows |
-| Settings | `/settings` | Local provider, model, language, and storage configuration |
+| Export | `/export` | Build a portable Markdown study pack from generated artifacts |
+| Flashcards | `/flashcards` | Hidden until backed by persisted study-card data |
+| Activity | `/activity` | Hidden until backed by persisted local events |
+| Developer | `/developer` | Retrieval diagnostics remain directly addressable but outside learner navigation |
+| Settings | `/settings` | Runtime configuration remains directly addressable but outside learner navigation |
 
-Navigation items MUST NOT imply completed features without working routes and
+The primary learner rail exposes Home, Library, Summary, Notes, Quizzes, and
+Export. Developer, Settings, and unfinished destinations MUST remain outside
+that rail. Navigation items MUST NOT imply completed features without working routes and
 data. A planned destination MAY be visible but disabled with an explicit
 `Coming later` label. It MUST NOT lead to an empty, broken, or fake page.
 

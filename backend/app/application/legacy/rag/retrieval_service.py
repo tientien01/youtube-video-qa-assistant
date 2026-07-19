@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from app.application.retrieval.fusion import SourceCandidate, reciprocal_rank_fusion
 from app.core.config import get_settings
@@ -8,7 +8,8 @@ from app.application.legacy.rag.reranker import reranker
 
 
 RetrievalMode = Literal["bm25", "embedding", "hybrid"]
-vector_store = None
+# Provider objects remain contained at this compatibility composition boundary.
+vector_store: Any = None
 
 
 def configure_retrieval_runtime(*, configured_vector_store) -> None:
@@ -51,10 +52,7 @@ def _retrieve_hybrid(video_id: str, question: str, top_k: int) -> list[Retrieved
     if not bm25_results and not embedding_results:
         return []
 
-    chunk_by_id = {
-        result.chunk.chunk_id: result.chunk
-        for result in [*bm25_results, *embedding_results]
-    }
+    chunk_by_id = {result.chunk.chunk_id: result.chunk for result in [*bm25_results, *embedding_results]}
     fused = reciprocal_rank_fusion(
         {
             "lexical": [SourceCandidate(item.chunk.chunk_id, item.score) for item in bm25_results],
